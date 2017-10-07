@@ -72,8 +72,14 @@ namespace GoogleDrive2.Api.Files
             set { listRequest.Parameters.fields = value; }
         }
         ListRequest listRequest = new ListRequest();
+        private bool stopRequest = false;
+        public void Stop()
+        {
+            stopRequest = true;
+        }
         public async Task StartAsync(bool startFromScratch)
         {
+            MyLogger.Assert(!stopRequest);
             if (startFromScratch)
             {
                 listRequest.Parameters.pageToken = null;
@@ -82,21 +88,25 @@ namespace GoogleDrive2.Api.Files
             OperationStarted?.Invoke();
             while (true)
             {
-                var response = await listRequest.GetHttpResponseAsync();
-                if (response?.StatusCode != HttpStatusCode.OK)
+                if (stopRequest) break;
+                using (var response = await listRequest.GetHttpResponseAsync())
                 {
-                    ErrorOccurred?.Invoke(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
-                    return;
+                    if (stopRequest) break;
+                    if (response?.StatusCode != HttpStatusCode.OK)
+                    {
+                        ErrorOccurred?.Invoke(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                        return;
+                    }
+                    var text = await listRequest.GetResponseTextAsync(response);
+                    var result = JsonConvert.DeserializeObject<Api.Files.ListRequest.ListResponse<T>>(text);
+                    if (result.incompleteSearch)
+                    {
+                        MyLogger.LogError($"Incomplete search: {await RestRequests.RestRequester.LogHttpWebResponse(response, false)}\r\n{text}");
+                    }
+                    CloudFilesAdded?.Invoke(result.files);
+                    if (result.nextPageToken == null) break;
+                    listRequest.Parameters.pageToken = result.nextPageToken;
                 }
-                var text = await listRequest.GetResponseTextAsync(response);
-                var result = JsonConvert.DeserializeObject<Api.Files.ListRequest.ListResponse<T>>(text);
-                if (result.incompleteSearch)
-                {
-                    MyLogger.LogError($"Incomplete search: {await RestRequests.RestRequester.LogHttpWebResponse(response, false)}\r\n{text}");
-                }
-                CloudFilesAdded?.Invoke(result.files);
-                if (result.nextPageToken == null) break;
-                listRequest.Parameters.pageToken = result.nextPageToken;
             }
             OperationEnded?.Invoke();
         }

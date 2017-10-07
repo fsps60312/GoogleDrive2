@@ -10,7 +10,11 @@ namespace GoogleDrive2.Pages.TestPage
         public FilesListRequestPage()
         {
             this.Title = "File List";
-            this.Update<Api.Files.ListParameters, Api.Files.ListRequest>();
+            DoInitializeTasks();
+        }
+        async void DoInitializeTasks()
+        {
+            await this.Update<Api.Files.ListParameters, Api.Files.ListRequest>();
         }
     }
 }

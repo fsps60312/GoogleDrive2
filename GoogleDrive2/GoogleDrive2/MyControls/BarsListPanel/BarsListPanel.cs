@@ -16,23 +16,22 @@ namespace GoogleDrive2.MyControls.BarsListPanel
     }
     class BarsListPanel<GenericView,DataType>:MyContentView where DataType:MyDisposable where GenericView : Xamarin.Forms.View, IDataBindedView<DataType>,new()
     {
-        public delegate void DataEventHandler(DataType data);
-        public event DataEventHandler DataInserted, DataRemoved;
+        public event Libraries.Events.MyEventHandler<DataType> DataInserted, DataRemoved;
         private void OnDataInserted(DataType data) { DataInserted?.Invoke(data); }
         private void OnDataRemoved(DataType data) { DataRemoved?.Invoke(data); }
-        protected double AnimationDuration { get { return Treap<DataType>.animationDuration; } }
-        protected double ItemHeight
+        public double AnimationDuration { get { return Treap<DataType>.animationDuration; } }
+        public double ItemHeight
         {
             get { return treap.itemHeight; }
             set { treap.itemHeight = value; }
         }
-        public Treap<DataType> Treap
+        public List<DataType>ToList()
         {
-            get { return treap; }
+            return treap.ToList();
         }
         Treap<DataType> treap = new Treap<DataType>();
         MyAbsoluteLayout ALmain;
-        protected MyScrollView SVmain;
+        MyScrollView SVmain;
         MyLabel LBend;
         private delegate void TreapLayoutChangedEventHandler();
         private event TreapLayoutChangedEventHandler TreapLayoutChanged;
@@ -78,25 +77,11 @@ namespace GoogleDrive2.MyControls.BarsListPanel
                 await semaphore.WaitAsync();
             }
         }
-        public void Clear()
-        {
-            if (treap.Count > 0)
-            {
-                int l = UponIndex(), r = DownIndex();
-                for (int i = treap.Count - 1; i >= 0; i--)
-                {
-                    treap.Query(i, new Action<Treap<DataType>.TreapNode>(async (o) =>
-                    {
-                        await (o.data as MyDisposable).OnDisposed(false && l <= i && i <= r);
-                    }));
-                }
-            }
-        }
         private void RegisterData(Treap<DataType>.TreapNode o, DataType data)
         {
-            MyDisposable.MyDisposableEventHandler disposedEventHandler = null;
+            Libraries.Events.MyEventHandler<object> disposedEventHandler = null;
             MyDisposable.HeightChangedEventHandler heightChangedEventHandler = null;
-            disposedEventHandler = new MyDisposable.MyDisposableEventHandler(() =>
+            disposedEventHandler = new Libraries.Events.MyEventHandler<object>(delegate
             {
                 data.Disposed -= disposedEventHandler;
                 data.HeightChanged -= heightChangedEventHandler;
@@ -133,10 +118,6 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         Stack<GenericView> AvaiableChildrenPool=new Stack<GenericView>();
         Dictionary<DataType, GenericView> ChildrenInUse = new Dictionary<DataType, GenericView>();
         public Func<double, Tuple<Rectangle, AbsoluteLayoutFlags>> BarsLayoutMethod = null;
-            //new Func<double, Tuple<Rectangle, AbsoluteLayoutFlags>>((y) =>
-            //{
-            //    return new Tuple<Rectangle, AbsoluteLayoutFlags>(new Rectangle(0, y, 1, -1), AbsoluteLayoutFlags.WidthProportional);
-            //});
         GenericView GetGenericView()
         {
             if (AvaiableChildrenPool.Count == 0)
@@ -352,8 +333,9 @@ namespace GoogleDrive2.MyControls.BarsListPanel
                 this.Content = SVmain;
             }
         }
-        public BarsListPanel()
+        public BarsListPanel(double itemHeight=50)
         {
+            treap.itemHeight = itemHeight;
             BarsLayoutMethod = new Func<double, Tuple<Rectangle, AbsoluteLayoutFlags>>((y) =>
            {
                return new Tuple<Rectangle, AbsoluteLayoutFlags>(new Rectangle(0, y, /*ALmain.Width*/1, -1), AbsoluteLayoutFlags.WidthProportional);

@@ -40,7 +40,7 @@ namespace GoogleDrive2.Pages.TestPage
                     "--abcde--";
                 //await MyLogger.Alert($"{body.Length}");
                 EDbody.Text = body;
-                AKVheader.BLPmain.Clear();
+                await AKVheader.BLPmain.ClearAsync();
                 await AddAuthorization();
                 AddContentLength();
                 var headers = new Dictionary<string, string>
@@ -149,7 +149,7 @@ namespace GoogleDrive2.Pages.TestPage
                 {
                     bool isFirst = true;
                     //await MyLogger.Alert(url);
-                    foreach (var field in AKVfield.BLPmain.Treap.ToList())
+                    foreach (var field in AKVfield.BLPmain.ToList())
                     {
                         //await MyLogger.Alert($"Field: {field.Key} = {field.Value}");
                         url += (isFirst ? "?" : "&");
@@ -160,7 +160,7 @@ namespace GoogleDrive2.Pages.TestPage
                 var blankPoint = url.IndexOf(' ');
                 MyLogger.Assert(blankPoint != -1);
                 HttpWebRequest request = WebRequest.CreateHttp(url.Substring(blankPoint + 1));
-                foreach (var header in AKVheader.BLPmain.Treap.ToList())
+                foreach (var header in AKVheader.BLPmain.ToList())
                 {
                     //await MyLogger.Alert($"Header: {header.Key} = {header.Value}");
                     request.Headers[header.Key] = header.Value;

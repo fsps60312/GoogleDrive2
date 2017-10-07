@@ -11,121 +11,14 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
         public class CloudFolderSearchList: MyContentView
         {
             public CloudFileListPanelViewModel.CloudFileItemBarViewModel FocusedItem = null;
-            public event Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel> ItemClicked,ItemAdded,ItemRemoved;
+            public event Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel> ItemClicked,ItemAdded,ItemRemoved, ItemToggled;
+            public event Libraries.Events.MyEventHandler<bool> MultiSelectionToggled;
+            public bool IsMultiSelectionToggled = false;
             TheBarList BLmain;
             MyGrid GDmain;
             SearchListControlPanel GDctrl;
             MyScrollView SVctrl;
-            class SearchListControlPanel : MyGrid
-            {
-                MyButton BTNselectAll;
-                public RefreshButton BTNrefresh;
-                public MyLabel LBtitle;
-                MySwitch SWmultiSelectEnabled;
-                new CloudFolderSearchList Parent;
-                volatile int SelectedFileCount = 0, SelectedFolderCount = 0;
-                private void InitializaViews(CloudFolderSearchList parent)
-                {
-                    this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(40, GridUnitType.Absolute) });
-                    this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                    this.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto) });
-                    this.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                    {
-                        BTNrefresh = new RefreshButton();
-                        this.Children.Add(BTNrefresh, 0, 0);
-                    }
-                    {
-                        LBtitle = new MyLabel { BackgroundColor = Color.White };
-                        LBtitle.WidthRequest = 150;
-                        LBtitle.HeightRequest = 40;
-                        this.Children.Add(LBtitle, 1, 0);
-                    }
-                    {
-                        SWmultiSelectEnabled = new MySwitch(null,null,false);
-                        this.Children.Add(SWmultiSelectEnabled, 0, 1);
-                    }
-                    {
-                        BTNselectAll = new MyButton { Text = "☑", IsEnabled = false };
-                        this.Children.Add(BTNselectAll, 1, 1);
-                        //MyGrid.SetColumnSpan(BTNselectAll, this.ColumnDefinitions.Count);
-                    }
-                    Parent = parent;
-                }
-                private bool SelectAllState = false;
-                private async Task Select(bool all)
-                {
-                    await Task.WhenAll((this.Parent as CloudFolderSearchList).BLmain.Treap.ToList().Select((o) =>
-                     {
-                         o.IsToggled = all;
-                         return Task.CompletedTask;
-                     }));
-                    if (all)
-                    {
-                        BTNselectAll.BackgroundColor = Color.DodgerBlue;
-                    }
-                    else
-                    {
-                        BTNselectAll.BackgroundColor = Color.Default;
-                    }
-                    SelectAllState = all;
-                }
-                void UpdateText()
-                {
-                    var s1 = "☑";
-                    var s2 = (SelectedFolderCount == 0 ? "" : $" | 📁{SelectedFolderCount}") + (SelectedFileCount == 0 ? "" : $" | 📄{SelectedFileCount}");
-                    if (string.IsNullOrEmpty(s2)) s2 = " | 🍄0";
-                    BTNselectAll.Text = s1 + s2;
-                }
-                private void RegisterEvents()
-                {
-                    {
-                        this.Parent.ItemAdded += (item) =>
-                        {
-                            item.Toggled += delegate
-                              {
-                                  var v = item.IsToggled ? 1 : -1;
-                                  if (item.File.mimeType == Constants.FolderMimeType) SelectedFolderCount += v;
-                                  else SelectedFileCount += v;
-                                  UpdateText();
-                              };
-                            item.Disposed += delegate { item.IsToggled = false; };
-                        };
-                    }
-                    {
-                        var eventHandler = new Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel>((f) =>
-                          {
-                              f.IsToggled ^= true;
-                          });
-                        SWmultiSelectEnabled.Toggled += async delegate
-                          {
-                              if ((BTNselectAll.IsEnabled = SWmultiSelectEnabled.IsToggled))
-                              {
-                                  (this.Parent as CloudFolderSearchList).ItemClicked += eventHandler;
-                              }
-                              else
-                              {
-                                  (this.Parent as CloudFolderSearchList).ItemClicked -= eventHandler;
-                                  await Select(false);
-                              }
-                          };
-                    }
-                    {
-                        BTNselectAll.Clicked += async delegate
-                           {
-                               BTNselectAll.IsEnabled = false;
-                               SelectAllState ^= true;
-                               await Select(SelectAllState);
-                               BTNselectAll.IsEnabled = true;
-                           };
-                    }
-                }
-                public SearchListControlPanel(CloudFolderSearchList parent)
-                {
-                    InitializaViews(parent);
-                    RegisterEvents();
-                    UpdateText();
-                }
-            }
+            public void Stop() { BLmain.Stop(); }
             private void InitializeViews(string q, List<string> orderBy)
             {
                 GDmain = new MyGrid();
@@ -140,16 +33,29 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     GDmain.Children.Add(SVctrl, 0, 0);
                 }
                 {
-                    BLmain = new TheBarList(q, orderBy, new Func<CloudFileListPanelViewModel.CloudFileItemBarViewModel, Task>((f)=>
+                    BLmain = new TheBarList(q, orderBy);
+                    //var toggledEventHandler = new Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel>((f)=>
+                    //{
+                    //    this.ItemToggled?.Invoke(f);
+                    //});
+                    BLmain.ItemAdded += (item) =>
                     {
-                        ItemClicked?.Invoke(f);
-                        GDctrl.LBtitle.Text = f.File.id;
-                        if (FocusedItem != null) FocusedItem.Focused = false;
-                        (FocusedItem = f).Focused = true;
-                        return Task.CompletedTask;
-                    }));
-                    BLmain.ItemAdded += (item) => { ItemAdded?.Invoke(item); };
-                    BLmain.ItemRemoved += (item) => { ItemRemoved?.Invoke(item); };
+                        item.Clicked = new Command(() =>
+                          {
+                              ItemClicked?.Invoke(item);
+                              GDctrl.LBtitle.Text = item.File.id;
+                              if (FocusedItem != null) FocusedItem.Focused = false;
+                              (FocusedItem = item).Focused = true;
+                          });
+                        //item.Toggled += toggledEventHandler;
+                        ItemAdded?.Invoke(item);
+                    };
+                    BLmain.ItemRemoved += (item) =>
+                    {
+                        item.Clicked = null;
+                        //item.Toggled -= toggledEventHandler;
+                        ItemRemoved?.Invoke(item);
+                    };
                     GDmain.Children.Add(BLmain, 0, 1);
                     //MyGrid.SetColumnSpan(BLmain, GDmain.ColumnDefinitions.Count);
                 }
@@ -158,13 +64,23 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
             private void RegisterEvents()
             {
                 GDctrl.BTNrefresh.RegisterEvents(BLmain.Lister);
+                this.MultiSelectionToggled += (t) => { IsMultiSelectionToggled = t; };
+                var toggledEventHandler = new Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel>((f) =>
+                {
+                    ItemToggled?.Invoke(f);
+                });
                 BLmain.ItemAdded += (item) =>
                   {
+                      item.Toggled += toggledEventHandler;
                       if (FocusedItem != null && item.File.id == FocusedItem.File.id)
                       {
                           FocusedItem.Focused = false;
                           (FocusedItem = item).Focused = true;
                       }
+                  };
+                BLmain.ItemRemoved += (item) =>
+                  {
+                      item.Toggled -= toggledEventHandler;
                   };
                 bool bugsInXamarinFixed = false;// see: https://bugzilla.xamarin.com/show_bug.cgi?id=38770
                 if (bugsInXamarinFixed)
@@ -220,6 +136,127 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                 InitializeViews(q, orderBy);
                 RegisterEvents();
                 new Action(async () => { await BLmain.Lister.StartAsync(true); })();
+            }
+            class SearchListControlPanel : MyGrid
+            {
+                MyButton BTNselectAll;
+                public RefreshButton BTNrefresh;
+                public MyLabel LBtitle;
+                MySwitch SWmultiSelectEnabled;
+                new CloudFolderSearchList Parent;
+                volatile int SelectedFileCount = 0, SelectedFolderCount = 0;
+                private void InitializaViews(CloudFolderSearchList parent)
+                {
+                    this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(40, GridUnitType.Absolute) });
+                    this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                    this.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto) });
+                    this.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    {
+                        BTNrefresh = new RefreshButton();
+                        this.Children.Add(BTNrefresh, 0, 0);
+                    }
+                    {
+                        LBtitle = new MyLabel { BackgroundColor = Color.White };
+                        LBtitle.WidthRequest = 150;
+                        LBtitle.HeightRequest = 40;
+                        this.Children.Add(LBtitle, 1, 0);
+                    }
+                    {
+                        BTNselectAll = new MyButton { Text = "☑", IsEnabled = false };
+                        this.Children.Add(BTNselectAll, 0, 1);
+                        //MyGrid.SetColumnSpan(BTNselectAll, this.ColumnDefinitions.Count);
+                    }
+                    {
+                        SWmultiSelectEnabled = new MySwitch(null,null,false);
+                        this.Children.Add(SWmultiSelectEnabled, 1, 1);
+                    }
+                    Parent = parent;
+                }
+                private bool SelectAllState = false;
+                private async Task Select(bool all)
+                {
+                    await Task.WhenAll((this.Parent as CloudFolderSearchList).BLmain.ToList().Select((o) =>
+                     {
+                         o.IsToggled = all;
+                         return Task.CompletedTask;
+                     }));
+                    if (all)
+                    {
+                        BTNselectAll.BackgroundColor = Color.DodgerBlue;
+                    }
+                    else
+                    {
+                        BTNselectAll.BackgroundColor = Color.Default;
+                    }
+                    SelectAllState = all;
+                }
+                void UpdateText()
+                {
+                    var s1 = "☑";
+                    var s2 = (SelectedFolderCount == 0 ? "" : $" | 📁{SelectedFolderCount}") + (SelectedFileCount == 0 ? "" : $" | 📄{SelectedFileCount}");
+                    if (string.IsNullOrEmpty(s2)) s2 = " | 🍄0";
+                    BTNselectAll.Text = s1 + s2;
+                }
+                private void RegisterEvents()
+                {
+                    {
+                        var toggledEventHandler = new Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel>((f) =>
+                        {
+                            var v = f.IsToggled ? 1 : -1;
+                            if (f.File.mimeType == Constants.FolderMimeType) SelectedFolderCount += v;
+                            else SelectedFileCount += v;
+                            UpdateText();
+                        });
+                        Libraries.Events.MyEventHandler<object> disposedEventHandler=null;
+                        disposedEventHandler = new Libraries.Events.MyEventHandler<object>((fo) =>
+                          {
+                              var f = fo as CloudFileListPanelViewModel.CloudFileItemBarViewModel;
+                              f.IsToggled = false;
+                              f.Toggled -= toggledEventHandler;
+                              f.Disposed -= disposedEventHandler;
+                          });
+                        this.Parent.ItemAdded += (item) =>
+                        {
+                            item.Toggled += toggledEventHandler;
+                            item.Disposed += delegate { item.IsToggled = false; };
+                        };
+                    }
+                    {
+                        var eventHandler = new Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel>((f) =>
+                          {
+                              f.IsToggled ^= true;
+                          });
+                        SWmultiSelectEnabled.Toggled += async delegate
+                          {
+                              var toggled = BTNselectAll.IsEnabled = SWmultiSelectEnabled.IsToggled;
+                              Parent.MultiSelectionToggled?.Invoke(toggled);
+                              if (toggled)
+                              {
+                                  (this.Parent as CloudFolderSearchList).ItemClicked += eventHandler;
+                              }
+                              else
+                              {
+                                  (this.Parent as CloudFolderSearchList).ItemClicked -= eventHandler;
+                                  await Select(false);
+                              }
+                          };
+                    }
+                    {
+                        BTNselectAll.Clicked += async delegate
+                           {
+                               BTNselectAll.IsEnabled = false;
+                               SelectAllState ^= true;
+                               await Select(SelectAllState);
+                               BTNselectAll.IsEnabled = true;
+                           };
+                    }
+                }
+                public SearchListControlPanel(CloudFolderSearchList parent)
+                {
+                    InitializaViews(parent);
+                    RegisterEvents();
+                    UpdateText();
+                }
             }
             class RefreshButton:MyButton
             {
@@ -280,7 +317,11 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
             {
                 public event Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel> ItemAdded,ItemRemoved;
                 public CloudFileListPanelViewModel.CloudFolderSearchListViewModel Lister;
-                public TheBarList(string q, List<string> orderBy, Func<CloudFileListPanelViewModel.CloudFileItemBarViewModel, Task> callBack)
+                public void Stop()
+                {
+                    Lister.Stop();
+                }
+                public TheBarList(string q, List<string> orderBy)
                 {
                     Lister = new CloudFileListPanelViewModel.CloudFolderSearchListViewModel(q, orderBy);
                     Libraries.MySemaphore semaphore = new Libraries.MySemaphore(1);
@@ -300,10 +341,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                          {
                              foreach (var fileProperty in files)
                              {
-                                 var newItem = new CloudFileListPanelViewModel.CloudFileItemBarViewModel(fileProperty, new Func<CloudFileListPanelViewModel.CloudFileItemBarViewModel, Task>(async (fileItem) =>
-                                 {
-                                     await callBack(fileItem);
-                                 }));
+                                 var newItem = new CloudFileListPanelViewModel.CloudFileItemBarViewModel(fileProperty);
                                  newItem.Disposed += delegate { ItemRemoved?.Invoke(newItem); };
                                  ItemAdded?.Invoke(newItem);
                                  this.PushBack(newItem);
@@ -341,6 +379,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
             }
             public ChainedSearchList(string q, List<string> orderBy, Func<Api.Files.FullList.FullProperties, Task<Tuple<string, List<string>>>> parameterGenerator) : base(q, orderBy)
             {
+                this.ListRemoved += (l) => { l.Stop(); };
                 this.ItemClicked += async (f) =>
                 {
                     var ps = await parameterGenerator(f.File);

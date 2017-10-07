@@ -170,8 +170,7 @@ namespace GoogleDrive2.Pages.TestPage
                 GDmain.Children.Add(SWonlyName, 1, 0);
             }
             {
-                BLmain = new MyControls.BarsListPanel.BarsListPanel<ColorItemBar, ColorItemBarViewModel>();
-                BLmain.Treap.itemHeight = 40;
+                BLmain = new MyControls.BarsListPanel.BarsListPanel<ColorItemBar, ColorItemBarViewModel> { ItemHeight = 40 };
                 {
                     var fs = new List<FieldInfo>(typeof(Color).GetTypeInfo().DeclaredFields);
                     //MyLogger.LogError($"field number={fs.Count}");

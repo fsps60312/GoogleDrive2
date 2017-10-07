@@ -37,6 +37,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
             {
                 AddList(l);
                 //if (l.leftChild != null)
+                if(!list.IsMultiSelectionToggled)
                 {
                     await Task.Delay(100);
                     try

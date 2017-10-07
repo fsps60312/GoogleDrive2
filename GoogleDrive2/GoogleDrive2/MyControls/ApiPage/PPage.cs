@@ -132,11 +132,11 @@ namespace GoogleDrive2.MyControls.ApiPage
             InitializeViews();
             RegisterEvents();
         }
-        public void Update<P>(P v) where P : ParametersClass, new()
+        public async Task Update<P>(P v) where P : ParametersClass, new()
         {
             Dictionary<string, string> data = new Dictionary<string, string>();
             ParametersClass.AddParameters(v, data,true);
-            listView.Clear();
+            await listView.ClearAsync();
             foreach(var p in data)
             {
                 listView.PushBack(new KeyValueItemBarViewModel { Key = p.Key, Value = p.Value });
@@ -150,9 +150,9 @@ namespace GoogleDrive2.MyControls.ApiPage
         FieldsListView FLVmain;
         MyEditor EDmain;
         MyEntry ETuri;
-        protected void Update<P,R>() where P : ParametersClass, new() where R:RequesterP<P>,new()
+        protected async Task Update<P,R>() where P : ParametersClass, new() where R:RequesterP<P>,new()
         {
-            FLVmain.Update(new P());
+            await FLVmain.Update(new P());
             var r = new R();
             ETuri.Text = $"{r.Method} {r.Uri}";
         }
@@ -202,7 +202,7 @@ namespace GoogleDrive2.MyControls.ApiPage
                   threadCnt++; UpdateBtnText();
                   var uri = ETuri.Text;
                   var request = new RequesterRaw(uri.Remove(uri.IndexOf(' ')), uri.Substring(uri.IndexOf(' ') + 1), true);
-                  foreach (var p in FLVmain.listView.Treap.ToList())if(!string.IsNullOrEmpty(p.Value))
+                  foreach (var p in FLVmain.listView.ToList())if(!string.IsNullOrEmpty(p.Value))
                   {
                       //await MyLogger.Alert($"Header: {header.Key} = {header.Value}");
                       request.Parameters[p.Key] = p.Value;
