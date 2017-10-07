@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>e2b1497f-a98c-4ee4-ba15-ceb32b78f974</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>GoogleDrive2</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)App.xaml.cs">
+      <DependentUpon>App.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)CloudFile.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Constants.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Libraries\Events.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Libraries\MyExponentialBackOff.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Libraries\MyLogger.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Libraries\MySemaphore.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MainPage.xaml.cs">
+      <DependentUpon>MainPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)MainTabbedPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\ApiPage\PPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\BarsListPanel\BarsListPanel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\BarsListPanel\MyDisposable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\BarsListPanel\Treap.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\BarsListPanel\Treap.TreapNode.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\CloudFileListPanel\CloudFileListPanel.CloudFileItemBar.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\CloudFileListPanel\CloudFileListPanel.CloudFolderSearchList.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\CloudFileListPanel\CloudFileListPanel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\CloudFileListPanel\CloudFileListPanelViewModel.CloudFileItemBarViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\CloudFileListPanel\CloudFileListPanelViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyAbsoluteLayout.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyActivityIndicator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyBoxView.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyContentPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyContentView.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyEditor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyEntry.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyGrid.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyLabel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyNavigationPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyProgressBar.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyScrollView.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyStackLayout.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyStackPanel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\MySwitch.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyTabbedPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyUnwipableView.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyWebView.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\FileBrowsePage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\MainTabbedPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\ButtonsPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\ColorTestPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\FilesListRequestPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\GetAuthorizationCodePage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\HttpRequestPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\SearchFileListPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\SemaphoreSlimPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\TestPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Api\Api.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Api\Files\List.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\TouchEventImplementPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\TouchEventPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)RestRequests\RestRequests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)RestRequests\RestRequestsAuthorizer.DriveAuthorizer.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)MainPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)App.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:UpdateDesignTimeXaml</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+</Project>
