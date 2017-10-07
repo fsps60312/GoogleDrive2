@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xamarin.Forms;
+using System.Linq;
 
 namespace GoogleDrive2.MyControls.CloudFileListPanel
 {
@@ -10,46 +11,153 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
         public class CloudFolderSearchList: MyContentView
         {
             public CloudFileListPanelViewModel.CloudFileItemBarViewModel FocusedItem = null;
-            public event Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel> ItemClicked;
+            public event Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel> ItemClicked,ItemAdded,ItemRemoved;
             TheBarList BLmain;
             MyGrid GDmain;
-            RefreshButton BTNrefresh;
-            MyLabel LBtitle;
+            SearchListControlPanel GDctrl;
+            MyScrollView SVctrl;
+            class SearchListControlPanel : MyGrid
+            {
+                MyButton BTNselectAll;
+                public RefreshButton BTNrefresh;
+                public MyLabel LBtitle;
+                MySwitch SWmultiSelectEnabled;
+                new CloudFolderSearchList Parent;
+                volatile int SelectedFileCount = 0, SelectedFolderCount = 0;
+                private void InitializaViews(CloudFolderSearchList parent)
+                {
+                    this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(40, GridUnitType.Absolute) });
+                    this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                    this.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto) });
+                    this.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    {
+                        BTNrefresh = new RefreshButton();
+                        this.Children.Add(BTNrefresh, 0, 0);
+                    }
+                    {
+                        LBtitle = new MyLabel { BackgroundColor = Color.White };
+                        LBtitle.WidthRequest = 150;
+                        LBtitle.HeightRequest = 40;
+                        this.Children.Add(LBtitle, 1, 0);
+                    }
+                    {
+                        SWmultiSelectEnabled = new MySwitch(null,null,false);
+                        this.Children.Add(SWmultiSelectEnabled, 0, 1);
+                    }
+                    {
+                        BTNselectAll = new MyButton { Text = "☑", IsEnabled = false };
+                        this.Children.Add(BTNselectAll, 1, 1);
+                        //MyGrid.SetColumnSpan(BTNselectAll, this.ColumnDefinitions.Count);
+                    }
+                    Parent = parent;
+                }
+                private bool SelectAllState = false;
+                private async Task Select(bool all)
+                {
+                    await Task.WhenAll((this.Parent as CloudFolderSearchList).BLmain.Treap.ToList().Select((o) =>
+                     {
+                         o.IsToggled = all;
+                         return Task.CompletedTask;
+                     }));
+                    if (all)
+                    {
+                        BTNselectAll.BackgroundColor = Color.DodgerBlue;
+                    }
+                    else
+                    {
+                        BTNselectAll.BackgroundColor = Color.Default;
+                    }
+                    SelectAllState = all;
+                }
+                void UpdateText()
+                {
+                    var s1 = "☑";
+                    var s2 = (SelectedFolderCount == 0 ? "" : $" | 📁{SelectedFolderCount}") + (SelectedFileCount == 0 ? "" : $" | 📄{SelectedFileCount}");
+                    if (string.IsNullOrEmpty(s2)) s2 = " | 🍄0";
+                    BTNselectAll.Text = s1 + s2;
+                }
+                private void RegisterEvents()
+                {
+                    {
+                        this.Parent.ItemAdded += (item) =>
+                        {
+                            item.Toggled += delegate
+                              {
+                                  var v = item.IsToggled ? 1 : -1;
+                                  if (item.File.mimeType == Constants.FolderMimeType) SelectedFolderCount += v;
+                                  else SelectedFileCount += v;
+                                  UpdateText();
+                              };
+                            item.Disposed += delegate { item.IsToggled = false; };
+                        };
+                    }
+                    {
+                        var eventHandler = new Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel>((f) =>
+                          {
+                              f.IsToggled ^= true;
+                          });
+                        SWmultiSelectEnabled.Toggled += async delegate
+                          {
+                              if ((BTNselectAll.IsEnabled = SWmultiSelectEnabled.IsToggled))
+                              {
+                                  (this.Parent as CloudFolderSearchList).ItemClicked += eventHandler;
+                              }
+                              else
+                              {
+                                  (this.Parent as CloudFolderSearchList).ItemClicked -= eventHandler;
+                                  await Select(false);
+                              }
+                          };
+                    }
+                    {
+                        BTNselectAll.Clicked += async delegate
+                           {
+                               BTNselectAll.IsEnabled = false;
+                               SelectAllState ^= true;
+                               await Select(SelectAllState);
+                               BTNselectAll.IsEnabled = true;
+                           };
+                    }
+                }
+                public SearchListControlPanel(CloudFolderSearchList parent)
+                {
+                    InitializaViews(parent);
+                    RegisterEvents();
+                    UpdateText();
+                }
+            }
             private void InitializeViews(string q, List<string> orderBy)
             {
                 GDmain = new MyGrid();
-                GDmain.RowDefinitions.Add(new Xamarin.Forms.RowDefinition { Height = new Xamarin.Forms.GridLength(1, Xamarin.Forms.GridUnitType.Auto) });
+                GDmain.RowDefinitions.Add(new Xamarin.Forms.RowDefinition { Height = new Xamarin.Forms.GridLength(50, Xamarin.Forms.GridUnitType.Absolute) });
                 GDmain.RowDefinitions.Add(new Xamarin.Forms.RowDefinition { Height = new Xamarin.Forms.GridLength(1, Xamarin.Forms.GridUnitType.Star) });
-                GDmain.ColumnDefinitions.Add(new Xamarin.Forms.ColumnDefinition { Width = new Xamarin.Forms.GridLength(1, Xamarin.Forms.GridUnitType.Auto) });
-                GDmain.ColumnDefinitions.Add(new Xamarin.Forms.ColumnDefinition { Width = new Xamarin.Forms.GridLength(1, Xamarin.Forms.GridUnitType.Star) });
                 {
-                    BTNrefresh = new RefreshButton();
-                    GDmain.Children.Add(BTNrefresh, 0, 0);
-                }
-                {
-                    LBtitle = new MyLabel { BackgroundColor = Color.White };
-                    LBtitle.WidthRequest = 150;
-                    LBtitle.HeightRequest = 40;
-                    GDmain.Children.Add(LBtitle, 1, 0);
+                    SVctrl = new MyScrollView { Orientation = ScrollOrientation.Vertical };
+                    {
+                        GDctrl = new SearchListControlPanel(this);
+                        SVctrl.Content = GDctrl;
+                    }
+                    GDmain.Children.Add(SVctrl, 0, 0);
                 }
                 {
                     BLmain = new TheBarList(q, orderBy, new Func<CloudFileListPanelViewModel.CloudFileItemBarViewModel, Task>((f)=>
                     {
                         ItemClicked?.Invoke(f);
-                        LBtitle.Text = f.File.id;
+                        GDctrl.LBtitle.Text = f.File.id;
                         if (FocusedItem != null) FocusedItem.Focused = false;
                         (FocusedItem = f).Focused = true;
-                        f.Toggled ^= true;
                         return Task.CompletedTask;
                     }));
+                    BLmain.ItemAdded += (item) => { ItemAdded?.Invoke(item); };
+                    BLmain.ItemRemoved += (item) => { ItemRemoved?.Invoke(item); };
                     GDmain.Children.Add(BLmain, 0, 1);
-                    MyGrid.SetColumnSpan(BLmain, GDmain.ColumnDefinitions.Count);
+                    //MyGrid.SetColumnSpan(BLmain, GDmain.ColumnDefinitions.Count);
                 }
                 this.Content = GDmain;
             }
             private void RegisterEvents()
             {
-                BTNrefresh.RegisterEvents(BLmain.Lister);
+                GDctrl.BTNrefresh.RegisterEvents(BLmain.Lister);
                 BLmain.ItemAdded += (item) =>
                   {
                       if (FocusedItem != null && item.File.id == FocusedItem.File.id)
@@ -61,49 +169,49 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                 bool bugsInXamarinFixed = false;// see: https://bugzilla.xamarin.com/show_bug.cgi?id=38770
                 if (bugsInXamarinFixed)
                 {
-                    var r = new Xamarin.Forms.PanGestureRecognizer();
-                    //double x = double.NaN, y = 0;
-                    bool dragging = false;
-                    r.PanUpdated += (sender, args) =>
-                      {
-                          //(this.Parent as Xamarin.Forms.Layout).LowerChild(this);
-                          if(dragging)
-                          {
-                              if(args.StatusType == GestureStatus.Completed)
-                              {
-                                  //LBtitle.HeightRequest /= 3;
-                                  //LBtitle.WidthRequest /= 3;
-                                  LBtitle.Scale = 1;
-                                  LBtitle.Opacity = 1;
-                                  //LBtitle.TranslationX += LBtitle.WidthRequest;
-                                  //LBtitle.TranslationY += LBtitle.HeightRequest;
-                                  dragging = false;
-                              }
-                          }
-                          else
-                          {
-                              if(args.StatusType==GestureStatus.Running)
-                              {
-                                  //LBtitle.TranslationX -= LBtitle.WidthRequest;
-                                  //LBtitle.TranslationY -= LBtitle.HeightRequest;
-                                  //LBtitle.HeightRequest *= 3;
-                                  //LBtitle.WidthRequest *= 3;
-                                  //var b = new MyBoxView();
-                                  (LBtitle.Parent as Layout).RaiseChild(LBtitle);//bug of Xamarin, will fix soon
-                                  //GDmain.Children.Remove(LBtitle);
-                                  //GDmain.Children.Add(LBtitle);
-                                  //(this.Parent as Layout).RaiseChild(this);//bug of Xamarin, will fix soon
-                                  LBtitle.Scale = 3;
-                                  LBtitle.Opacity = 0.5;
-                                  dragging = true;
-                              }
-                          }
-                          this.TranslationX = args.TotalX;
-                          this.TranslationY = args.TotalY;
-                          //this.ForceLayout();
-                          //this.UpdateChildrenLayout();
-                      };
-                    LBtitle.GestureRecognizers.Add(r);
+                    //var r = new Xamarin.Forms.PanGestureRecognizer();
+                    ////double x = double.NaN, y = 0;
+                    //bool dragging = false;
+                    //r.PanUpdated += (sender, args) =>
+                    //  {
+                    //      //(this.Parent as Xamarin.Forms.Layout).LowerChild(this);
+                    //      if(dragging)
+                    //      {
+                    //          if(args.StatusType == GestureStatus.Completed)
+                    //          {
+                    //              //LBtitle.HeightRequest /= 3;
+                    //              //LBtitle.WidthRequest /= 3;
+                    //              LBtitle.Scale = 1;
+                    //              LBtitle.Opacity = 1;
+                    //              //LBtitle.TranslationX += LBtitle.WidthRequest;
+                    //              //LBtitle.TranslationY += LBtitle.HeightRequest;
+                    //              dragging = false;
+                    //          }
+                    //      }
+                    //      else
+                    //      {
+                    //          if(args.StatusType==GestureStatus.Running)
+                    //          {
+                    //              //LBtitle.TranslationX -= LBtitle.WidthRequest;
+                    //              //LBtitle.TranslationY -= LBtitle.HeightRequest;
+                    //              //LBtitle.HeightRequest *= 3;
+                    //              //LBtitle.WidthRequest *= 3;
+                    //              //var b = new MyBoxView();
+                    //              (LBtitle.Parent as Layout).RaiseChild(LBtitle);//bug of Xamarin, will fix soon
+                    //              //GDmain.Children.Remove(LBtitle);
+                    //              //GDmain.Children.Add(LBtitle);
+                    //              //(this.Parent as Layout).RaiseChild(this);//bug of Xamarin, will fix soon
+                    //              LBtitle.Scale = 3;
+                    //              LBtitle.Opacity = 0.5;
+                    //              dragging = true;
+                    //          }
+                    //      }
+                    //      this.TranslationX = args.TotalX;
+                    //      this.TranslationY = args.TotalY;
+                    //      //this.ForceLayout();
+                    //      //this.UpdateChildrenLayout();
+                    //  };
+                    //GDctrl.LBtitle.GestureRecognizers.Add(r);
                 }
                 //this.SizeChanged += delegate { ChangeWidth(); };
             }
@@ -164,13 +272,13 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                 {
                     var s1 = isRunning.HasValue ? (isRunning.Value ? "⏳" : "↻") : "⚠";
                     var s2 = (folderCount == 0 ? "" : $" | 📁{folderCount}") + (fileCount == 0 ? "" : $" | 📄{fileCount}");
-                    if (string.IsNullOrEmpty(s2)) s2 = " | 🍄";
+                    if (string.IsNullOrEmpty(s2)) s2 = " | 🍄0";
                     this.Text = s1 + s2;
                 }
             }
             class TheBarList : BarsListPanel.BarsListPanel<CloudFileItemBar, CloudFileListPanelViewModel.CloudFileItemBarViewModel>
             {
-                public event Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel> ItemAdded;
+                public event Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel> ItemAdded,ItemRemoved;
                 public CloudFileListPanelViewModel.CloudFolderSearchListViewModel Lister;
                 public TheBarList(string q, List<string> orderBy, Func<CloudFileListPanelViewModel.CloudFileItemBarViewModel, Task> callBack)
                 {
@@ -196,6 +304,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                                  {
                                      await callBack(fileItem);
                                  }));
+                                 newItem.Disposed += delegate { ItemRemoved?.Invoke(newItem); };
                                  ItemAdded?.Invoke(newItem);
                                  this.PushBack(newItem);
                              }

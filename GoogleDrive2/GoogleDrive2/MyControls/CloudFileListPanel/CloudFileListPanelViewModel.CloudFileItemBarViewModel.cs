@@ -71,17 +71,19 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     UpdateBackgroundColor();
                 }
             }
-            private bool __Toggled__ = false;
-            public bool Toggled
+            private bool __IsToggled__ = false;
+            public bool IsToggled
             {
-                get { return __Toggled__; }
+                get { return __IsToggled__; }
                 set
                 {
-                    if (__Toggled__ == value) return;
-                    __Toggled__ = value;
-                    BorderColor = __Toggled__ ? Color.Black : Color.Transparent;
+                    if (__IsToggled__ == value) return;
+                    __IsToggled__ = value;
+                    BorderColor = __IsToggled__ ? Color.Black : Color.Transparent;
+                    Toggled?.Invoke(this);
                 }
             }
+            public event Libraries.Events.MyEventHandler<CloudFileItemBarViewModel> Toggled;
             private Color __BorderColor__ = Color.Transparent;
             public Color BorderColor
             {
