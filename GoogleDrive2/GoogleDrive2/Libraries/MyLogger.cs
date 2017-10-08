@@ -49,14 +49,14 @@ namespace GoogleDrive2
             this.Log(log);
         }
     }
-    class MyLogger
+    partial class MyLogger
     {
         public delegate void LogAppendedEventHandler(string log);
         public static LogAppendedEventHandler ErrorLogged;
-        public static async Task Alert(string msg)
-        {
-            await App.Current.MainPage.DisplayAlert("", msg, "OK");
-        }
+        //public static async Task Alert(string msg)
+        //{
+        //    await App.Current.MainPage.DisplayAlert("", msg, "OK");
+        //}
         public static void LogError(string log)
         {
             ErrorLogged?.Invoke(log);

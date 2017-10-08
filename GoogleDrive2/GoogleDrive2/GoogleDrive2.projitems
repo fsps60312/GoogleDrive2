@@ -19,6 +19,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Libraries\MyExponentialBackOff.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Libraries\MyLogger.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Libraries\MySemaphore.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Local\File.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
@@ -30,6 +31,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\BarsListPanel\Treap.TreapNode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\CloudFileListPanel\CloudFileListPanel.CloudFileItemBar.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\CloudFileListPanel\CloudFileListPanel.CloudFolderSearchList.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\CloudFileListPanel\CloudFileListPanel.CloudFolderSearchList.SearchListControlPanel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\CloudFileListPanel\CloudFileListPanel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\CloudFileListPanel\CloudFileListPanelViewModel.CloudFileItemBarViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\CloudFileListPanel\CloudFileListPanelViewModel.cs" />

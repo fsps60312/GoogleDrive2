@@ -35,7 +35,7 @@ namespace GoogleDrive2.RestRequests
                 });
                 if (!await ApplicationViewSwitcher.TryShowAsStandaloneAsync(newViewId))
                 {
-                    await MyLogger.Alert("Failed to show window!");
+                    MyLogger.LogError("Failed to show window!");
                     return;
                 }
                 var eventHandler = new Windows.Foundation.TypedEventHandler<WebView, WebViewNavigationStartingEventArgs>((sender, e) =>
