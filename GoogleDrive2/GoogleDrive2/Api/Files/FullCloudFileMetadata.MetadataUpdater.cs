@@ -6,6 +6,31 @@ namespace GoogleDrive2.Api.Files
 {
     public partial class FullCloudFileMetadata
     {
+        public class FolderCreate : SimpleApiOperator
+        {
+            object metaData;
+            public override async Task StartAsync()
+            {
+                var request = new MultipartUpload(metaData, new byte[0]);
+                using (var response = await request.GetHttpResponseAsync())
+                {
+                    if (response?.StatusCode == HttpStatusCode.OK)
+                    {
+                        var f = JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(await request.GetResponseTextAsync(response));
+                        OnUploadCompleted(f.id);
+                    }
+                    else OnErrorOccurred(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                }
+            }
+            public FolderCreate(object metaData)
+            {
+                this.metaData = metaData;
+                if ((metaData as FullCloudFileMetadata).mimeType != Constants.FolderMimeType)
+                {
+                    MyLogger.LogError($"Folder mimeType expected: {(metaData as FullCloudFileMetadata).mimeType}");
+                }
+            }
+        }
         public class Starrer:MetadataUpdater
         {
             public Starrer(string fileId, bool starred) : base(fileId, new FullCloudFileMetadata { starred = starred }) { }

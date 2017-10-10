@@ -25,9 +25,26 @@ namespace GoogleDrive2.UWP.MyControls
         public static AlertDialog Instance = null;
         public TextBox TXBmain;
         public Grid GDmain;
-        public event Libraries.Events.MyEventHandler<string> OKClicked;
-        public AlertDialog():this(new List<string> { "OK" }) { }
-        public AlertDialog(List<string>buttons)
+        public event Libraries.Events.MyEventHandler<Tuple<string,string>> ButtonClicked;
+        public void AddButtons(List<string> buttons)
+        {
+            int col = 1;
+            GDmain.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            foreach (var txt in buttons)
+            {
+                GDmain.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto) });
+                var btn = new Button { Content = txt, HorizontalAlignment = HorizontalAlignment.Right, Padding = new Thickness(30, 10, 30, 10) };
+                btn.Click += delegate
+                {
+                    ButtonClicked?.Invoke(new Tuple<string, string>(TXBmain.Text, txt));
+                };
+                GDmain.Children.Add(btn);
+                Grid.SetRow(btn, 1);
+                Grid.SetColumn(btn, col++);
+            }
+            Grid.SetColumnSpan(TXBmain, col);
+        }
+        public AlertDialog()
         {
             Instance = this;
             GDmain = new Grid();
@@ -38,21 +55,6 @@ namespace GoogleDrive2.UWP.MyControls
                 ScrollViewer.SetVerticalScrollBarVisibility(TXBmain, ScrollBarVisibility.Auto);
                 ScrollViewer.SetHorizontalScrollBarVisibility(TXBmain, ScrollBarVisibility.Auto);
                 GDmain.Children.Add(TXBmain);
-            }
-            {
-                int col = 0;
-                foreach (var txt in buttons)
-                {
-                    GDmain.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                    var btn = new Button { Content = txt, HorizontalAlignment = HorizontalAlignment.Right, Padding = new Thickness(30, 10, 30, 10) };
-                    btn.Click += delegate
-                    {
-                        OKClicked?.Invoke(txt);
-                    };
-                    GDmain.Children.Add(btn);
-                    Grid.SetRow(btn, 1);
-                    Grid.SetColumn(btn, col++);
-                }
             }
             this.Content = GDmain;
         }

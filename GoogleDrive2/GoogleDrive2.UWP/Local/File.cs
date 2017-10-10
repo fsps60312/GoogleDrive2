@@ -35,9 +35,9 @@ namespace GoogleDrive2.Local
                     longitude = p.Longitude,
                     altitude = p.Height
                 },
-                time=p.DateTaken.UtcDateTime.ToString("yyyy:MM:dd HH:mm:ss"),
-                cameraMake=p.CameraManufacturer,
-                cameraModel=p.CameraModel
+                time = p.DateTaken.UtcDateTime.ToString("yyyy:MM:dd HH:mm:ss"),
+                cameraMake = p.CameraManufacturer,
+                cameraModel = p.CameraModel
             };
             switch (p.Orientation)
             {

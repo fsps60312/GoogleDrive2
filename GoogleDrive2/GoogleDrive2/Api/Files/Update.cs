@@ -9,10 +9,10 @@ namespace GoogleDrive2.Api.Files
     {
 #pragma warning disable 0649 // Fields are assigned to by JSON deserialization
         public string uploadType;
-        public List<string> addParents;
+        public System.Collections.Generic.List<string> addParents;
         public bool? keepRevisionForever;//default: false
         public string ocrLanguage;
-        public List<string> removeParents;
+        public System.Collections.Generic.List<string> removeParents;
         public bool? supportsTeamDrives/*default: false*/, useContentAsIndexableText/*default: false*/;
 #pragma warning restore 0649 // Fields are assigned to by JSON deserialization
     }

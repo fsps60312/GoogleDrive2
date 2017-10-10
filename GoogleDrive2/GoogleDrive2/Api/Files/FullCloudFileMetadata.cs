@@ -5,6 +5,15 @@ namespace GoogleDrive2.Api.Files
 {
     public partial class FullCloudFileMetadata
     {
+        public FolderCreate GetFolderCreater(string folderName)
+        {
+            return new FolderCreate(new FullCloudFileMetadata
+            {
+                name = folderName,
+                parents = new System.Collections.Generic.List<string> { this.id },
+                mimeType = Constants.FolderMimeType
+            });
+        }
         public Trasher GetTrasher(bool trashed) { return new Trasher(this.id, trashed); }
         public Starrer GetStarrer(bool starred) { return new Starrer(this.id, starred); }
         public MetadataUpdater GetMetadataUpdater(FullCloudFileMetadata metadata) { return new MetadataUpdater(this.id, metadata); }

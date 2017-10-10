@@ -14,7 +14,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
         {
             class SearchListControlPanel : MyGrid
             {
-                MyButton BTNselectAll,BTNshowInfo,BTNuploadFile,BTNtrash,BTNstar;
+                MyButton BTNselectAll,BTNshowInfo,BTNuploadFile,BTNtrash,BTNstar,BTNnewFolder;
                 public RefreshButton BTNrefresh;
                 public MyLabel LBtitle;
                 MySwitch SWmultiSelectEnabled,SWtrash;
@@ -23,6 +23,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                 private void ArrangeViews()
                 {
                     this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(40, GridUnitType.Absolute) });
+                    this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                     this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                     this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                     this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
@@ -40,6 +41,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         this.Children.Add(BTNtrash, 0, 4);
                         this.Children.Add(SWtrash, 1, 4);
                         this.Children.Add(BTNstar, 0, 5);
+                        this.Children.Add(BTNnewFolder, 0, 6);
                     }
                 }
                 private void InitializaViews()
@@ -58,6 +60,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     BTNtrash = new MyButton { Text = Constants.Icons.TrashCan };
                     SWtrash = new MySwitch("Trash Can", "Folder", false);
                     BTNstar = new MyButton { Text = Constants.Icons.Star };
+                    BTNnewFolder = new MyButton { Text = "+" + Constants.Icons.Folder };
                 }
                 private bool SelectAllState = false;
                 private async Task Select(bool all)
@@ -163,6 +166,37 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     }
                     Parent.Refresh();
                 }
+                async Task CreateFolder()
+                {
+                    if(Parent.ClickedItem==null)
+                    {
+                        await MyLogger.Alert($"{Constants.Icons.Info} No item selected");
+                        return;
+                    }
+                    var cloud = Parent.ClickedItem.File;
+                    if(cloud.mimeType!=Constants.FolderMimeType)
+                    {
+                        var badChoice = "I still want to try";
+                        var response=await MyLogger.ActionSheet(Constants.Icons.Warning,"Please select a Folder or Google Drive will hate you",new List<string> {"OK", badChoice});
+                        if (response.Item2 != badChoice) return;
+                    }
+                    Tuple<string, string> name;
+                    while (true)
+                    {
+                        name = await MyLogger.ActionSheet("Type your Folder Name", "New Folder", new List<string> { "OK", "Cancel" });
+                        if (name.Item2 == "OK") break;
+                        else
+                        {
+                            if ((await MyLogger.ActionSheet(Constants.Icons.Info, "Folder creation is about to be canceled. Are you sure?", new List<string> { "Yes", "No" })).Item2 == "Yes")
+                            {
+                                return;
+                            }
+                        }
+                    }
+                    var creator = cloud.GetFolderCreater(name.Item1);
+                    creator.ErrorOccurred += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };
+                    await creator.StartAsync();
+                }
                 private void RegisterEvents()
                 {
                     Parent.ItemClicked += (f)=>
@@ -177,6 +211,14 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                               if (f.File.starred.Value) BTNstar.BackgroundColor = Color.DodgerBlue;
                               else BTNstar.BackgroundColor = Color.Default;
                           }
+                      };
+                    BTNnewFolder.Clicked += async delegate
+                      {
+                          BTNnewFolder.IsEnabled = false;
+                          var text = BTNnewFolder.Text;
+                          BTNnewFolder.Text += Constants.Icons.Hourglass;
+                          try { await CreateFolder(); }
+                          finally { BTNnewFolder.Text = text; BTNnewFolder.IsEnabled = true; }
                       };
                     BTNstar.Clicked += async delegate
                       {

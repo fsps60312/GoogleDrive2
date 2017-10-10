@@ -170,7 +170,7 @@ namespace GoogleDrive2
                 //return new Task<HttpWebRequest>(() => request);
             }
         }
-        class RequesterH<P> : RequesterP<P> where P : ParametersClass, new()
+        public class RequesterH<P> : RequesterP<P> where P : ParametersClass, new()
         {
             public RequesterH(string method, string uri, bool authorizationRequired) : base(method, uri, authorizationRequired) { }
             public Dictionary<string, string> Headers { get; private set; } = new Dictionary<string, string>();
@@ -187,7 +187,7 @@ namespace GoogleDrive2
                 return request;
             }
         }
-        class RequesterB<P> : RequesterH<P> where P : ParametersClass, new()
+        public class RequesterB<P> : RequesterH<P> where P : ParametersClass, new()
         {
             protected string ContentType
             {

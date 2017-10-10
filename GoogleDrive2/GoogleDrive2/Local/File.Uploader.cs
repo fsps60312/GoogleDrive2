@@ -17,11 +17,12 @@ namespace GoogleDrive2.Local
             {
                 totalSize = (long)await F.GetSizeAsync();
                 FileMetadata.name = F.Name;
+                //FileMetadata.mimeType = F.MimeType;
                 //FileMetadata.size = (long)await F.GetSizeAsync();
                 FileMetadata.createdTime = await F.GetTimeCreatedAsync();
                 FileMetadata.modifiedTime = await F.GetTimeModifiedAsync();
-                if (F.IsImageFile) FileMetadata.imageMediaMetadata = await F.GetImageMediaMetadataAsync();
-                if (F.IsVideoFile) FileMetadata.videoMediaMetadata = await F.GetVideoMediaMetadataAsync();
+                //if (F.IsImageFile) FileMetadata.imageMediaMetadata = await F.GetImageMediaMetadataAsync(); //not writable
+                //if (F.IsVideoFile) FileMetadata.videoMediaMetadata = await F.GetVideoMediaMetadataAsync(); //not writable
             }
             async Task StartMultipartUploadAsync()
             {
@@ -44,7 +45,8 @@ namespace GoogleDrive2.Local
             async Task<string> CreateResumableUploadAsync()
             {
                 await MyLogger.Alert($"file size: {totalSize}");
-                throw new System.NotImplementedException();
+                await StartMultipartUploadAsync();
+                return null;
             }
             public override async Task StartAsync(bool startFromScratch)
             {
@@ -58,7 +60,7 @@ namespace GoogleDrive2.Local
                     F.CloseFileIfNot();
                     await AssignFileMetadata();
                     bytesUploaded = 0;
-                    if (totalSize <= MinChunkSize)
+                    if (totalSize <= MinChunkSize||true)
                     {
                         await StartMultipartUploadAsync();
                     }

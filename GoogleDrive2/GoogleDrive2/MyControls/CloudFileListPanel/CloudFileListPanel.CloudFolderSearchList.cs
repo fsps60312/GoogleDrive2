@@ -96,6 +96,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                   };
                 BLmain.ItemRemoved += (item) =>
                   {
+                      item.IsToggled = false;
                       item.Toggled -= toggledEventHandler;
                   };
                 bool bugsInXamarinFixed = false;// see: https://bugzilla.xamarin.com/show_bug.cgi?id=38770

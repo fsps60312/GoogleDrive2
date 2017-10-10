@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace GoogleDrive2.Api.Files
 {
-    class MultipartUploadParameters : ParametersClass
+    public class MultipartUploadParameters : ParametersClass
     {
         public string uploadType = "multipart";
     }
-    class MultipartUpload:RequesterB<MultipartUploadParameters>
+    public class MultipartUpload:RequesterB<MultipartUploadParameters>
     {
         string DetermineSeperateString(byte[]metaBytes,byte[]fileBytes)
         {
