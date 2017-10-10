@@ -24,10 +24,10 @@ namespace GoogleDrive2.UWP.MyControls
     {
         public static AlertDialog Instance = null;
         public TextBox TXBmain;
-        public Button BTNok;
         public Grid GDmain;
-        public event Libraries.Events.EmptyEventHandler OKClicked;
-        public AlertDialog()
+        public event Libraries.Events.MyEventHandler<string> OKClicked;
+        public AlertDialog():this(new List<string> { "OK" }) { }
+        public AlertDialog(List<string>buttons)
         {
             Instance = this;
             GDmain = new Grid();
@@ -40,13 +40,19 @@ namespace GoogleDrive2.UWP.MyControls
                 GDmain.Children.Add(TXBmain);
             }
             {
-                BTNok = new Button { Content = "OK", HorizontalAlignment = HorizontalAlignment.Right, Padding = new Thickness(50, 10, 50, 10) };
-                BTNok.Click += delegate
+                int col = 0;
+                foreach (var txt in buttons)
                 {
-                    OKClicked?.Invoke();
-                };
-                GDmain.Children.Add(BTNok);
-                Grid.SetRow(BTNok, 1);
+                    GDmain.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    var btn = new Button { Content = txt, HorizontalAlignment = HorizontalAlignment.Right, Padding = new Thickness(30, 10, 30, 10) };
+                    btn.Click += delegate
+                    {
+                        OKClicked?.Invoke(txt);
+                    };
+                    GDmain.Children.Add(btn);
+                    Grid.SetRow(btn, 1);
+                    Grid.SetColumn(btn, col++);
+                }
             }
             this.Content = GDmain;
         }

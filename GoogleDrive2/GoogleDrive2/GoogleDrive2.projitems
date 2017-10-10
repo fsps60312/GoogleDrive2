@@ -9,6 +9,10 @@
     <Import_RootNamespace>GoogleDrive2</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Api\Files\FullCloudFileMetadata.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Api\Files\FullCloudFileMetadata.MetadataUpdater.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Api\Files\MultipartUpload.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Api\Files\Update.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
@@ -19,7 +23,10 @@
     <Compile Include="$(MSBuildThisFileDirectory)Libraries\MyExponentialBackOff.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Libraries\MyLogger.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Libraries\MySemaphore.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Libraries\MySerializer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Libraries\StringAlgorithms.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Local\File.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Local\File.Uploader.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>

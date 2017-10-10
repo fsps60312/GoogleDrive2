@@ -9,6 +9,20 @@ namespace GoogleDrive2
 {
     namespace Api
     {
+        public abstract class SimpleApiOperator:ApiOperator
+        {
+            public abstract Task StartAsync();
+        }
+        public abstract class AdvancedApiOperator:ApiOperator
+        {
+            public abstract Task StartAsync(bool startFromScratch);
+        }
+        public class ApiOperator
+        {
+            public event Libraries.Events.MyEventHandler<string> UploadCompleted, ErrorOccurred;
+            protected void OnUploadCompleted(string fileId) { UploadCompleted?.Invoke(fileId); }
+            protected void OnErrorOccurred(string msg) { ErrorOccurred?.Invoke(msg); }
+        }
         public class ParametersClass
         {
             public string fields = null;// "nextPageToken,incompleteSearch,files(id,name,mimeType)";
@@ -169,9 +183,13 @@ namespace GoogleDrive2
         }
         class RequesterB<P> : RequesterH<P> where P : ParametersClass, new()
         {
-            public RequesterB(string method, string uri, string contentType, bool authorizationRequired) : base(method, uri, authorizationRequired)
+            protected string ContentType
             {
-                Headers["Content-Type"] = contentType;
+                get { return Headers["Content-Type"]; }
+                set { Headers["Content-Type"] = value; }
+            }
+            public RequesterB(string method, string uri, bool authorizationRequired) : base(method, uri, authorizationRequired)
+            {
             }
             public List<byte> Body { get; private set; } = new List<byte>();
             public byte[] EncodeToBytes(string s) { return Encoding.UTF8.GetBytes(s); }
@@ -181,6 +199,7 @@ namespace GoogleDrive2
                 var request = await base.GetHttpRequest();
                 var bd = Body.ToArray();
                 request.Headers["Content-Length"] = bd.Length.ToString();
+                //await MyLogger.Alert(Encoding.UTF8.GetString(bd));
                 using (System.IO.Stream requestStream = await request.GetRequestStreamAsync())
                 {
                     await requestStream.WriteAsync(bd, 0, bd.Length);

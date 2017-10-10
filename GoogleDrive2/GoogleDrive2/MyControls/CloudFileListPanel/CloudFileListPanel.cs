@@ -57,9 +57,9 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
         public CloudFileListPanel()
         {
             InitializeViews();
-            AddList(new ChainedSearchList("'root' in parents and not trashed", new System.Collections.Generic.List<string>(), new System.Func<Api.Files.FullList.FullProperties, System.Threading.Tasks.Task<System.Tuple<string, System.Collections.Generic.List<string>>>>((f) =>
+            AddList(new ChainedSearchList("'root' in parents", new System.Collections.Generic.List<string>(), new System.Func<Api.Files.FullCloudFileMetadata, System.Threading.Tasks.Task<System.Tuple<string, System.Collections.Generic.List<string>>>>((f) =>
             {
-                return Task.FromResult(new System.Tuple<string, System.Collections.Generic.List<string>>($"'{f.id}' in parents and not trashed", new System.Collections.Generic.List<string>()));
+                return Task.FromResult(new System.Tuple<string, System.Collections.Generic.List<string>>($"'{f.id}' in parents", new System.Collections.Generic.List<string>()));
             })));
         }
     }

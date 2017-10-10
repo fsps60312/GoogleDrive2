@@ -15,7 +15,7 @@ namespace GoogleDrive2.Pages.TestPage
         async Task ItemClicked(MyControls.CloudFileListPanel.CloudFileListPanelViewModel.CloudFileItemBarViewModel f)
         {
             await MyLogger.Alert(JsonConvert.SerializeObject(f.File));
-            ChangeKeyWord($"'{f.File.id}' in parents and not trashed");
+            ChangeKeyWord($"'{f.File.id}' in parents");
         }
         private void InitializeViews()
         {
@@ -27,7 +27,7 @@ namespace GoogleDrive2.Pages.TestPage
                 GDmain.Children.Add(ETq, 0, 0);
             }
             {
-                CFSmain = new MyControls.CloudFileListPanel.CloudFileListPanel.CloudFolderSearchList("'root' in parents and not trashed", new List<string>());
+                CFSmain = new MyControls.CloudFileListPanel.CloudFileListPanel.CloudFolderSearchList("'root' in parents", new List<string>());
                 CFSmain.ItemClicked += async (f) => { await ItemClicked(f); };
                 GDmain.Children.Add(CFSmain, 0, 1);
             }

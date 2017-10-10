@@ -47,7 +47,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     OnPropertyChanged("BackgroundColor");
                 }
             }
-            public Api.Files.FullList.FullProperties File { get; private set; }
+            public Api.Files.FullCloudFileMetadata File { get; private set; }
             Color originColor,focusedColor,selectedColor;
             private bool __Selected__ = false;
             public bool Selected
@@ -101,11 +101,11 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                 else if (Focused) BackgroundColor = focusedColor;
                 else BackgroundColor = originColor;
             }
-            public CloudFileItemBarViewModel(Api.Files.FullList.FullProperties file)
+            public CloudFileItemBarViewModel(Api.Files.FullCloudFileMetadata file)
             {
                 File = file;
                 bool isFolder = (File.mimeType == Constants.FolderMimeType);
-                this.Text =(isFolder?"📁":"📄")+ File.name;
+                this.Text = (isFolder ? Constants.Icons.Folder : Constants.Icons.File) + File.name;
                 BackgroundColor = originColor = ( isFolder? Color.LightGoldenrodYellow : Color.GreenYellow);
                 focusedColor = Color.FromRgb(originColor.R - 0.1, originColor.G - 0.1, originColor.B - 0.1);
                 selectedColor= Color.FromRgb(focusedColor.R - 0.1, focusedColor.G - 0.1, focusedColor.B - 0.1);

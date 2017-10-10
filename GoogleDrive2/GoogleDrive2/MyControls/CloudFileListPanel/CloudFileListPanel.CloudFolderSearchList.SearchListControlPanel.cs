@@ -14,43 +14,47 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
         {
             class SearchListControlPanel : MyGrid
             {
-                MyButton BTNselectAll,BTNshowInfo;
+                MyButton BTNselectAll,BTNshowInfo,BTNuploadFile,BTNtrash;
                 public RefreshButton BTNrefresh;
                 public MyLabel LBtitle;
-                MySwitch SWmultiSelectEnabled;
+                MySwitch SWmultiSelectEnabled,SWtrash;
                 new CloudFolderSearchList Parent;
                 volatile int SelectedFileCount = 0, SelectedFolderCount = 0;
-                private void InitializaViews(CloudFolderSearchList parent)
+                private void ArrangeViews()
                 {
                     this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(40, GridUnitType.Absolute) });
+                    this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                    this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                     this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                     this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                     this.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Auto) });
                     this.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                     {
-                        BTNrefresh = new RefreshButton();
                         this.Children.Add(BTNrefresh, 0, 0);
-                    }
-                    {
-                        LBtitle = new MyLabel { BackgroundColor = Color.White };
-                        LBtitle.WidthRequest = 150;
-                        LBtitle.HeightRequest = 40;
                         this.Children.Add(LBtitle, 1, 0);
-                    }
-                    {
-                        BTNselectAll = new MyButton { Text = "☑", IsEnabled = false };
                         this.Children.Add(BTNselectAll, 0, 1);
-                        //MyGrid.SetColumnSpan(BTNselectAll, this.ColumnDefinitions.Count);
-                    }
-                    {
-                        SWmultiSelectEnabled = new MySwitch(null,null,false);
                         this.Children.Add(SWmultiSelectEnabled, 1, 1);
-                    }
-                    {
-                        BTNshowInfo = new MyButton { Text = "ℹ" };
                         this.Children.Add(BTNshowInfo, 0, 2);
+                        this.Children.Add(BTNuploadFile, 0, 3);
+                        this.Children.Add(BTNtrash, 0, 4);
+                        this.Children.Add(SWtrash, 1, 4);
                     }
-                    Parent = parent;
+                }
+                private void InitializaViews()
+                {
+                    BTNrefresh = new RefreshButton();
+                    LBtitle = new MyLabel
+                    {
+                        BackgroundColor = Color.White,
+                        WidthRequest = 150,
+                        HeightRequest = 40
+                    };
+                    BTNselectAll = new MyButton { Text = Constants.Icons.CheckBox, IsEnabled = false };
+                    SWmultiSelectEnabled = new MySwitch(null, null, false);
+                    BTNshowInfo = new MyButton { Text = Constants.Icons.Info };
+                    BTNuploadFile = new MyButton { Text = Constants.Icons.Upload };
+                    BTNtrash = new MyButton { Text = Constants.Icons.TrashCan };
+                    SWtrash = new MySwitch("Trash Can", "Folder", false);
                 }
                 private bool SelectAllState = false;
                 private async Task Select(bool all)
@@ -72,64 +76,78 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                 }
                 void UpdateText()
                 {
-                    var s1 = "☑";
-                    var s2 = (SelectedFolderCount == 0 ? "" : $" | 📁{SelectedFolderCount}") + (SelectedFileCount == 0 ? "" : $" | 📄{SelectedFileCount}");
-                    if (string.IsNullOrEmpty(s2)) s2 = " | 🍄0";
+                    var s1 = Constants.Icons.CheckBox;
+                    var s2 = (SelectedFolderCount == 0 ? "" : $" | {Constants.Icons.Folder}{SelectedFolderCount}") + (SelectedFileCount == 0 ? "" : $" | {Constants.Icons.File}{SelectedFileCount}");
+                    if (string.IsNullOrEmpty(s2)) s2 = $" | {Constants.Icons.Mushroom}0";
                     BTNselectAll.Text = s1 + s2;
                 }
-                List<string> GetInfoAsStringList(object o)
+                async Task UploadButtonClicked()
                 {
+                    if (this.Parent.FocusedItem == null)
                     {
-                        if (o is System.Collections.IEnumerable && !(o is string))
-                        {
-                            var ans = new List<string>();
-                            int idx = 0;
-                            foreach(var nxto in (System.Collections.IEnumerable)o)
-                            {
-                                ans.Add($"{($"[{idx++}]:").PadRight(15)} {nxto}");
-                                if (nxto != null)
-                                {
-                                    foreach (var s in GetInfoAsStringList(nxto))
-                                    {
-                                        ans.Add($"    {s}");
-                                    }
-                                }
-                            }
-                            return ans;
-                        }
+                        await MyLogger.Alert($"{Constants.Icons.Info} No item selected");
+                        return;
                     }
+                    var cloud = this.Parent.FocusedItem.File;
+                    if (cloud.mimeType != Constants.FolderMimeType)
                     {
-                        var fs = o.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
-                        List<string> ans = new List<string>();
-                        foreach (var f in fs)
-                        {
-                            object nxto;
-                            try
-                            {
-                                nxto = f.GetValue(o);
-                            }
-                            catch (Exception error)
-                            {
-                                nxto = error;
-                            }
-                            ans.Add($"{(f.Name + ":").PadRight(15)} {nxto}");
-                            if (nxto != null)
-                            {
-                                foreach (var s in GetInfoAsStringList(nxto))
-                                {
-                                    ans.Add($"    {s}");
-                                }
-                            }
-                        }
-                        return ans;
+                        await MyLogger.Alert($"{Constants.Icons.Info} Item of Folder type expected");
+                        return;
                     }
+                    var file = await Local.File.OpenSingleFileAsync();
+                    if (file == null) return;
+                    await MyLogger.Alert(file.MimeType);
+                    var uploader = file.GetUploader();
+                    uploader.FileMetadata.parents = new List<string> { cloud.id };
+                    uploader.ErrorOccurred += async (msg) =>
+                    {
+                        await MyLogger.Alert($"Error:\r\n{msg}");
+                    };
+                    uploader.UploadCompleted += async (msg) =>
+                    {
+                        await MyLogger.Alert($"Completed:\r\n{msg}");
+                    };
+                    await uploader.StartAsync(true);
+                    await MyLogger.Alert("Completed");
                 }
-                string GetInfoAsString(object o)
+                async Task TrashButtonClicked()
                 {
-                    return string.Join("\r\n", GetInfoAsStringList(o));
+                    if (this.Parent.FocusedItem == null)
+                    {
+                        await MyLogger.Alert($"{Constants.Icons.Info} No item selected");
+                        return;
+                    }
+                    var cloud = this.Parent.FocusedItem.File;
+                    var trasher = cloud.GetTrasher(!cloud.trashed.Value);
+                    trasher.UploadCompleted += async (fileId) => { await MyLogger.Alert($"Completed: {fileId}"); };
+                    trasher.ErrorOccurred += async (msg) => { await MyLogger.Alert($"Error: {msg}"); };
+                    await trasher.StartAsync();
                 }
                 private void RegisterEvents()
                 {
+                    Parent.ItemClicked += (f)=>
+                      {
+                          var s1 = f.File.mimeType == Constants.FolderMimeType ? Constants.Icons.Folder : Constants.Icons.File;
+                          const string s2 = Constants.Icons.TrashCan;
+                          if(f.File.trashed.Value) BTNtrash.Text = $"{s2}→{s1}";
+                          else BTNtrash.Text =  $"{s1}→{s2}";
+                      };
+                    SWtrash.Toggled += (sender,args)=>
+                      {
+                          Parent.ToggleTrashed(args.Value);
+                      };
+                    BTNtrash.Clicked += async delegate
+                      {
+                          BTNtrash.IsEnabled = false;
+                          try { await TrashButtonClicked(); }
+                          finally { BTNtrash.IsEnabled = true; }
+                      };
+                    BTNuploadFile.Clicked += async delegate
+                      {
+                          BTNuploadFile.IsEnabled = false;
+                          try { await UploadButtonClicked(); }
+                          finally { BTNuploadFile.IsEnabled = true; }
+                      };
                     BTNshowInfo.Clicked += async delegate
                       {
                           if(Parent.FocusedItem==null)
@@ -138,7 +156,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                               return;
                           }
                           var file = Parent.FocusedItem.File;
-                          await MyLogger.Alert(GetInfoAsString(file));
+                          await MyLogger.Alert(Libraries.MySerializer.SerializeFields(file));
                       };
                     {
                         var toggledEventHandler = new Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel>((f) =>
@@ -194,7 +212,9 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                 }
                 public SearchListControlPanel(CloudFolderSearchList parent)
                 {
-                    InitializaViews(parent);
+                    Parent = parent;
+                    InitializaViews();
+                    ArrangeViews();
                     RegisterEvents();
                     UpdateText();
                 }

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -71,44 +69,52 @@ namespace GoogleDrive2.Api.Files
             get { return listRequest.Parameters.fields; }
             set { listRequest.Parameters.fields = value; }
         }
-        ListRequest listRequest = new ListRequest();
+        protected ListRequest listRequest = new ListRequest();
         private bool stopRequest = false;
         public void Stop()
         {
             stopRequest = true;
         }
+        private Libraries.MySemaphore semaphore = new Libraries.MySemaphore(1);
         public async Task StartAsync(bool startFromScratch)
         {
-            MyLogger.Assert(!stopRequest);
-            if (startFromScratch)
+            stopRequest = true;
+            await semaphore.WaitAsync();
+            //await MyLogger.Alert(listRequest.Parameters.q);
+            try
             {
-                listRequest.Parameters.pageToken = null;
-                CloudFileListCleared?.Invoke();
-            }
-            OperationStarted?.Invoke();
-            while (true)
-            {
-                if (stopRequest) break;
-                using (var response = await listRequest.GetHttpResponseAsync())
+                stopRequest = false;
+                if (startFromScratch)
+                {
+                    listRequest.Parameters.pageToken = null;
+                    CloudFileListCleared?.Invoke();
+                }
+                OperationStarted?.Invoke();
+                while (true)
                 {
                     if (stopRequest) break;
-                    if (response?.StatusCode != HttpStatusCode.OK)
+                    using (var response = await listRequest.GetHttpResponseAsync())
                     {
-                        ErrorOccurred?.Invoke(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
-                        return;
+                        if (stopRequest) break;
+                        if (response?.StatusCode != HttpStatusCode.OK)
+                        {
+                            ErrorOccurred?.Invoke(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                            return;
+                        }
+                        var text = await listRequest.GetResponseTextAsync(response);
+                        var result = JsonConvert.DeserializeObject<Api.Files.ListRequest.ListResponse<T>>(text);
+                        if (result.incompleteSearch)
+                        {
+                            MyLogger.LogError($"Incomplete search: {await RestRequests.RestRequester.LogHttpWebResponse(response, false)}\r\n{text}");
+                        }
+                        CloudFilesAdded?.Invoke(result.files);
+                        if (result.nextPageToken == null) break;
+                        listRequest.Parameters.pageToken = result.nextPageToken;
                     }
-                    var text = await listRequest.GetResponseTextAsync(response);
-                    var result = JsonConvert.DeserializeObject<Api.Files.ListRequest.ListResponse<T>>(text);
-                    if (result.incompleteSearch)
-                    {
-                        MyLogger.LogError($"Incomplete search: {await RestRequests.RestRequester.LogHttpWebResponse(response, false)}\r\n{text}");
-                    }
-                    CloudFilesAdded?.Invoke(result.files);
-                    if (result.nextPageToken == null) break;
-                    listRequest.Parameters.pageToken = result.nextPageToken;
                 }
+                OperationEnded?.Invoke();
             }
-            OperationEnded?.Invoke();
+            finally { semaphore.Release(); }
         }
         public List(string q, System.Collections.Generic.List<string> orderBy = null)
         {
@@ -119,105 +125,8 @@ namespace GoogleDrive2.Api.Files
             }
         }
     }
-    class FullList : List<FullList.FullProperties>
+    class FullList : List<FullCloudFileMetadata>
     {
-        public class FullProperties
-        {
-#pragma warning disable 0649 // Fields are assigned to by JSON deserialization
-            public const string kind= "drive#file";
-            public string id, name, mimeType, description;
-            public bool? starred, trashed, explicitlyTrashed;
-            public class UserClass
-            {
-                public const string kind = "drive#user";
-                public string displayName, photoLink;
-                public bool? me;
-                public string permissionId, emailAddress;
-            }
-            public UserClass trashingUser;
-            public DateTime? trashedTime;
-            public System.Collections.Generic.List<string> parents;
-            public Dictionary<string, string> properties, appProperties;
-            public enum SpacesEnum {drive, appDataFolder, photos };
-            public System.Collections.Generic.List<SpacesEnum> spaces;
-            public long? version;
-            public string webContentLink, webViewLink, iconLink;
-            public bool? hasThumbnail;
-            public string thumbnailLink;
-            public long? thumbnailVersion;
-            public bool? viewedByMe;
-            public DateTime? viewedByMeTime, createdTime, modifiedTime, modifiedByMeTime;
-            public bool? modifiedByMe;
-            public DateTime? sharedWithMeTime;
-            public UserClass sharingUser;
-            public System.Collections.Generic.List<UserClass> owners;
-            public string teamDriveId;
-            public UserClass lastModifyingUser;
-            public bool? shared, ownedByMe;
-            public class CapabilitiesClass
-            {
-                public bool? canAddChildren, canChangeViewersCanCopyContent, canComment, canCopy, canDelete, canDownload, canEdit, canListChildren, canMoveItemIntoTeamDrive, canMoveTeamDriveItem, canReadRevisions, canReadTeamDrive, canRemoveChildren, canRename, canShare, canTrash, canUntrash;
-            }
-            public CapabilitiesClass capabilities;
-            public bool? viewersCanCopyContent, writersCanShare;
-            public class PermissionsClass
-            {
-                public string kind = "drive#permission";
-                public string id, type, emailAddress, domain, role;
-                public bool? allowFileDiscovery;
-                public string displayName, photoLink;
-                public DateTime? expirationTime;
-                public class TeamDrivePermissionDetailsClass
-                {
-                    public string teamDrivePermissionType, role, inheritedFrom;
-                    public bool? inherited;
-                }
-                public System.Collections.Generic.List<TeamDrivePermissionDetailsClass> teamDrivePermissionDetails;
-                public bool? deleted;
-            }
-            public System.Collections.Generic.List<PermissionsClass> permissions;
-            public bool? hasAugmentedPermissions;
-            public string folderColorRgb, originalFilename, fullFileExtension, fileExtension, md5Checksum;
-            public long? size, quotaBytesUsed;
-            public string headRevisionId;
-            public class ContentHintsClass
-            {
-                public class ThumbnailClass
-                {
-                    public byte[] image;
-                    public string mimeType;
-                }
-                public string indexableText;
-            }
-            public ContentHintsClass contentHints;
-            public class ImageMediaMetadataClass
-            {
-                public int? width, height, rotation;
-                public class LocationClass
-                {
-                    public double? latitude, longitude, altitude;
-                }
-                public LocationClass location;
-                public string time, cameraMake, cameraModel;
-                public float? exposureTime, aperture;
-                public bool? flashUsed;
-                public float? focalLength;
-                public int? isoSpeed;
-                public string meteringMode, sensor, exposureMode, colorSpace, whiteBalance;
-                public float? exposureBias, maxApertureValue;
-                public int? subjectDistance;
-                public string lens;
-            }
-            public ImageMediaMetadataClass imageMediaMetadata;
-            public class VideoMediaMetadataClass
-            {
-                public int? width, height;
-                public long? durationMillis;
-            }
-            public VideoMediaMetadataClass videoMediaMetadata;
-            public bool? isAppAuthorized;
-#pragma warning restore 0649 // Fields are assigned to by JSON deserialization
-        }
         public FullList(string q, System.Collections.Generic.List<string> orderBy) : base(q, orderBy)
         {
             this.Fields = "kind,nextPageToken,incompleteSearch,files";
