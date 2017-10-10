@@ -22,6 +22,7 @@ namespace GoogleDrive2.RestRequests
                 CoreApplicationView newView = CoreApplication.CreateNewView();
                 int newViewId = 0;
                 var originViewId = ApplicationView.GetForCurrentView().Id;
+                bool windowClosed = false;
                 await newView.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
                     Frame frame = new Frame();
@@ -30,8 +31,10 @@ namespace GoogleDrive2.RestRequests
                     // You have to activate the window in order to show it later.
                     Window.Current.Activate();
 
-                    newViewId = ApplicationView.GetForCurrentView().Id;
-                    ApplicationView.GetForCurrentView().Title = title;
+                    var currentView = ApplicationView.GetForCurrentView();
+                    newViewId = currentView.Id;
+                    currentView.Title = title;
+                    currentView.Consolidated += delegate { windowClosed = true; semaphoreSlim.Release(); };
                 });
                 if (!await ApplicationViewSwitcher.TryShowAsStandaloneAsync(newViewId))
                 {
@@ -52,7 +55,7 @@ namespace GoogleDrive2.RestRequests
                 {
                     UWP.MyControls.WebViewWindow.Instance.webView.NavigationStarting -= eventHandler;
                 });
-                await ApplicationViewSwitcher.SwitchAsync(originViewId, newViewId, ApplicationViewSwitchingOptions.ConsolidateViews);
+                if(!windowClosed) await ApplicationViewSwitcher.SwitchAsync(originViewId, newViewId, ApplicationViewSwitchingOptions.ConsolidateViews);
             }
         }
     }

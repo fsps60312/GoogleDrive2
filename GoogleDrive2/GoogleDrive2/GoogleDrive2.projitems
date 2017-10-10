@@ -39,6 +39,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\CloudFileListPanel\CloudFileListPanel.CloudFileItemBar.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\CloudFileListPanel\CloudFileListPanel.CloudFolderSearchList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\CloudFileListPanel\CloudFileListPanel.CloudFolderSearchList.SearchListControlPanel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\CloudFileListPanel\CloudFileListPanel.CloudFolderSearchList.TheBarList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\CloudFileListPanel\CloudFileListPanel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\CloudFileListPanel\CloudFileListPanelViewModel.CloudFileItemBarViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\CloudFileListPanel\CloudFileListPanelViewModel.cs" />

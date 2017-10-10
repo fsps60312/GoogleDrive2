@@ -38,13 +38,13 @@ namespace GoogleDrive2.Api.Files
                 photos = "photos";
         }
         public System.Collections.Generic.List<string> corpora = new System.Collections.Generic.List<string> { CorporaEnum.user };
-        public bool includeTeamDriveItems = false;
+        public bool? includeTeamDriveItems = false;
         public System.Collections.Generic.List<string> orderBy = new System.Collections.Generic.List<string>();
-        public int pageSize = 100;
+        public int? pageSize = 100;
         public string pageToken = null;
         public string q = "";
         public System.Collections.Generic.List<string> spaces = new System.Collections.Generic.List<string> { SpacesEnum.drive };
-        public bool supportsTeamDrives = false;
+        public bool? supportsTeamDrives = false;
         public string teamDriveId = null;
     }
     class ListRequest : RequesterP<ListParameters>

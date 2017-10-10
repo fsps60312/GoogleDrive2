@@ -23,6 +23,8 @@ namespace GoogleDrive2
                 CoreApplicationView newView = CoreApplication.CreateNewView();
                 int newViewId = 0;
                 var originViewId = ApplicationView.GetForCurrentView().Id;
+                var semaphoreSlim = new Libraries.MySemaphore(0);
+                bool windowClosed = false;
                 await newView.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
                     Frame frame = new Frame();
@@ -31,15 +33,15 @@ namespace GoogleDrive2
                     // You have to activate the window in order to show it later.
                     Window.Current.Activate();
 
-                    newViewId = ApplicationView.GetForCurrentView().Id;
-                    //ApplicationView.GetForCurrentView().Title = title;
+                    var currentView = ApplicationView.GetForCurrentView();
+                    newViewId = currentView.Id;
+                    currentView.Consolidated += delegate { windowClosed = true; semaphoreSlim.Release(); };
                 });
                 if (!await ApplicationViewSwitcher.TryShowAsStandaloneAsync(newViewId))
                 {
                     GoogleDrive2.MyLogger.LogError("Failed to show window!");
                     return false;
                 }
-                var semaphoreSlim = new Libraries.MySemaphore(0);
                 bool? ans = null;
                 var eventHandler = new Libraries.Events.MyEventHandler<string>((response) =>
                 {
@@ -57,7 +59,7 @@ namespace GoogleDrive2
                 {
                     UWP.MyControls.AlertDialog.Instance.OKClicked -= eventHandler;
                 });
-                await ApplicationViewSwitcher.SwitchAsync(originViewId, newViewId, ApplicationViewSwitchingOptions.ConsolidateViews);
+                if (!windowClosed) await ApplicationViewSwitcher.SwitchAsync(originViewId, newViewId, ApplicationViewSwitchingOptions.ConsolidateViews);
                 MyLogger.Assert(ans.HasValue);
                 return ans.Value;
             }
@@ -71,23 +73,25 @@ namespace GoogleDrive2
                 CoreApplicationView newView = CoreApplication.CreateNewView();
                 int newViewId = 0;
                 var originViewId = ApplicationView.GetForCurrentView().Id;
+                var semaphoreSlim = new Libraries.MySemaphore(0);
+                bool windowClosed = false;
                 await newView.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
                     Frame frame = new Frame();
                     frame.Navigate(typeof(UWP.MyControls.AlertDialog), null);
                     Window.Current.Content = frame;
-                // You have to activate the window in order to show it later.
-                Window.Current.Activate();
+                    // You have to activate the window in order to show it later.
+                    Window.Current.Activate();
 
-                    newViewId = ApplicationView.GetForCurrentView().Id;
-                //ApplicationView.GetForCurrentView().Title = title;
-            });
+                    var currentView = ApplicationView.GetForCurrentView();
+                    newViewId = currentView.Id;
+                    currentView.Consolidated += delegate { windowClosed = true; semaphoreSlim.Release(); };
+                });
                 if (!await ApplicationViewSwitcher.TryShowAsStandaloneAsync(newViewId))
                 {
                     GoogleDrive2.MyLogger.LogError("Failed to show window!");
                     return;
                 }
-                var semaphoreSlim = new Libraries.MySemaphore(0);
                 var eventHandler = new Libraries.Events.MyEventHandler<string>(delegate
                 {
                     semaphoreSlim.Release();
@@ -102,7 +106,7 @@ namespace GoogleDrive2
                 {
                     UWP.MyControls.AlertDialog.Instance.OKClicked -= eventHandler;
                 });
-                await ApplicationViewSwitcher.SwitchAsync(originViewId, newViewId, ApplicationViewSwitchingOptions.ConsolidateViews);
+                if (!windowClosed) await ApplicationViewSwitcher.SwitchAsync(originViewId, newViewId, ApplicationViewSwitchingOptions.ConsolidateViews);
             }
             finally { SemaphoreDialogBox.Release(); }
         }

@@ -83,6 +83,28 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     Toggled?.Invoke(this);
                 }
             }
+            private double __Opacity__ = 1;
+            public double Opacity
+            {
+                get { return __Opacity__; }
+                set
+                {
+                    if (__Opacity__ == value) return;
+                    __Opacity__ = value;
+                    OnPropertyChanged("Opacity");
+                }
+            }
+            bool __UnderVerification__ = false;
+            public bool UnderVerification
+            {
+                get { return __UnderVerification__; }
+                set
+                {
+                    if (__UnderVerification__ == value) return;
+                    __UnderVerification__ = value;
+                    Opacity = value ? 0.5 : 1.0;
+                }
+            }
             public event Libraries.Events.MyEventHandler<CloudFileItemBarViewModel> Toggled;
             private Color __BorderColor__ = Color.Transparent;
             public Color BorderColor
@@ -101,14 +123,18 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                 else if (Focused) BackgroundColor = focusedColor;
                 else BackgroundColor = originColor;
             }
-            public CloudFileItemBarViewModel(Api.Files.FullCloudFileMetadata file)
+            public void Initialize(Api.Files.FullCloudFileMetadata file)
             {
                 File = file;
                 bool isFolder = (File.mimeType == Constants.FolderMimeType);
-                this.Text = (isFolder ? Constants.Icons.Folder : Constants.Icons.File) + File.name;
-                BackgroundColor = originColor = ( isFolder? Color.LightGoldenrodYellow : Color.GreenYellow);
+                this.Text = (File.starred.Value ? Constants.Icons.Star : "") + (isFolder ? Constants.Icons.Folder : Constants.Icons.File) + File.name;
+                BackgroundColor = originColor = (isFolder ? Color.LightGoldenrodYellow : Color.GreenYellow);
                 focusedColor = Color.FromRgb(originColor.R - 0.1, originColor.G - 0.1, originColor.B - 0.1);
-                selectedColor= Color.FromRgb(focusedColor.R - 0.1, focusedColor.G - 0.1, focusedColor.B - 0.1);
+                selectedColor = Color.FromRgb(focusedColor.R - 0.1, focusedColor.G - 0.1, focusedColor.B - 0.1);
+            }
+            public CloudFileItemBarViewModel(Api.Files.FullCloudFileMetadata file)
+            {
+                Initialize(file);
             }
         }
     }

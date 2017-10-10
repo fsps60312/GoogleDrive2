@@ -114,21 +114,24 @@ namespace GoogleDrive2.RestRequests
                     $"?redirect_uri={WebUtility.UrlEncode(redirect_uri)}" +
                     $"&prompt=consent&response_type=code&client_id={WebUtility.UrlEncode(client_id)}" +
                     $"&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdrive&access_type=offline";
-                SemaphoreSlim semaphoreSlim = new SemaphoreSlim(0, 1);
                 string ans = null;
-                var eventAction = new Action<string>((string eUrl) =>
+                for (int i = 0; ans == null||ans.StartsWith("/?error="); i++)
                 {
-                    var keyWord = $"{redirect_uri}";
-                    //await MyLogger.Alert(e.Url);
-                    if (eUrl.StartsWith(keyWord))
+                    SemaphoreSlim semaphoreSlim = new SemaphoreSlim(0, 1);
+                    var eventAction = new Action<string>((string eUrl) =>
                     {
-                        ans = eUrl.Substring(keyWord.Length);
-                        var kw = "/?code=";
-                        if (ans.StartsWith(kw)) ans = ans.Substring(kw.Length);
-                        semaphoreSlim.Release();
-                    }
-                });
-                await OpenWebWindowToGetAuthorizationCode("Sign in to your Google Drive, please", uri, semaphoreSlim, eventAction);
+                        var keyWord = $"{redirect_uri}";
+                        //await MyLogger.Alert(e.Url);
+                        if (eUrl.StartsWith(keyWord))
+                        {
+                            ans = eUrl.Substring(keyWord.Length);
+                            var kw = "/?code=";
+                            if (ans.StartsWith(kw)) ans = ans.Substring(kw.Length);
+                            semaphoreSlim.Release();
+                        }
+                    });
+                    await OpenWebWindowToGetAuthorizationCode(i == 0 ? "Sign in to your Google Drive, please" : "Signing in to Google Drive is required in order to get the data", uri, semaphoreSlim, eventAction);
+                }
                 return ans;
             }
         }

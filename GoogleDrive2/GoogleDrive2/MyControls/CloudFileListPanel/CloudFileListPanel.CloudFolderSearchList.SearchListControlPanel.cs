@@ -14,7 +14,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
         {
             class SearchListControlPanel : MyGrid
             {
-                MyButton BTNselectAll,BTNshowInfo,BTNuploadFile,BTNtrash;
+                MyButton BTNselectAll,BTNshowInfo,BTNuploadFile,BTNtrash,BTNstar;
                 public RefreshButton BTNrefresh;
                 public MyLabel LBtitle;
                 MySwitch SWmultiSelectEnabled,SWtrash;
@@ -23,6 +23,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                 private void ArrangeViews()
                 {
                     this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(40, GridUnitType.Absolute) });
+                    this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                     this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                     this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                     this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
@@ -38,6 +39,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         this.Children.Add(BTNuploadFile, 0, 3);
                         this.Children.Add(BTNtrash, 0, 4);
                         this.Children.Add(SWtrash, 1, 4);
+                        this.Children.Add(BTNstar, 0, 5);
                     }
                 }
                 private void InitializaViews()
@@ -55,6 +57,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     BTNuploadFile = new MyButton { Text = Constants.Icons.Upload };
                     BTNtrash = new MyButton { Text = Constants.Icons.TrashCan };
                     SWtrash = new MySwitch("Trash Can", "Folder", false);
+                    BTNstar = new MyButton { Text = Constants.Icons.Star };
                 }
                 private bool SelectAllState = false;
                 private async Task Select(bool all)
@@ -83,12 +86,12 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                 }
                 async Task UploadButtonClicked()
                 {
-                    if (this.Parent.FocusedItem == null)
+                    if (this.Parent.ClickedItem == null)
                     {
                         await MyLogger.Alert($"{Constants.Icons.Info} No item selected");
                         return;
                     }
-                    var cloud = this.Parent.FocusedItem.File;
+                    var cloud = this.Parent.ClickedItem.File;
                     if (cloud.mimeType != Constants.FolderMimeType)
                     {
                         await MyLogger.Alert($"{Constants.Icons.Info} Item of Folder type expected");
@@ -96,7 +99,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     }
                     var file = await Local.File.OpenSingleFileAsync();
                     if (file == null) return;
-                    await MyLogger.Alert(file.MimeType);
+                    //await MyLogger.Alert(file.MimeType);
                     var uploader = file.GetUploader();
                     uploader.FileMetadata.parents = new List<string> { cloud.id };
                     uploader.ErrorOccurred += async (msg) =>
@@ -108,29 +111,80 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         await MyLogger.Alert($"Completed:\r\n{msg}");
                     };
                     await uploader.StartAsync(true);
-                    await MyLogger.Alert("Completed");
+                    //await MyLogger.Alert("Completed");
                 }
                 async Task TrashButtonClicked()
                 {
-                    if (this.Parent.FocusedItem == null)
+                    if (this.Parent.ClickedItem == null)
                     {
                         await MyLogger.Alert($"{Constants.Icons.Info} No item selected");
                         return;
                     }
-                    var cloud = this.Parent.FocusedItem.File;
-                    var trasher = cloud.GetTrasher(!cloud.trashed.Value);
-                    trasher.UploadCompleted += async (fileId) => { await MyLogger.Alert($"Completed: {fileId}"); };
-                    trasher.ErrorOccurred += async (msg) => { await MyLogger.Alert($"Error: {msg}"); };
-                    await trasher.StartAsync();
+                    if (Parent.IsMultiSelectionToggled)
+                    {
+                        await Task.WhenAll(Parent.ToggledItems.Select(async (f) =>
+                        {
+                            var trasher = f.File.GetTrasher(!f.File.trashed.Value);
+                            trasher.ErrorOccurred += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };
+                            await trasher.StartAsync();
+                        }));
+                    }
+                    else
+                    {
+                        var cloud = this.Parent.ClickedItem.File;
+                        var trasher = cloud.GetTrasher(!cloud.trashed.Value);
+                        trasher.ErrorOccurred += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };
+                        await trasher.StartAsync();
+                    }
+                    Parent.Refresh();
+                }
+                async Task StarButtonClicked()
+                {
+                    if (this.Parent.ClickedItem == null)
+                    {
+                        await MyLogger.Alert($"{Constants.Icons.Info} No item selected");
+                        return;
+                    }
+                    if (Parent.IsMultiSelectionToggled)
+                    {
+                        await Task.WhenAll(Parent.ToggledItems.Select(async (f) =>
+                        {
+                            var starrer = f.File.GetStarrer(!f.File.starred.Value);
+                            starrer.ErrorOccurred += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };
+                            await starrer.StartAsync();
+                        }));
+                    }
+                    else
+                    {
+                        var cloud = this.Parent.ClickedItem.File;
+                        var starrer = cloud.GetStarrer(!cloud.starred.Value);
+                        starrer.ErrorOccurred += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };
+                        await starrer.StartAsync();
+                    }
+                    Parent.Refresh();
                 }
                 private void RegisterEvents()
                 {
                     Parent.ItemClicked += (f)=>
                       {
-                          var s1 = f.File.mimeType == Constants.FolderMimeType ? Constants.Icons.Folder : Constants.Icons.File;
-                          const string s2 = Constants.Icons.TrashCan;
-                          if(f.File.trashed.Value) BTNtrash.Text = $"{s2}→{s1}";
-                          else BTNtrash.Text =  $"{s1}→{s2}";
+                          {
+                              var s1 = f.File.mimeType == Constants.FolderMimeType ? Constants.Icons.Folder : Constants.Icons.File;
+                              const string s2 = Constants.Icons.TrashCan;
+                              if (f.File.trashed.Value) BTNtrash.Text = $"{s2}→{s1}";
+                              else BTNtrash.Text = $"{s1}→{s2}";
+                          }
+                          {
+                              if (f.File.starred.Value) BTNstar.BackgroundColor = Color.DodgerBlue;
+                              else BTNstar.BackgroundColor = Color.Default;
+                          }
+                      };
+                    BTNstar.Clicked += async delegate
+                      {
+                          BTNstar.IsEnabled = false;
+                          var text = BTNstar.Text;
+                          BTNstar.Text += Constants.Icons.Hourglass;
+                          try { await StarButtonClicked(); }
+                          finally { BTNstar.Text = text; BTNstar.IsEnabled = true; }
                       };
                     SWtrash.Toggled += (sender,args)=>
                       {
@@ -139,8 +193,10 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     BTNtrash.Clicked += async delegate
                       {
                           BTNtrash.IsEnabled = false;
+                          var text = BTNtrash.Text;
+                          BTNtrash.Text += Constants.Icons.Hourglass;
                           try { await TrashButtonClicked(); }
-                          finally { BTNtrash.IsEnabled = true; }
+                          finally { BTNtrash.IsEnabled = true; BTNtrash.Text = text; }
                       };
                     BTNuploadFile.Clicked += async delegate
                       {
@@ -150,12 +206,12 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                       };
                     BTNshowInfo.Clicked += async delegate
                       {
-                          if(Parent.FocusedItem==null)
+                          if(Parent.ClickedItem==null)
                           {
                               await MyLogger.Alert("ℹ No item selected");
                               return;
                           }
-                          var file = Parent.FocusedItem.File;
+                          var file = Parent.ClickedItem.File;
                           await MyLogger.Alert(Libraries.MySerializer.SerializeFields(file));
                       };
                     {

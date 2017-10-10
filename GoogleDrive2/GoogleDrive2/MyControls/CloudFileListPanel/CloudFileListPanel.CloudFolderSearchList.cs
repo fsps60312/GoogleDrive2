@@ -9,11 +9,12 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
     {
         public partial class CloudFolderSearchList: MyContentView
         {
-            public CloudFileListPanelViewModel.CloudFileItemBarViewModel FocusedItem = null;
+            public CloudFileListPanelViewModel.CloudFileItemBarViewModel ClickedItem = null;
+            public HashSet<CloudFileListPanelViewModel.CloudFileItemBarViewModel> ToggledItems = new HashSet<CloudFileListPanelViewModel.CloudFileItemBarViewModel>();
             public event Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel> ItemClicked,ItemAdded,ItemRemoved, ItemToggled;
             public event Libraries.Events.MyEventHandler<bool> MultiSelectionToggled;
             event Libraries.Events.EmptyEventHandler RefreshRequested;
-            public bool IsMultiSelectionToggled = false;
+            public bool IsMultiSelectionToggled { get; private set; } = false;
             public string Q { get; private set; }
             TheBarList BLmain;
             MyGrid GDmain;
@@ -54,8 +55,8 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                           {
                               ItemClicked?.Invoke(item);
                               GDctrl.LBtitle.Text = item.File.id;
-                              if (FocusedItem != null) FocusedItem.Focused = false;
-                              (FocusedItem = item).Focused = true;
+                              if (ClickedItem != null) ClickedItem.Focused = false;
+                              (ClickedItem = item).Focused = true;
                           });
                         //item.Toggled += toggledEventHandler;
                         ItemAdded?.Invoke(item);
@@ -75,6 +76,11 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
             {
                 GDctrl.BTNrefresh.RegisterEvents(this);
                 this.MultiSelectionToggled += (t) => { IsMultiSelectionToggled = t; };
+                this.ItemToggled += (f) =>
+                {
+                    if (f.IsToggled) ToggledItems.Add(f);
+                    else ToggledItems.Remove(f);
+                };
                 var toggledEventHandler = new Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel>((f) =>
                 {
                     ItemToggled?.Invoke(f);
@@ -82,10 +88,10 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                 BLmain.ItemAdded += (item) =>
                   {
                       item.Toggled += toggledEventHandler;
-                      if (FocusedItem != null && item.File.id == FocusedItem.File.id)
+                      if (ClickedItem != null && item.File.id == ClickedItem.File.id)
                       {
-                          FocusedItem.Focused = false;
-                          (FocusedItem = item).Focused = true;
+                          ClickedItem.Focused = false;
+                          (ClickedItem = item).Focused = true;
                       }
                   };
                 BLmain.ItemRemoved += (item) =>
@@ -203,61 +209,6 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     var s2 = (folderCount == 0 ? "" : $" | {Constants.Icons.Folder}{folderCount}") + (fileCount == 0 ? "" : $" | {Constants.Icons.File}{fileCount}");
                     if (string.IsNullOrEmpty(s2)) s2 = $" | {Constants.Icons.Mushroom}0";
                     this.Text = s1 + s2;
-                }
-            }
-            class TheBarList : BarsListPanel.BarsListPanel<CloudFileItemBar, CloudFileListPanelViewModel.CloudFileItemBarViewModel>
-            {
-                public event Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel> ItemAdded,ItemRemoved;
-                public event Libraries.Events.EmptyEventHandler OperationStarted, OperationEnded, CloudFileListCleared;
-                public event Libraries.Events.MyEventHandler<List<Api.Files.FullCloudFileMetadata>> CloudFilesAdded;
-                public event Libraries.Events.MyEventHandler<string> ErrorOccurred;
-                CloudFileListPanelViewModel.CloudFolderSearchListViewModel Lister;
-                public void Stop() { Lister.Stop(); }
-                public async Task RefreshAsync() { await Lister.StartAsync(true); }
-                public void ChangeQ(string q)
-                {
-                    Lister.Stop();
-                    Initialize(q, OrderBy);
-                }
-                List<string> OrderBy;
-                void Initialize(string q, List<string> orderBy)
-                {
-                    OrderBy = orderBy;
-                    Lister = new CloudFileListPanelViewModel.CloudFolderSearchListViewModel(q, orderBy);
-                    Libraries.MySemaphore semaphore = new Libraries.MySemaphore(1);
-                    Lister.OperationStarted += delegate { OperationStarted?.Invoke(); };
-                    Lister.OperationEnded += delegate { OperationEnded?.Invoke(); };
-                    Lister.ErrorOccurred += (msg) => { ErrorOccurred?.Invoke(msg); };
-                    Lister.CloudFileListCleared += async () =>
-                    {
-                        CloudFileListCleared?.Invoke();
-                        await semaphore.WaitAsync();
-                        try
-                        {
-                            await this.ClearAsync();
-                        }
-                        finally { semaphore.Release(); }
-                    };
-                    Lister.CloudFilesAdded += async (files) =>
-                    {
-                        CloudFilesAdded?.Invoke(files);
-                        await semaphore.WaitAsync();
-                        try
-                        {
-                            foreach (var fileProperty in files)
-                            {
-                                var newItem = new CloudFileListPanelViewModel.CloudFileItemBarViewModel(fileProperty);
-                                newItem.Disposed += delegate { ItemRemoved?.Invoke(newItem); };
-                                ItemAdded?.Invoke(newItem);
-                                this.PushBack(newItem);
-                            }
-                        }
-                        finally { semaphore.Release(); }
-                    };
-                }
-                public TheBarList(string q, List<string> orderBy)
-                {
-                    Initialize(q, orderBy);
                 }
             }
         }

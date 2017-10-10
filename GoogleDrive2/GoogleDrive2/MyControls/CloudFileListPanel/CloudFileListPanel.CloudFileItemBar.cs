@@ -38,6 +38,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                 a += 1;
                 {
                     BTNmain = new MyButton();
+                    BTNmain.SetBinding(MyButton.OpacityProperty, "Opacity");
                     BTNmain.SetBinding(MyButton.TextProperty, "Text");
                     BTNmain.SetBinding(MyButton.CommandProperty, "Clicked");
                     BTNmain.SetBinding(MyButton.BackgroundColorProperty, "BackgroundColor");

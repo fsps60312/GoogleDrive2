@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace GoogleDrive2
 {
@@ -53,13 +54,26 @@ namespace GoogleDrive2
     {
         public delegate void LogAppendedEventHandler(string log);
         public static LogAppendedEventHandler ErrorLogged;
+        public static Libraries.Events.MyEventHandler<string> Debugged;
         //public static async Task Alert(string msg)
         //{
         //    await App.Current.MainPage.DisplayAlert("", msg, "OK");
         //}
+        static string StackTrace()
+        {
+            var ans = System.Environment.StackTrace;
+            ans = ans.Substring(ans.IndexOf(Environment.NewLine, ans.IndexOf(Environment.NewLine, ans.IndexOf(Environment.NewLine) + 1) + 1) + 2);
+            return ans;
+        }
+        public static void Debug(string log,bool printStackTrace=true)
+        {
+            var msg = log;
+            if (printStackTrace) msg += $"\r\nStack Trace: {StackTrace()}";
+            ErrorLogged?.Invoke(msg);
+        }
         public static void LogError(string log)
         {
-            ErrorLogged?.Invoke(log);
+            ErrorLogged?.Invoke($"{log}\r\nStack Trace: {StackTrace()}");
         }
         public static void Assert(bool condition)
         {
@@ -68,10 +82,8 @@ namespace GoogleDrive2
         }
         static MyLogger()
         {
-            ErrorLogged += (log) =>
-              {
-                  System.Diagnostics.Debug.WriteLine(log);
-              };
+            ErrorLogged += (log) => { System.Diagnostics.Debug.WriteLine(log); };
+            Debugged += (log) => { System.Diagnostics.Debug.WriteLine(log); };
         }
     }
 }

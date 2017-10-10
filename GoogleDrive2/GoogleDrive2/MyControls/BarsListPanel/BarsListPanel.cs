@@ -17,6 +17,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
     class BarsListPanel<GenericView,DataType>:MyContentView where DataType:MyDisposable where GenericView : Xamarin.Forms.View, IDataBindedView<DataType>,new()
     {
         public event Libraries.Events.MyEventHandler<DataType> DataInserted, DataRemoved;
+        public event Libraries.Events.MyEventHandler<Treap<DataType>.TreapNode> TreapNodeAdded, TreapNodeRemoved;
         private void OnDataInserted(DataType data) { DataInserted?.Invoke(data); }
         private void OnDataRemoved(DataType data) { DataRemoved?.Invoke(data); }
         public double AnimationDuration { get { return Treap<DataType>.animationDuration; } }
@@ -98,17 +99,34 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             data.HeightChanged += heightChangedEventHandler;
             OnDataInserted(data);
         }
-        public void PushFront(DataType data)
+        public void MoveItem(int from,int to)
+        {
+            treap.MoveItem(from, to);
+        }
+        public Treap<DataType>.TreapNode Remove(int idx)
+        {
+            return treap.Delete(idx);
+        }
+        public Treap<DataType>.TreapNode PushFront(DataType data)
         {
             var o = treap.Insert(data, 0);
             RegisterData(o, data);
             OnTreapLayoutChanged();
+            return o;
         }
-        public void PushBack(DataType data)
+        public Treap<DataType>.TreapNode Insert(DataType data,int idx)
+        {
+            var o = treap.Insert(data, idx);
+            RegisterData(o, data);
+            OnTreapLayoutChanged();
+            return o;
+        }
+        public Treap<DataType>.TreapNode PushBack(DataType data)
         {
             var o = treap.Insert(data, treap.Count);
             RegisterData(o, data);
             OnTreapLayoutChanged();
+            return o;
         }
         public async Task ScrollToEnd()
         {
@@ -157,6 +175,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             //MyLogger.Assert(l == r);
             //return r;
         }
+        protected bool IsBarVisible(int idx) { return UponIndex() <= idx && idx <= DownIndex(); }
         volatile bool isLayoutRunning = false, needRunAgain = false;
         private bool UpdateLayout()
         {
@@ -266,7 +285,6 @@ namespace GoogleDrive2.MyControls.BarsListPanel
                   ALmain.WidthRequest = WidthRequestTo;
               }));
         }
-
         private void AnimateLayout()
         {
             if (isLayoutRunning)
@@ -303,6 +321,8 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         }
         private void RegisterEvents()
         {
+            treap.TreapNodeAdded += (o) => { TreapNodeAdded?.Invoke(o); };
+            treap.TreapNodeRemoved += (o) => { TreapNodeRemoved?.Invoke(o); };
             this.TreapLayoutChanged += () => { AnimateLayout(); };
             SVmain.Scrolled += (sender,args) => { AnimateLayout(); };
             SVmain.SizeChanged += (sender, args) => { AnimateLayout(); };

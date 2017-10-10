@@ -32,13 +32,19 @@ namespace GoogleDrive2
                 {
                     if (includeNull || (o != null&&(o as List<string>).Count>0)) ps[s] = string.Join(",", o as List<string>);
                 }
-                else if (t == typeof(bool))
+                else if (t == typeof(bool?))
                 {
-                    ps[s] = (bool)o ? "true" : "false";
+                    if (includeNull || o != null)
+                    {
+                        ps[s] = ((bool?)o).HasValue ? (((bool?)o).Value ? "true" : "false") : null;
+                    }
                 }
-                else if (t == typeof(int))
+                else if (t == typeof(int?))
                 {
-                    ps[s] = ((int)o).ToString();
+                    if (includeNull || o != null)
+                    {
+                        ps[s] = ((int?)o).HasValue ? ((int?)o).Value.ToString() : null;
+                    }
                 }
                 else if (t == typeof(string))
                 {

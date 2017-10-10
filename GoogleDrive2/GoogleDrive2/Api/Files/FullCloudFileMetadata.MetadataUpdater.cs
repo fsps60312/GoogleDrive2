@@ -6,6 +6,10 @@ namespace GoogleDrive2.Api.Files
 {
     public partial class FullCloudFileMetadata
     {
+        public class Starrer:MetadataUpdater
+        {
+            public Starrer(string fileId, bool starred) : base(fileId, new FullCloudFileMetadata { starred = starred }) { }
+        }
         public class Trasher : MetadataUpdater
         {
             public Trasher(string fileId,bool trashed) : base(fileId, new FullCloudFileMetadata { trashed = trashed }) { }

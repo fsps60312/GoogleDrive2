@@ -43,6 +43,7 @@ namespace GoogleDrive2.Local
             string resumableUri = null;
             async Task<string> CreateResumableUploadAsync()
             {
+                await MyLogger.Alert($"file size: {totalSize}");
                 throw new System.NotImplementedException();
             }
             public override async Task StartAsync(bool startFromScratch)
@@ -57,7 +58,7 @@ namespace GoogleDrive2.Local
                     F.CloseFileIfNot();
                     await AssignFileMetadata();
                     bytesUploaded = 0;
-                    if (FileMetadata.size <= MinChunkSize)
+                    if (totalSize <= MinChunkSize)
                     {
                         await StartMultipartUploadAsync();
                     }
