@@ -102,10 +102,13 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         public void MoveItem(int from,int to)
         {
             treap.MoveItem(from, to);
+            OnTreapLayoutChanged();
         }
         public Treap<DataType>.TreapNode Remove(int idx)
         {
-            return treap.Delete(idx);
+            var o= treap.Delete(idx);
+            //OnTreapLayoutChanged();//dispose will trigger this event
+            return o;
         }
         public Treap<DataType>.TreapNode PushFront(DataType data)
         {
