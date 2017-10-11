@@ -77,6 +77,9 @@ namespace GoogleDrive2
         }
         public abstract class RequesterPrototype
         {
+            protected event Libraries.Events.EmptyEventHandler Started;
+            protected event Libraries.Events.MyEventHandler<MyHttpRequest> Requested;
+            protected event Libraries.Events.MyEventHandler<MyHttpResponse> Responded;
             public string Method { get; private set; }
             public string Uri { get; private set; }
             public bool AuthorizationRequired { get; private set; }
@@ -86,36 +89,33 @@ namespace GoogleDrive2
                 Uri = uri;
                 requester.AuthorizationRequired = AuthorizationRequired = authorizationRequired;
                 MyLogger.Assert(uri.IndexOf('?') == -1);
+                var start = DateTime.Now;
+                this.Started += delegate { MyLogger.Debug($"Started {(DateTime.Now-start).TotalSeconds}"); };
+                this.Requested += delegate { MyLogger.Debug($"Requested {(DateTime.Now-start).TotalSeconds}"); };
+                this.Responded += delegate { MyLogger.Debug($"Responded {(DateTime.Now-start).TotalSeconds}"); };
             }
-            protected abstract Task<HttpWebRequest> GetHttpRequest();
+            protected abstract Task<MyHttpRequest> GetHttpRequest();
             private RestRequests.RestRequester requester = new RestRequests.RestRequester();
-            public async Task<HttpWebResponse> GetHttpResponseAsync()
+            public async Task<MyHttpResponse> GetHttpResponseAsync()
             {
+                Started?.Invoke();
                 var request = await this.GetHttpRequest();
+                Requested?.Invoke(request);
                 //await MyLogger.Alert(request.RequestUri.ToString());
-                return await requester.GetHttpResponseAsync(request);
+                var response= await requester.GetHttpResponseAsync(request);
+                Responded?.Invoke(response);
+                return response;
             }
-            public async Task<string>GetResponseTextAsync(HttpWebResponse response)
+            public string GetResponseTextAsync(MyHttpResponse response)
             {
-                try
-                {
-                    using (var reader = new System.IO.StreamReader(response.GetResponseStream()))
-                    {
-                        return await reader.ReadToEndAsync();
-                    }
-                }
-                catch(Exception error)
-                {
-                    MyLogger.LogError($"Error when read response text:\r\n{error}");
-                    return null;
-                }
+                return response.GetResponseString();
             }
         }
         public class RequesterRaw : RequesterPrototype
         {
             public RequesterRaw(string method, string uri, bool authorizationRequired) : base(method, uri, authorizationRequired) { }
             public Dictionary<string, string> Parameters = new Dictionary<string, string>();
-            protected override Task<HttpWebRequest> GetHttpRequest()
+            protected override Task<MyHttpRequest> GetHttpRequest()
             {
                 StringBuilder uri = new StringBuilder(Uri);
                 {
@@ -133,16 +133,17 @@ namespace GoogleDrive2
                         uri.Append(WebUtility.UrlEncode(p.Value));
                     }
                 }
-                var request = HttpWebRequest.CreateHttp(uri.ToString());
-                request.Method = Method;
+                var request = new MyHttpRequest(Method, uri.ToString());
                 return Task.FromResult(request);
             }
         }
         public class RequesterP<P>: RequesterPrototype where P : ParametersClass, new()
         {
-            public RequesterP(string method, string uri, bool authorizationRequired) : base(method, uri, authorizationRequired) { }
+            public RequesterP(string method, string uri, bool authorizationRequired) : base(method, uri, authorizationRequired)
+            {
+            }
             public P Parameters = new P();
-            protected override async Task<HttpWebRequest> GetHttpRequest()
+            protected override async Task<MyHttpRequest> GetHttpRequest()
             {
                 //AddParameter("fields", fields);
                 StringBuilder uri = new StringBuilder(Uri);
@@ -164,8 +165,7 @@ namespace GoogleDrive2
                     }
                 }
                 //MyLogger.LogError(uri.ToString());
-                var request = HttpWebRequest.CreateHttp(uri.ToString());
-                request.Method = Method;
+                var request = new MyHttpRequest(Method, uri.ToString());
                 return await Task.FromResult(request);
                 //return new Task<HttpWebRequest>(() => request);
             }
@@ -174,7 +174,7 @@ namespace GoogleDrive2
         {
             public RequesterH(string method, string uri, bool authorizationRequired) : base(method, uri, authorizationRequired) { }
             public Dictionary<string, string> Headers { get; private set; } = new Dictionary<string, string>();
-            protected override async Task<HttpWebRequest> GetHttpRequest()
+            protected override async Task<MyHttpRequest> GetHttpRequest()
             {
                 var request = await base.GetHttpRequest();
                 if (Headers != null)
@@ -200,16 +200,12 @@ namespace GoogleDrive2
             public List<byte> Body { get; private set; } = new List<byte>();
             public byte[] EncodeToBytes(string s) { return Encoding.UTF8.GetBytes(s); }
             public void AppendBody(string s) { Body.AddRange(EncodeToBytes(s)); }
-            protected override async Task<HttpWebRequest> GetHttpRequest()
+            protected override async Task<MyHttpRequest> GetHttpRequest()
             {
                 var request = await base.GetHttpRequest();
-                var bd = Body.ToArray();
-                request.Headers["Content-Length"] = bd.Length.ToString();
+                request.Headers["Content-Length"] = Body.Count.ToString();
                 //await MyLogger.Alert(Encoding.UTF8.GetString(bd));
-                using (System.IO.Stream requestStream = await request.GetRequestStreamAsync())
-                {
-                    await requestStream.WriteAsync(bd, 0, bd.Length);
-                }
+                request.WriteBytes(Body);
                 return request;
             }
         }

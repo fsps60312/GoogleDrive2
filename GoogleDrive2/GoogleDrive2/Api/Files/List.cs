@@ -98,14 +98,14 @@ namespace GoogleDrive2.Api.Files
                         if (stopRequest) break;
                         if (response?.StatusCode != HttpStatusCode.OK)
                         {
-                            ErrorOccurred?.Invoke(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                            ErrorOccurred?.Invoke(RestRequests.RestRequester.LogHttpWebResponse(response, true));
                             return;
                         }
-                        var text = await listRequest.GetResponseTextAsync(response);
+                        var text = listRequest.GetResponseTextAsync(response);
                         var result = JsonConvert.DeserializeObject<Api.Files.ListRequest.ListResponse<T>>(text);
                         if (result.incompleteSearch)
                         {
-                            MyLogger.LogError($"Incomplete search: {await RestRequests.RestRequester.LogHttpWebResponse(response, false)}\r\n{text}");
+                            MyLogger.LogError($"Incomplete search: {RestRequests.RestRequester.LogHttpWebResponse(response, true)}\r\n{text}");
                         }
                         CloudFilesAdded?.Invoke(result.files);
                         if (result.nextPageToken == null) break;

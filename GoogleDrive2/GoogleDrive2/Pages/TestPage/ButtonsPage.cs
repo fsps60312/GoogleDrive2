@@ -48,16 +48,18 @@ namespace GoogleDrive2.Pages.TestPage
             {
                 var r = new Api.Files.ListRequest();
                 r.Parameters.fields = "nextPageToken,incompleteSearch,files(id,name,mimeType,md5Checksum)";
-                var response = await r.GetHttpResponseAsync();
-                var text = await r.GetResponseTextAsync(response);
-                //await MyLogger.Alert(text);
+                using (var response = await r.GetHttpResponseAsync())
                 {
-                    var result = JsonConvert.DeserializeObject<Api.Files.ListRequest.ListResponse<object>>(text);
-                    await MyLogger.Alert(JsonConvert.SerializeObject(result));
-                }
-                {
-                    var result = JsonConvert.DeserializeObject<Api.Files.ListRequest.ListResponse<TemporaryClass1>>(text);
-                    await MyLogger.Alert(JsonConvert.SerializeObject(result));
+                    var text = r.GetResponseTextAsync(response);
+                    //await MyLogger.Alert(text);
+                    {
+                        var result = JsonConvert.DeserializeObject<Api.Files.ListRequest.ListResponse<object>>(text);
+                        await MyLogger.Alert(JsonConvert.SerializeObject(result));
+                    }
+                    {
+                        var result = JsonConvert.DeserializeObject<Api.Files.ListRequest.ListResponse<TemporaryClass1>>(text);
+                        await MyLogger.Alert(JsonConvert.SerializeObject(result));
+                    }
                 }
             }));
         }

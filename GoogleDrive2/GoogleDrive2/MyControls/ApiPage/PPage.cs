@@ -207,7 +207,10 @@ namespace GoogleDrive2.MyControls.ApiPage
                       //await MyLogger.Alert($"Header: {header.Key} = {header.Value}");
                       request.Parameters[p.Key] = p.Value;
                   }
-                  EDmain.Text = await RestRequests.RestRequester.LogHttpWebResponse(await request.GetHttpResponseAsync(), true);
+                  using (var response = await request.GetHttpResponseAsync())
+                  {
+                      EDmain.Text = RestRequests.RestRequester.LogHttpWebResponse(response, true);
+                  }
                   threadCnt--; UpdateBtnText();
               };
         }

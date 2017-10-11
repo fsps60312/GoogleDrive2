@@ -9,7 +9,7 @@ namespace GoogleDrive2.RestRequests
 {
     class RestRequestsPrototype: MyLoggerClass
     {
-        public static async Task<string> LogHttpWebResponse(HttpWebResponse response, bool readStream)
+        public static string LogHttpWebResponse(MyHttpResponse response, bool readStream)
         {
             if (response == null) return "(Null Response)";
             string ans = $"Http response: {response.StatusCode} ({(int)response.StatusCode})\r\n";
@@ -18,50 +18,29 @@ namespace GoogleDrive2.RestRequests
             ans += sb.ToString() + "\r\n";
             if (readStream)
             {
-                try
-                {
-                    var reader = new System.IO.StreamReader(response.GetResponseStream());
-                    ans += await reader.ReadToEndAsync() + "\r\n";
-                    reader.Dispose();
-                }
-                catch (ArgumentException error)
-                {
-                    if (error.Message != "Stream was not readable.") throw error;
-                    ans+= $"Error: {error.Message}\r\n";
-                }
+                ans += (response.GetResponseString() ?? "Error: Stream was not readable.") + "\r\n";
             }
             return ans;
         }
-        public virtual async Task<HttpWebResponse> GetHttpResponseAsync(HttpWebRequest request)
+        public virtual async Task<MyHttpResponse> GetHttpResponseAsync(MyHttpRequest request)
         {
-            try
-            {
-                return (await request.GetResponseAsync()) as HttpWebResponse;
-            }
-            catch (WebException error)
-            {
-                return error.Response as HttpWebResponse;
-            }
-            finally
-            {
-                request.Abort();
-            }
+            return await request.GetResponseAsync();
         }
     }
     class RestRequestsLogger: RestRequestsPrototype
     {
-        public override async Task<HttpWebResponse> GetHttpResponseAsync(HttpWebRequest request)
+        public override async Task<MyHttpResponse> GetHttpResponseAsync(MyHttpRequest request)
         {
             var ans = await base.GetHttpResponseAsync(request);
-            if (ans?.StatusCode != HttpStatusCode.Accepted) this.Log(await LogHttpWebResponse(ans, (int)(ans?.StatusCode ?? 0) / 100 != 2));
+            if (ans?.StatusCode != HttpStatusCode.Accepted) this.Log(LogHttpWebResponse(ans,true /*(int)(ans?.StatusCode ?? 0) / 100 != 2*/));
             return ans;
         }
     }
     class RestRequestsRetrier : RestRequestsLogger
     {
-        public override async Task<HttpWebResponse> GetHttpResponseAsync(HttpWebRequest request)
+        public override async Task<MyHttpResponse> GetHttpResponseAsync(MyHttpRequest request)
         {
-            HttpWebResponse response=null;
+            MyHttpResponse response = null;
             if (!await Libraries.MyExponentialBackOff.Do(new Func<Task<bool>>(async () =>
              {
                  response = await base.GetHttpResponseAsync(request);
@@ -78,12 +57,13 @@ namespace GoogleDrive2.RestRequests
                          }
                      default: return true;
                  }
-             }), new Func<int, Task>(async (timeToWait) =>
+             }), new Func<int, Task>((timeToWait) =>
               {
-                  this.Log($"Trying again {timeToWait} ms later...\r\nResponse: {await LogHttpWebResponse(response, true)}");
+                  this.Log($"Trying again {timeToWait} ms later...\r\nResponse: {LogHttpWebResponse(response, true)}");
+                  return Task.CompletedTask;
               })))
             {
-                this.LogError($"Attempted to reconnect but still failed.\r\nResponse: {await LogHttpWebResponse(response, false)}");
+                this.LogError($"Attempted to reconnect but still failed.\r\nResponse: {LogHttpWebResponse(response, true)}");
             }
             return response;
         }
@@ -91,7 +71,7 @@ namespace GoogleDrive2.RestRequests
     class RestRequestsLimiter: RestRequestsRetrier
     {
         private Libraries.MySemaphore semaphore = new Libraries.MySemaphore(50);
-        public override async Task<HttpWebResponse> GetHttpResponseAsync(HttpWebRequest request)
+        public override async Task<MyHttpResponse> GetHttpResponseAsync(MyHttpRequest request)
         {
             await semaphore.WaitAsync();
             try
@@ -109,20 +89,20 @@ namespace GoogleDrive2.RestRequests
     {
         public bool AuthorizationRequired = true;
         //public RestRequestsAuthorizer(bool auth) { authorizationRequired = auth; }
-        private async Task UpdateRequestAuthorization(HttpWebRequest request,bool refresh)
+        private async Task UpdateRequestAuthorization(MyHttpRequest request,bool refresh)
         {
             if (AuthorizationRequired)
             {
                 request.Headers["Authorization"] = $"{await DriveAuthorizer.GetTokenTypeAsync()} {await DriveAuthorizer.GetAccessTokenAsync(refresh)}";
             }
         }
-        public override async Task<HttpWebResponse> GetHttpResponseAsync(HttpWebRequest request)
+        public override async Task<MyHttpResponse> GetHttpResponseAsync(MyHttpRequest request)
         {
             await UpdateRequestAuthorization(request,false);
             var response = await base.GetHttpResponseAsync(request);
             if (response?.StatusCode == HttpStatusCode.Unauthorized)
             {
-                this.Log($"Http response: {await RestRequests.RestRequester.LogHttpWebResponse(response, true)}");
+                this.Log($"Http response: {RestRequests.RestRequester.LogHttpWebResponse(response, true)}");
                 await Task.Delay(500);
                 this.Log("Refreshing access token...");
                 //MyLogger.Assert(Array.IndexOf(request.Headers.AllKeys, "Authorization") != -1);
@@ -130,7 +110,7 @@ namespace GoogleDrive2.RestRequests
                 response = await base.GetHttpResponseAsync(request);
                 if (response?.StatusCode == HttpStatusCode.Unauthorized)
                 {
-                    this.LogError($"Failed to authenticate\r\nHttp response: {await RestRequests.RestRequester.LogHttpWebResponse(response, false)}");
+                    this.LogError($"Failed to authenticate\r\nHttp response: {RestRequests.RestRequester.LogHttpWebResponse(response, true)}");
                 }
             }
             return response;
@@ -138,7 +118,7 @@ namespace GoogleDrive2.RestRequests
     }
     partial class RestRequester:RestRequestsAuthorizer
     {
-        public override async Task<HttpWebResponse> GetHttpResponseAsync(HttpWebRequest request)
+        public override async Task<MyHttpResponse> GetHttpResponseAsync(MyHttpRequest request)
         {
             try
             {

@@ -65,7 +65,7 @@ namespace GoogleDrive2
             ans = ans.Substring(ans.IndexOf(Environment.NewLine, ans.IndexOf(Environment.NewLine, ans.IndexOf(Environment.NewLine) + 1) + 1) + 2);
             return ans;
         }
-        public static void Debug(string log,bool printStackTrace=true)
+        public static void Debug(string log,bool printStackTrace=false)
         {
             var msg = log;
             if (printStackTrace) msg += $"\r\nStack Trace: {StackTrace()}";

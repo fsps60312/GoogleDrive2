@@ -63,6 +63,10 @@
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyWebView.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\FileBrowsePage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\MainTabbedPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\NetworkStatusPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\RequestWithBodyPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\RequestWithHeadersPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\RequestWithParametersPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\ButtonsPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\ColorTestPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\FilesListRequestPage.cs" />
@@ -75,6 +79,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)Api\Files\List.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\TouchEventImplementPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\TouchEventPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)RestRequests\MyHttpRequest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)RestRequests\MyHttpResponse.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RestRequests\RestRequests.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RestRequests\RestRequestsAuthorizer.DriveAuthorizer.cs" />
   </ItemGroup>

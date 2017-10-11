@@ -159,21 +159,15 @@ namespace GoogleDrive2.Pages.TestPage
                 }
                 var blankPoint = url.IndexOf(' ');
                 MyLogger.Assert(blankPoint != -1);
-                HttpWebRequest request = WebRequest.CreateHttp(url.Substring(blankPoint + 1));
+                MyHttpRequest request =new MyHttpRequest(url.Remove(blankPoint), url.Substring(blankPoint + 1));
                 foreach (var header in AKVheader.BLPmain.ToList())
                 {
                     //await MyLogger.Alert($"Header: {header.Key} = {header.Value}");
                     request.Headers[header.Key] = header.Value;
                 }
-                request.Method = url.Remove(blankPoint);
                 if (Array.IndexOf(request.Headers.AllKeys, "Content-Length") != -1)
                 {
-                    using (var stream = await request.GetRequestStreamAsync())
-                    {
-                        var bytes = Encoding.UTF8.GetBytes(BodyTextToSend());
-                        //MyLogger.Log(Encoding.UTF8.GetString(bytes).Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t")); //換行為甚麼是\r啦 >_<
-                        await stream.WriteAsync(bytes, 0, bytes.Length);
-                    }
+                    request.WriteBytes(Encoding.UTF8.GetBytes(BodyTextToSend()));
                 }
                 string result;
                 try
@@ -186,7 +180,7 @@ namespace GoogleDrive2.Pages.TestPage
                         }
                         else
                         {
-                            result = await RestRequests.RestRequester.LogHttpWebResponse(response, true);
+                            result = RestRequests.RestRequester.LogHttpWebResponse(response, true);
                         }
                     }
                 }

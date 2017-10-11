@@ -68,20 +68,15 @@ namespace GoogleDrive2.RestRequests
                     $"&refresh_token={WebUtility.UrlEncode(refreshToken)}" +
                     $"&client_id={WebUtility.UrlEncode(client_id)}";
                 var bodyBytes = Encoding.UTF8.GetBytes(body);
-                HttpWebRequest request = HttpWebRequest.CreateHttp(token_uri);
-                request.ContentType = "application/x-www-form-urlencoded";
-                request.Headers["Content-Length"] = bodyBytes.Length.ToString();
-                request.Method = "POST";
-                using (var requestStream = await request.GetRequestStreamAsync())
+                MyHttpRequest request = new MyHttpRequest("POST", token_uri)
                 {
-                    await requestStream.WriteAsync(bodyBytes, 0, bodyBytes.Length);
-                }
+                    ContentType = "application/x-www-form-urlencoded"
+                };
+                request.Headers["Content-Length"] = bodyBytes.Length.ToString();
+                request.WriteBytes(bodyBytes);
                 using (var response = await responseGetter.GetHttpResponseAsync(request))
                 {
-                    using (var reader = new System.IO.StreamReader(response.GetResponseStream()))
-                    {
-                        return await reader.ReadToEndAsync();
-                    }
+                    return response.GetResponseString();
                 }
             }
             static async Task<string> ExchangeCodeForTokens(string authorizationCode)
@@ -92,20 +87,15 @@ namespace GoogleDrive2.RestRequests
                     $"&client_secret={WebUtility.UrlEncode(client_secret)}" +
                     $"&scope=&grant_type=authorization_code";
                 var bodyBytes = Encoding.UTF8.GetBytes(body);
-                HttpWebRequest request = HttpWebRequest.CreateHttp(token_uri);
-                request.ContentType = "application/x-www-form-urlencoded";
-                request.Headers["Content-Length"] = bodyBytes.Length.ToString();
-                request.Method = "POST";
-                using (var requestStream = await request.GetRequestStreamAsync())
+                MyHttpRequest request = new MyHttpRequest("POST", token_uri)
                 {
-                    await requestStream.WriteAsync(bodyBytes, 0, bodyBytes.Length);
-                }
+                    ContentType = "application/x-www-form-urlencoded"
+                };
+                request.Headers["Content-Length"] = bodyBytes.Length.ToString();
+                request.WriteBytes(bodyBytes);
                 using (var response = await responseGetter.GetHttpResponseAsync(request))
                 {
-                    using (var reader = new System.IO.StreamReader(response.GetResponseStream()))
-                    {
-                        return await reader.ReadToEndAsync();
-                    }
+                    return response.GetResponseString();
                 }
             }
             static async Task<string> GetAuthorizationCode()
