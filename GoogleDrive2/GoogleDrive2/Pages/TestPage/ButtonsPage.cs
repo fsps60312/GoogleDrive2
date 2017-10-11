@@ -50,7 +50,7 @@ namespace GoogleDrive2.Pages.TestPage
                 r.Parameters.fields = "nextPageToken,incompleteSearch,files(id,name,mimeType,md5Checksum)";
                 using (var response = await r.GetHttpResponseAsync())
                 {
-                    var text = r.GetResponseTextAsync(response);
+                    var text =await r.GetResponseTextAsync(response);
                     //await MyLogger.Alert(text);
                     {
                         var result = JsonConvert.DeserializeObject<Api.Files.ListRequest.ListResponse<object>>(text);

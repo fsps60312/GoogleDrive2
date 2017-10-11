@@ -180,7 +180,7 @@ namespace GoogleDrive2.Pages.TestPage
                         }
                         else
                         {
-                            result = RestRequests.RestRequester.LogHttpWebResponse(response, true);
+                            result = await RestRequests.RestRequester.LogHttpWebResponse(response, true);
                         }
                     }
                 }

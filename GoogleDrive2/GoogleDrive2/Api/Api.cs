@@ -77,9 +77,6 @@ namespace GoogleDrive2
         }
         public abstract class RequesterPrototype
         {
-            protected event Libraries.Events.EmptyEventHandler Started;
-            protected event Libraries.Events.MyEventHandler<MyHttpRequest> Requested;
-            protected event Libraries.Events.MyEventHandler<MyHttpResponse> Responded;
             public string Method { get; private set; }
             public string Uri { get; private set; }
             public bool AuthorizationRequired { get; private set; }
@@ -89,26 +86,19 @@ namespace GoogleDrive2
                 Uri = uri;
                 requester.AuthorizationRequired = AuthorizationRequired = authorizationRequired;
                 MyLogger.Assert(uri.IndexOf('?') == -1);
-                var start = DateTime.Now;
-                this.Started += delegate { MyLogger.Debug($"Started {(DateTime.Now-start).TotalSeconds}"); };
-                this.Requested += delegate { MyLogger.Debug($"Requested {(DateTime.Now-start).TotalSeconds}"); };
-                this.Responded += delegate { MyLogger.Debug($"Responded {(DateTime.Now-start).TotalSeconds}"); };
             }
             protected abstract Task<MyHttpRequest> GetHttpRequest();
             private RestRequests.RestRequester requester = new RestRequests.RestRequester();
             public async Task<MyHttpResponse> GetHttpResponseAsync()
             {
-                Started?.Invoke();
                 var request = await this.GetHttpRequest();
-                Requested?.Invoke(request);
                 //await MyLogger.Alert(request.RequestUri.ToString());
                 var response= await requester.GetHttpResponseAsync(request);
-                Responded?.Invoke(response);
                 return response;
             }
-            public string GetResponseTextAsync(MyHttpResponse response)
+            public async Task<string> GetResponseTextAsync(MyHttpResponse response)
             {
-                return response.GetResponseString();
+                return await response.GetResponseString();
             }
         }
         public class RequesterRaw : RequesterPrototype

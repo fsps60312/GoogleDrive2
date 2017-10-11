@@ -76,7 +76,7 @@ namespace GoogleDrive2.RestRequests
                 request.WriteBytes(bodyBytes);
                 using (var response = await responseGetter.GetHttpResponseAsync(request))
                 {
-                    return response.GetResponseString();
+                    return await response.GetResponseString();
                 }
             }
             static async Task<string> ExchangeCodeForTokens(string authorizationCode)
@@ -95,7 +95,7 @@ namespace GoogleDrive2.RestRequests
                 request.WriteBytes(bodyBytes);
                 using (var response = await responseGetter.GetHttpResponseAsync(request))
                 {
-                    return response.GetResponseString();
+                    return await  response.GetResponseString();
                 }
             }
             static async Task<string> GetAuthorizationCode()

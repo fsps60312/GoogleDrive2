@@ -22,24 +22,42 @@ namespace GoogleDrive2
             if (Bytes == null) Bytes = new List<byte>();
             Bytes.AddRange(bytes);
         }
-        public MyHttpRequest(string method, string uri)
-        {
-            Method = method;
-            Uri = uri;
-        }
-        byte[] EncodeToBytes(string s) { return Encoding.UTF8.GetBytes(s); }
         public async Task<MyHttpResponse> GetResponseAsync()
         {
-            var realRequest = HttpWebRequest.CreateHttp(Uri);
-            realRequest.Method = Method;
-            realRequest.Headers = Headers;
+            await PerformTasks1();
             if (Bytes != null)
             {
-                using (var stream = await realRequest.GetRequestStreamAsync())
+                using (var stream = await request.GetRequestStreamAsync())
                 {
                     await stream.WriteAsync(Bytes.ToArray(), 0, Bytes.Count);
                 }
             }
+            var response= await PerformTasks2();
+            response.Receiving+= delegate { MyLogger.Debug($"Receiving {(DateTime.Now - start).TotalSeconds}"); };
+            response.Received+= delegate { MyLogger.Debug($"Received {(DateTime.Now - start).TotalSeconds}"); };
+            return response;
+        }
+        DateTime start;
+        public MyHttpRequest(string method, string uri)
+        {
+            Method = method;
+            Uri = uri;
+            start = DateTime.Now;
+            this.Started += delegate { MyLogger.Debug($"Started {(DateTime.Now - start).TotalSeconds}"); };
+            this.Requested += delegate { MyLogger.Debug($"Requested {(DateTime.Now - start).TotalSeconds}"); };
+            this.Responded += delegate { MyLogger.Debug($"Responded {(DateTime.Now - start).TotalSeconds}"); };
+        }
+        event Libraries.Events.EmptyEventHandler Started, Requested, Responded;
+        byte[] EncodeToBytes(string s) { return Encoding.UTF8.GetBytes(s); }
+        HttpWebRequest GetRequest()
+        {
+            var realRequest = HttpWebRequest.CreateHttp(Uri);
+            realRequest.Method = Method;
+            realRequest.Headers = Headers;
+            return realRequest;
+        }
+        async Task<HttpWebResponse> GetResponse(HttpWebRequest realRequest)
+        {
             HttpWebResponse response;
             try
             {
@@ -53,11 +71,35 @@ namespace GoogleDrive2
             {
                 realRequest.Abort();
             }
+            return response;
+        }
+        HttpWebResponse response;
+        HttpWebRequest request;
+        Libraries.MySemaphore semaphore = null;
+        async void SendRequest(HttpWebRequest realRequest)
+        {
+            semaphore = new Libraries.MySemaphore(0);
+            response = await GetResponse(realRequest);
+            semaphore.Release();
+        }
+        Task PerformTasks1()
+        {
+            Started?.Invoke();
+            request = GetRequest();
+            Requested?.Invoke();
+            SendRequest(request);
+            return Task.CompletedTask;
+        }
+        async Task<MyHttpResponse> PerformTasks2()
+        {
+            MyLogger.Assert(semaphore != null);
+            await semaphore.WaitAsync();
+            MyLogger.Assert(response != null);
+            Responded?.Invoke();
             if (response == null) return null;
             else
             {
                 var ans = new MyHttpResponse(response);
-                await ans.ReadStreamAsync();
                 return ans;
             }
         }

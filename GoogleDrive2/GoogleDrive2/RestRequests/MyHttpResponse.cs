@@ -11,23 +11,30 @@ namespace GoogleDrive2
         public HttpStatusCode StatusCode { get { return O.StatusCode; } }
         public List<byte> Bytes { get; private set; } = null;
         public WebHeaderCollection Headers { get { return O.Headers; } }
-        HttpWebResponse O;
-        bool proccessed=false;
+        public event Libraries.Events.EmptyEventHandler Receiving, Received;
         public MyHttpResponse(HttpWebResponse o)
         {
             MyLogger.Assert(o != null);
             O = o;
         }
-        static string DecodeToString(byte[]bytes) { return Encoding.UTF8.GetString(bytes); }
-        public string GetResponseString()
+        public System.IO.Stream GetResponseStream()
         {
+            dataLosed = true;
+            return O.GetResponseStream();
+        }
+        public async Task<string> GetResponseString()
+        {
+            MyLogger.Assert(!dataLosed);
+            if (!proccessed) await ReadStreamAsync();
             if (Bytes == null) return null;
             return DecodeToString(Bytes.ToArray());
         }
         public async Task ReadStreamAsync()
         {
+            MyLogger.Assert(!dataLosed);
             MyLogger.Assert(!proccessed);
             proccessed = true;
+            Receiving?.Invoke();
             using (var stream = O.GetResponseStream())
             {
                 if(stream!=null)
@@ -40,11 +47,18 @@ namespace GoogleDrive2
                     }
                 }
             }
+            Received?.Invoke();
         }
         public void Dispose()
         {
             O?.Dispose();
             Bytes = null;
+        }
+        HttpWebResponse O;
+        bool proccessed = false, dataLosed = false;
+        static string DecodeToString(byte[] bytes)
+        {
+            return Encoding.UTF8.GetString(bytes);
         }
     }
 }

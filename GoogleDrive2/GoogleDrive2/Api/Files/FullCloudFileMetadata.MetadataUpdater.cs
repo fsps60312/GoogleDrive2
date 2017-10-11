@@ -16,10 +16,10 @@ namespace GoogleDrive2.Api.Files
                 {
                     if (response?.StatusCode == HttpStatusCode.OK)
                     {
-                        var f = JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(request.GetResponseTextAsync(response));
+                        var f = JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(await request.GetResponseTextAsync(response));
                         OnUploadCompleted(f.id);
                     }
-                    else OnErrorOccurred(RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                    else OnErrorOccurred(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
                 }
             }
             public FolderCreate(object metaData)
@@ -50,10 +50,10 @@ namespace GoogleDrive2.Api.Files
                 {
                     if(response?.StatusCode==HttpStatusCode.OK)
                     {
-                        var f = JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(request.GetResponseTextAsync(response));
+                        var f = JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(await request.GetResponseTextAsync(response));
                         OnUploadCompleted(f.id);
                     }
-                    else OnErrorOccurred(RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                    else OnErrorOccurred(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
                 }
             }
             public MetadataUpdater(string fileId,FullCloudFileMetadata metadata)

@@ -35,10 +35,10 @@ namespace GoogleDrive2.Local
                     {
                         //bytesUploaded = FileMetadata.size.Value;
                         bytesUploaded = totalSize;
-                        var f = JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(request.GetResponseTextAsync(response));
+                        var f = JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(await request.GetResponseTextAsync(response));
                         OnUploadCompleted(f.id);
                     }
-                    else OnErrorOccurred(RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                    else OnErrorOccurred(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
                 }
             }
             string resumableUri = null;

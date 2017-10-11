@@ -209,7 +209,7 @@ namespace GoogleDrive2.MyControls.ApiPage
                   }
                   using (var response = await request.GetHttpResponseAsync())
                   {
-                      EDmain.Text = RestRequests.RestRequester.LogHttpWebResponse(response, true);
+                      EDmain.Text = await RestRequests.RestRequester.LogHttpWebResponse(response, true);
                   }
                   threadCnt--; UpdateBtnText();
               };

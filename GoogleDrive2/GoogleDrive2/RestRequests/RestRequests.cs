@@ -9,7 +9,7 @@ namespace GoogleDrive2.RestRequests
 {
     class RestRequestsPrototype: MyLoggerClass
     {
-        public static string LogHttpWebResponse(MyHttpResponse response, bool readStream)
+        public static async Task<string> LogHttpWebResponse(MyHttpResponse response, bool readStream)
         {
             if (response == null) return "(Null Response)";
             string ans = $"Http response: {response.StatusCode} ({(int)response.StatusCode})\r\n";
@@ -18,7 +18,7 @@ namespace GoogleDrive2.RestRequests
             ans += sb.ToString() + "\r\n";
             if (readStream)
             {
-                ans += (response.GetResponseString() ?? "Error: Stream was not readable.") + "\r\n";
+                ans += (await response.GetResponseString() ?? "Error: Stream was not readable.") + "\r\n";
             }
             return ans;
         }
@@ -32,7 +32,7 @@ namespace GoogleDrive2.RestRequests
         public override async Task<MyHttpResponse> GetHttpResponseAsync(MyHttpRequest request)
         {
             var ans = await base.GetHttpResponseAsync(request);
-            if (ans?.StatusCode != HttpStatusCode.Accepted) this.Log(LogHttpWebResponse(ans,true /*(int)(ans?.StatusCode ?? 0) / 100 != 2*/));
+            if (ans?.StatusCode != HttpStatusCode.Accepted) this.Log(await LogHttpWebResponse(ans,true /*(int)(ans?.StatusCode ?? 0) / 100 != 2*/));
             return ans;
         }
     }
@@ -57,13 +57,14 @@ namespace GoogleDrive2.RestRequests
                          }
                      default: return true;
                  }
-             }), new Func<int, Task>((timeToWait) =>
+             }), new Func<int, Task>(async(timeToWait) =>
               {
-                  this.Log($"Trying again {timeToWait} ms later...\r\nResponse: {LogHttpWebResponse(response, true)}");
-                  return Task.CompletedTask;
+                  var msg = $"Trying again {timeToWait} ms later...\r\nResponse: {await LogHttpWebResponse(response, true)}";
+                  this.Log(msg);
+                  MyLogger.LogError(msg);
               })))
             {
-                this.LogError($"Attempted to reconnect but still failed.\r\nResponse: {LogHttpWebResponse(response, true)}");
+                this.LogError($"Attempted to reconnect but still failed.\r\nResponse: {await LogHttpWebResponse(response, true)}");
             }
             return response;
         }
@@ -102,7 +103,7 @@ namespace GoogleDrive2.RestRequests
             var response = await base.GetHttpResponseAsync(request);
             if (response?.StatusCode == HttpStatusCode.Unauthorized)
             {
-                this.Log($"Http response: {RestRequests.RestRequester.LogHttpWebResponse(response, true)}");
+                this.Log($"Http response: {await RestRequests.RestRequester.LogHttpWebResponse(response, true)}");
                 await Task.Delay(500);
                 this.Log("Refreshing access token...");
                 //MyLogger.Assert(Array.IndexOf(request.Headers.AllKeys, "Authorization") != -1);
@@ -110,7 +111,7 @@ namespace GoogleDrive2.RestRequests
                 response = await base.GetHttpResponseAsync(request);
                 if (response?.StatusCode == HttpStatusCode.Unauthorized)
                 {
-                    this.LogError($"Failed to authenticate\r\nHttp response: {RestRequests.RestRequester.LogHttpWebResponse(response, true)}");
+                    this.LogError($"Failed to authenticate\r\nHttp response: {await RestRequests.RestRequester.LogHttpWebResponse(response, true)}");
                 }
             }
             return response;
