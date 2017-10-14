@@ -35,6 +35,7 @@ namespace GoogleDrive2.Pages.TestPage
         }
         private void ChangeKeyWord(string q)
         {
+            CFSmain.Stop();
             GDmain.Children.Remove(CFSmain);
             CFSmain = new MyControls.CloudFileListPanel.CloudFileListPanel.CloudFolderSearchList(q, new List<string>());
             CFSmain.ItemClicked += async (f) => { await ItemClicked(f); };

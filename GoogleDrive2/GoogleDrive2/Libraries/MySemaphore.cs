@@ -22,22 +22,6 @@ namespace GoogleDrive2.Libraries
         }
         public async Task WaitAsync()
         {
-            await setSemaphore.WaitAsync();
-            try
-            {
-                for (; threadCountLimit < threadCountLimitRequest; threadCountLimit++)
-                {
-                    this.Release();
-                }
-                for (; threadCountLimit > threadCountLimitRequest; threadCountLimit--)
-                {
-                    await mainSemaphore.WaitAsync();
-                }
-            }
-            finally
-            {
-                setSemaphore.Release();
-            }
             await mainSemaphore.WaitAsync();
             if (parentSemaphore != null) await parentSemaphore.WaitAsync();
         }
@@ -52,6 +36,25 @@ namespace GoogleDrive2.Libraries
         public void SetThreadLimit(int limit)
         {
             threadCountLimitRequest = limit;
+            new Action(async () =>
+            {
+                await setSemaphore.WaitAsync();
+                try
+                {
+                    for (; threadCountLimit < threadCountLimitRequest; threadCountLimit++)
+                    {
+                        this.Release();
+                    }
+                    for (; threadCountLimit > threadCountLimitRequest; threadCountLimit--)
+                    {
+                        await mainSemaphore.WaitAsync();
+                    }
+                }
+                finally
+                {
+                    setSemaphore.Release();
+                }
+            })();
         }
     }
 }

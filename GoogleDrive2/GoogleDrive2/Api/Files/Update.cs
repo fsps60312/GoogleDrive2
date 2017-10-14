@@ -21,8 +21,7 @@ namespace GoogleDrive2.Api.Files
         public UpdateMetadata(string fileId,object metadata):base("PATCH", $"https://www.googleapis.com/drive/v3/files/{fileId}",true)
         {
             this.ContentType = "application/json; charset=UTF-8";
-            this.Body.Clear();
-            this.Body.AddRange(EncodeToBytes(JsonConvert.SerializeObject(metadata, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, DateFormatString = "yyyy-MM-ddTHH:mm:ssZ" })));
+            this.Body = EncodeToBytes(JsonConvert.SerializeObject(metadata, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, DateFormatString = "yyyy-MM-ddTHH:mm:ssZ" }));
         }
     }
 }

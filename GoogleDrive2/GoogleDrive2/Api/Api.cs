@@ -187,15 +187,27 @@ namespace GoogleDrive2
             public RequesterB(string method, string uri, bool authorizationRequired) : base(method, uri, authorizationRequired)
             {
             }
-            public List<byte> Body { get; private set; } = new List<byte>();
+            public byte[] Body { get; protected set; } = null;
             public byte[] EncodeToBytes(string s) { return Encoding.UTF8.GetBytes(s); }
-            public void AppendBody(string s) { Body.AddRange(EncodeToBytes(s)); }
+            public void CreateBody(Action<List<byte>> func)
+            {
+                var list = new List<byte>();
+                func(list);
+                Body = list.ToArray();
+            }
+            public async Task CreateBodyAsync(Func<List<byte>,Task>func)
+            {
+                var list = new List<byte>();
+                await func(list);
+                Body = list.ToArray();
+            }
             protected override async Task<MyHttpRequest> GetHttpRequest()
             {
                 var request = await base.GetHttpRequest();
-                request.Headers["Content-Length"] = Body.Count.ToString();
+                request.Headers["Content-Length"] = Body.Length.ToString();
                 //await MyLogger.Alert(Encoding.UTF8.GetString(bd));
-                request.WriteBytes(Body);
+                MyLogger.Assert(Body != null);
+                request.CreateGetBodyMethod(Body);
                 return request;
             }
         }

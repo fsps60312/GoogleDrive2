@@ -165,9 +165,9 @@ namespace GoogleDrive2.Pages.TestPage
                     //await MyLogger.Alert($"Header: {header.Key} = {header.Value}");
                     request.Headers[header.Key] = header.Value;
                 }
-                if (Array.IndexOf(request.Headers.AllKeys, "Content-Length") != -1)
+                if (request.Headers.ContainsKey("Content-Length"))
                 {
-                    request.WriteBytes(Encoding.UTF8.GetBytes(BodyTextToSend()));
+                    request.CreateGetBodyMethod(Encoding.UTF8.GetBytes(BodyTextToSend()));
                 }
                 string result;
                 try

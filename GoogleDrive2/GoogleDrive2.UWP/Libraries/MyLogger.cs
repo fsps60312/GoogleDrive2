@@ -14,7 +14,7 @@ namespace GoogleDrive2
 {
     partial class MyLogger
     {
-        static Libraries.MySemaphore SemaphoreDialogBox = new Libraries.MySemaphore(1);
+        public static Libraries.MySemaphore SemaphoreDialogBox = new Libraries.MySemaphore(1);
         public static async Task<Tuple<string, string>> ActionSheet(string title, string msg, List<string> buttons)
         {
             await SemaphoreDialogBox.WaitAsync();
@@ -41,6 +41,9 @@ namespace GoogleDrive2
                 if (!await ApplicationViewSwitcher.TryShowAsStandaloneAsync(newViewId))
                 {
                     GoogleDrive2.MyLogger.LogError("Failed to show window!");
+                    GoogleDrive2.MyLogger.LogError($"Title: {title}");
+                    GoogleDrive2.MyLogger.LogError($"Text: {msg}");
+                    GoogleDrive2.MyLogger.LogError($"Buttons: {string.Join(", ",buttons)}");
                     return new Tuple<string, string>(null, null);
                 }
                 Tuple<string, string> ans = new Tuple<string, string>(null, null);

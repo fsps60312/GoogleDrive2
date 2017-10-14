@@ -73,7 +73,7 @@ namespace GoogleDrive2.RestRequests
                     ContentType = "application/x-www-form-urlencoded"
                 };
                 request.Headers["Content-Length"] = bodyBytes.Length.ToString();
-                request.WriteBytes(bodyBytes);
+                request.CreateGetBodyMethod(bodyBytes);
                 using (var response = await responseGetter.GetHttpResponseAsync(request))
                 {
                     return await response.GetResponseString();
@@ -92,7 +92,7 @@ namespace GoogleDrive2.RestRequests
                     ContentType = "application/x-www-form-urlencoded"
                 };
                 request.Headers["Content-Length"] = bodyBytes.Length.ToString();
-                request.WriteBytes(bodyBytes);
+                request.CreateGetBodyMethod(bodyBytes);
                 using (var response = await responseGetter.GetHttpResponseAsync(request))
                 {
                     return await  response.GetResponseString();

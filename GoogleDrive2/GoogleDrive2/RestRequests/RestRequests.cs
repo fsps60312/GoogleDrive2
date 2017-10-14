@@ -14,7 +14,7 @@ namespace GoogleDrive2.RestRequests
             if (response == null) return "(Null Response)";
             string ans = $"Http response: {response.StatusCode} ({(int)response.StatusCode})\r\n";
             StringBuilder sb = new StringBuilder();
-            foreach (var key in response.Headers.AllKeys) sb.AppendLine($"{key}:{JsonConvert.SerializeObject(response.Headers[key])}");
+            foreach (var p in response.Headers) sb.AppendLine($"{p.Key}:{JsonConvert.SerializeObject(p.Value)}");
             ans += sb.ToString() + "\r\n";
             if (readStream)
             {

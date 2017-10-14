@@ -23,16 +23,18 @@ namespace GoogleDrive2.Api.Files
             var metaBytes = EncodeToBytes("Content-Type: application/json; charset=UTF-8\n\n" +
                 JsonConvert.SerializeObject(metaData, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, DateFormatString = "yyyy-MM-ddTHH:mm:ssZ" }));
             var seperateString = DetermineSeperateString(metaBytes, fileContent);
-            this.Body.Clear();
-            this.Body.AddRange(EncodeToBytes($"--{seperateString}\n"));
+            this.CreateBody((list) =>
             {
-                this.Body.AddRange(metaBytes);
-            }
-            this.Body.AddRange(EncodeToBytes($"\n--{seperateString}\n\n"));
-            {
-                this.Body.AddRange(fileContent);
-            }
-            this.Body.AddRange(EncodeToBytes($"\n--{seperateString}--"));
+                list.AddRange(EncodeToBytes($"--{seperateString}\n"));
+                {
+                    list.AddRange(metaBytes);
+                }
+                list.AddRange(EncodeToBytes($"\n--{seperateString}\n\n"));
+                {
+                    list.AddRange(fileContent);
+                }
+                list.AddRange(EncodeToBytes($"\n--{seperateString}--"));
+            });
             return seperateString;
         }
         public MultipartUpload(object metaData,byte[]fileContent):base("POST", "https://www.googleapis.com/upload/drive/v3/files", true)

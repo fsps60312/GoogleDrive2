@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace GoogleDrive2
@@ -10,45 +12,17 @@ namespace GoogleDrive2
     {
         public HttpStatusCode StatusCode { get { return O.StatusCode; } }
         public List<byte> Bytes { get; private set; } = null;
-        public Dictionary<string,string> Headers
-        {
-            get
-            {
-                Dictionary<string, string> ans = new Dictionary<string, string>();
-                foreach (var k in O.Headers.AllKeys) ans[k] = O.Headers[k];
-                return ans;
-            }
-        }
-        string toString = null;
-        public override string ToString()
-        {
-            if (toString != null) return toString;
-            try
-            {
-                StringBuilder ans = new StringBuilder();
-                ans.Append($"{StatusCode}({(int)StatusCode})"); ans.Append(' '); ans.Append(O.StatusDescription); ans.AppendLine();
-                ans.Append(O.Method); ans.Append(' '); ans.Append(O.ResponseUri); ans.AppendLine();
-                foreach (var p in Headers)
-                {
-                    ans.Append(p.Key); ans.Append(":\t"); ans.Append(p.Value); ans.AppendLine();
-                }
-                return ans.ToString();
-            }
-            catch(Exception error)
-            {
-                return error.ToString();
-            }
-        }
-        public event Libraries.Events.EmptyEventHandler Receiving, Received,Disposed;
-        public MyHttpResponse(HttpWebResponse o)
+        public HttpResponseHeaders Headers { get { return O.Headers; } }
+        public event Libraries.Events.EmptyEventHandler Receiving, Received;
+        public MyHttpResponse(HttpResponseMessage o)
         {
             MyLogger.Assert(o != null);
             O = o;
         }
-        public System.IO.Stream GetResponseStream()
+        public async Task<System.IO.Stream> GetResponseStream()
         {
             dataLosed = true;
-            return O.GetResponseStream();
+            return await O.Content.ReadAsStreamAsync();
         }
         public async Task<string> GetResponseString()
         {
@@ -63,7 +37,7 @@ namespace GoogleDrive2
             MyLogger.Assert(!proccessed);
             proccessed = true;
             Receiving?.Invoke();
-            using (var stream = O.GetResponseStream())
+            using (var stream =await O.Content.ReadAsStreamAsync())
             {
                 if(stream!=null)
                 {
@@ -79,12 +53,10 @@ namespace GoogleDrive2
         }
         public void Dispose()
         {
-            toString = ToString();
             O?.Dispose();
             Bytes = null;
-            Disposed?.Invoke();
         }
-        HttpWebResponse O;
+        HttpResponseMessage O;
         bool proccessed = false, dataLosed = false;
         static string DecodeToString(byte[] bytes)
         {

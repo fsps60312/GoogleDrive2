@@ -209,7 +209,10 @@ namespace GoogleDrive2.MyControls.ApiPage
                   }
                   using (var response = await request.GetHttpResponseAsync())
                   {
-                      EDmain.Text = await RestRequests.RestRequester.LogHttpWebResponse(response, true);
+                      var txt= await RestRequests.RestRequester.LogHttpWebResponse(response, true);
+                      int maxLength = 10000;
+                      if (txt.Length > maxLength) txt = txt.Remove(maxLength+1)+"...(Cut since too long)";
+                      EDmain.Text = txt;
                   }
                   threadCnt--; UpdateBtnText();
               };
