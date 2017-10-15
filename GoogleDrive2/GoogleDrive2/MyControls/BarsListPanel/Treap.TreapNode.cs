@@ -79,11 +79,22 @@ namespace GoogleDrive2.MyControls.BarsListPanel
                 animationStartTimeTag = DateTime.MinValue;
                 yOffsetTag = 0;
             }
-            public void AddToListRecursively(ref List<DataType>list)
+            public TreapNode Front()
             {
-                this.l?.AddToListRecursively(ref list);
-                list.Add(this.data);
-                this.r?.AddToListRecursively(ref list);
+                PutDown();
+                return l == null ? this : l.Front();
+            }
+            public TreapNode Back()
+            {
+                PutDown();
+                return r == null ? this : r.Back();
+            }
+            public void ForEach(Action<TreapNode> callBack)
+            {
+                PutDown();
+                this.l?.ForEach(callBack);
+                callBack(this);
+                this.r?.ForEach(callBack);
             }
             public int QueryLowerBound(double targetY)
             {
@@ -113,7 +124,6 @@ namespace GoogleDrive2.MyControls.BarsListPanel
                     return yOffset + animationOffset * AnimationOffsetRatio((DateTime.Now - animationStartTime).TotalMilliseconds / animationDuration);
                 }
             }
-            public static int GetSize(TreapNode o) { return o == null ? 0 : o.size; }
             public void AppendAnimation(DateTime time, double offset)
             {
                 {
@@ -135,6 +145,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
                 }
                 return position;
             }
+            public static int GetSize(TreapNode o) { return o == null ? 0 : o.size; }
             public static TreapNode Merge(TreapNode a, TreapNode b)
             {
                 if (a == null || b == null) return a ?? b;

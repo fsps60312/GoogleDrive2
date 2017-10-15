@@ -104,32 +104,26 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             treap.MoveItem(from, to);
             OnTreapLayoutChanged();
         }
-        public Treap<DataType>.TreapNode Remove(int idx)
+        public Tuple<Treap<DataType>.TreapNode,double> Remove(int idx)
         {
-            var o= treap.Delete(idx);
-            //OnTreapLayoutChanged();//dispose will trigger this event
-            return o;
-        }
-        public Treap<DataType>.TreapNode PushFront(DataType data)
-        {
-            var o = treap.Insert(data, 0);
-            RegisterData(o, data);
+            var o = treap.Cut(idx);
             OnTreapLayoutChanged();
             return o;
         }
-        public Treap<DataType>.TreapNode Insert(DataType data,int idx)
+        public Treap<DataType>.TreapNode Insert(DataType data, int idx)
         {
             var o = treap.Insert(data, idx);
             RegisterData(o, data);
             OnTreapLayoutChanged();
             return o;
         }
+        public Treap<DataType>.TreapNode PushFront(DataType data)
+        {
+            return Insert(data, 0);
+        }
         public Treap<DataType>.TreapNode PushBack(DataType data)
         {
-            var o = treap.Insert(data, treap.Count);
-            RegisterData(o, data);
-            OnTreapLayoutChanged();
-            return o;
+            return Insert(data, treap.Count);
         }
         public async Task ScrollToEnd()
         {
