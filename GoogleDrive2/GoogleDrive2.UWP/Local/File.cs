@@ -64,20 +64,31 @@ namespace GoogleDrive2.Local
         }
         public string Name { get { return O.Name; } }
         public string MimeType { get { return O.ContentType; } }
-        Stream fileStream = null;
+        Stream readStream = null, writeStream = null;
         private async Task OpenReadIfNotAsync()
         {
-            if (fileStream == null) fileStream = await O.OpenStreamForReadAsync();
+            CloseWriteIfNot();
+            if (readStream == null) readStream = await O.OpenStreamForReadAsync();
         }
-        public async Task SeekAsync(long position)
+        private async Task OpenWriteIfNotAsync()
+        {
+            CloseReadIfNot();
+            if (writeStream == null) writeStream = await O.OpenStreamForWriteAsync();
+        }
+        public async Task WriteBytesAsync(byte[]array)
+        {
+            await OpenWriteIfNotAsync();
+            await writeStream.WriteAsync(array, 0, array.Length);
+        }
+        public async Task SeekReadAsync(long position)
         {
             await OpenReadIfNotAsync();
-            fileStream.Seek(position, SeekOrigin.Begin);
+            readStream.Seek(position, SeekOrigin.Begin);
         }
         public async Task<int>ReadAsync(byte[]array,int offset,int count)
         {
             await OpenReadIfNotAsync();
-            return await fileStream.ReadAsync(array, offset, count);
+            return await readStream.ReadAsync(array, offset, count);
         }
         public async Task<byte[]> ReadBytesAsync(int count)
         {
@@ -86,15 +97,25 @@ namespace GoogleDrive2.Local
             int i = 0;
             while (i < count)
             {
-                i += await fileStream.ReadAsync(ans, i, count - i);
+                i += await readStream.ReadAsync(ans, i, count - i);
             }
             return ans;
         }
-        public void CloseFileIfNot()
+        public void CloseReadIfNot()
         {
-            if (fileStream == null) return;
-            fileStream.Dispose();
-            fileStream = null;
+            if (readStream != null)
+            {
+                readStream.Dispose();
+                readStream = null;
+            }
+        }
+        public void CloseWriteIfNot()
+        {
+            if (writeStream != null)
+            {
+                writeStream.Dispose();
+                writeStream = null;
+            }
         }
         private static async Task<File> OpenSingleFilePrivateAsync()
         {

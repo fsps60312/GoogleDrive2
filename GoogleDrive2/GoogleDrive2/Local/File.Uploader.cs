@@ -31,7 +31,7 @@ namespace GoogleDrive2.Local
                 try
                 {
                     var request = new Api.Files.MultipartUpload(FileMetadata, await F.ReadBytesAsync((int)totalSize));
-                    F.CloseFileIfNot();
+                    F.CloseReadIfNot();
                     using (var response = await request.GetHttpResponseAsync())
                     {
                         if (response?.StatusCode == System.Net.HttpStatusCode.OK)
@@ -42,7 +42,7 @@ namespace GoogleDrive2.Local
                         else this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
                     }
                 }
-                finally { F.CloseFileIfNot(); }
+                finally { F.CloseReadIfNot(); }
             }
             string resumableUri = null;
             async Task<bool> CreateResumableUploadAsync()
@@ -65,7 +65,7 @@ namespace GoogleDrive2.Local
             }
             async Task<MyHttpResponse> DoSingleResumableUploadAsync(long position,long chunkSize)
             {
-                await F.SeekAsync(position);
+                await F.SeekReadAsync(position);
                 var request = new Api.Files.ResumableUpload(resumableUri, totalSize, position, position + chunkSize - 1, await F.ReadBytesAsync((int)chunkSize));
                 return await request.GetHttpResponseAsync();
             }
@@ -113,7 +113,7 @@ namespace GoogleDrive2.Local
                         }
                     }
                 }
-                finally { F.CloseFileIfNot(); }
+                finally { F.CloseReadIfNot(); }
             }
             long ParseRangeHeader(MyHttpResponse response)
             {
@@ -129,6 +129,7 @@ namespace GoogleDrive2.Local
             async Task StartResumableUploadAsync()
             {
                 var request = new Api.Files.ResumableUpload(resumableUri, totalSize);
+                long startPosition = -1;
                 using (var response = await request.GetHttpResponseAsync())
                 {
                     switch (response?.StatusCode)
@@ -145,8 +146,8 @@ namespace GoogleDrive2.Local
                         default:
                             if ((int)response?.StatusCode == 308)
                             {
-                                await StartResumableUploadAsync(ParseRangeHeader(response));
-                                return;
+                                startPosition = ParseRangeHeader(response);
+                                break;
                             }
                             else
                             {
@@ -155,6 +156,8 @@ namespace GoogleDrive2.Local
                             }
                     }
                 }
+                MyLogger.Assert(startPosition != -1);
+                await StartResumableUploadAsync(startPosition);
             }
             public override async Task StartAsync(bool startFromScratch)
             {
@@ -167,7 +170,7 @@ namespace GoogleDrive2.Local
                     }
                     if (startFromScratch)
                     {
-                        F.CloseFileIfNot();
+                        F.CloseReadIfNot();
                         await AssignFileMetadata();
                         bytesUploaded = 0;
                         if (totalSize <= MinChunkSize)
@@ -194,7 +197,7 @@ namespace GoogleDrive2.Local
                         await StartResumableUploadAsync();
                     }
                 }
-                finally { F.CloseFileIfNot(); }
+                finally { F.CloseReadIfNot(); }
             }
             public Uploader(File file)
             {

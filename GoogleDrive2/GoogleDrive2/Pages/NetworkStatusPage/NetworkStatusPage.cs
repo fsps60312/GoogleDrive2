@@ -1,7 +1,6 @@
 ﻿using System.Text;
 using GoogleDrive2.MyControls;
 using Xamarin.Forms;
-using System.ComponentModel;
 using System.Linq;
 
 namespace GoogleDrive2.Pages.NetworkStatusPage
@@ -16,11 +15,12 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
             };
         }
     }
-    class NetworkStatusPage : MyContentPage
+
+    partial class NetworkStatusPage : MyContentPage
     {
         MyGrid GDmain;
         MyLabel LBrequest, LBresponse,LBfile;
-        MyButton BTNclear;
+        MyButton BTNclear,BTNmemory;
         NetworkStatusPanel NSPmain;
         HttpStatistics httpStatistics = new HttpStatistics();
         void InitializeViews()
@@ -30,6 +30,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
                 GDmain = new MyGrid();
                 GDmain.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
                 GDmain.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                GDmain.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 GDmain.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 GDmain.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 GDmain.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -59,8 +60,17 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
                     GDmain.Children.Add(LBfile, 2, 0);
                 }
                 {
+                    BTNmemory = new MyButton
+                    {
+                        FontFamily="Consolas",
+                        BindingContext = httpStatistics
+                    };
+                    BTNmemory.SetBinding(MyButton.TextProperty, "MemoryUsed");
+                    GDmain.Children.Add(BTNmemory, 3, 0);
+                }
+                {
                     BTNclear = new MyButton { Text = Constants.Icons.Clear + "Clear" };
-                    GDmain.Children.Add(BTNclear, 3, 0);
+                    GDmain.Children.Add(BTNclear, 4, 0);
                 }
                 {
                     NSPmain = new NetworkStatusPanel();
@@ -72,60 +82,23 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
         }
         void RegisterEvents()
         {
-            BTNclear.Clicked += async delegate {if(await MyLogger.Ask("Clear all http requests/responses history.\r\nAre you sure?")) await NSPmain.ClearAsync(); };
+            BTNmemory.Clicked += delegate
+              {
+                  BTNmemory.IsEnabled = false;
+                  System.GC.Collect(System.GC.MaxGeneration, System.GCCollectionMode.Forced, true);
+                  BTNmemory.IsEnabled = true;
+              };
+            BTNclear.Clicked += async delegate
+            {
+                BTNmemory.IsEnabled = false;
+                if (await MyLogger.Ask("Clear all http requests/responses history.\r\nAre you sure?")) await NSPmain.ClearAsync();
+                BTNmemory.IsEnabled = true;
+            };
         }
         public NetworkStatusPage()
         {
             InitializeViews();
             RegisterEvents();
-        }
-
-        class HttpStatistics : INotifyPropertyChanged
-        {
-            public event PropertyChangedEventHandler PropertyChanged;
-            private void OnPropertyChanged(string propertyName)
-            {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-            }
-            string __RequestCount__ = "Active Requests: Unknown";
-            string __ResponseCount__ = "Active Responses: Unknown";
-            string __FileCount__ = "Opened Files: Unknown";
-            public string RequestCount
-            {
-                get { return __RequestCount__; }
-                set
-                {
-                    if (__RequestCount__ == value) return;
-                    __RequestCount__ = value;
-                    OnPropertyChanged("RequestCount");
-                }
-            }
-            public string ResponseCount
-            {
-                get { return __ResponseCount__; }
-                set
-                {
-                    if (__ResponseCount__ == value) return;
-                    __ResponseCount__ = value;
-                    OnPropertyChanged("ResponseCount");
-                }
-            }
-            public string FileCount
-            {
-                get { return __FileCount__; }
-                set
-                {
-                    if (__FileCount__ == value) return;
-                    __FileCount__ = value;
-                    OnPropertyChanged("FileCount");
-                }
-            }
-            public HttpStatistics()
-            {
-                MyHttpRequest.InstanceCountChanged += (c) => { RequestCount= $"Active Requests: {c}"; };
-                MyHttpResponse.InstanceCountChanged += (c) => { ResponseCount= $"Active Responses: {c}"; };
-                Local.File.InstanceCountChanged += (c) => { FileCount = $"Opened Files: {c}"; };
-            }
         }
     }
 }

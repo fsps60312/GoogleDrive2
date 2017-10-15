@@ -130,12 +130,10 @@ namespace GoogleDrive2
         }
         static volatile int InstanceCount = 0;
         public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
-        Libraries.MySemaphore semaphoreInstance = new Libraries.MySemaphore(1);
-        async void AddInstanceCount(int value)
+        static void AddInstanceCount(int value)
         {
-            await semaphoreInstance.WaitAsync();
-            InstanceCountChanged?.Invoke(InstanceCount+=value);
-            semaphoreInstance.Release();
+            System.Threading.Interlocked.Add(ref InstanceCount, value);
+            InstanceCountChanged?.Invoke(InstanceCount);
         }
         public MyHttpRequest(string method, string uri)
         {

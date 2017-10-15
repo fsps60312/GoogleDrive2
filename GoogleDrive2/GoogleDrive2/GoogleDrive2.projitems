@@ -67,6 +67,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\NetworkStatusBar.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\NetworkStatusBarViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\NetworkStatusPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\NetworkStatusPage.HttpStatistics.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\ButtonsPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\ColorTestPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\FilesListRequestPage.cs" />
