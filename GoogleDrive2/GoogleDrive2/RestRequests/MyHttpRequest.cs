@@ -4,36 +4,52 @@ using System.Text;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Threading;
+using MyStream = System.IO.Stream;
 
 namespace GoogleDrive2
 {
     public partial class MyHttpRequest
     {
+        //abstract class MyStream:System.IO.Stream
+        //{
+        //    //public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        //    //{
+        //    //    return base.WriteAsync(buffer, offset, count, cancellationToken);
+        //    //}
+        //}
         public string Method;
         public string Uri;
         public Dictionary<string, string> Headers { get; private set; } = new Dictionary<string, string>();
         public event Libraries.Events.EmptyEventHandler Started, Writing, Requesting, Receiving, Received, Finished;
         public event Libraries.Events.MyEventHandler<HttpWebResponse> Responded;
+        public event Libraries.Events.MyEventHandler<Tuple<long,long?>> ProgressChanged;
         public static event Libraries.Events.MyEventHandler<MyHttpRequest> NewRequestCreated;
         public string ContentType
         {
             get { return Headers["Content-Type"]; }
             set { Headers["Content-Type"] = value; }
         }
+        public void CreateGetBodyMethod(Func<MyStream, Action<Tuple<long, long?>>, Task> method)
+        {
+            writeBodyTask = method;
+        }
         public void CreateGetBodyMethod(byte[] bytes)
         {
-            writeBodyTask = new Func<System.IO.Stream, Task>(async (stream) =>
+            CreateGetBodyMethod(new Func<MyStream, Action<Tuple<long, long?>>, Task>(async (stream, progressChanged) =>
               {
+                  progressChanged(new Tuple<long, long?>(0, bytes.Length));
                   await stream.WriteAsync(bytes, 0, bytes.Length);
-              });
+                  progressChanged(new Tuple<long, long?>(bytes.Length, bytes.Length));
+              }));
         }
         public override string ToString()
         {
             StringBuilder ans = new StringBuilder();
-            ans.Append(Method);ans.Append(' ');ans.Append(Uri);ans.AppendLine();
-            foreach(var p in Headers)
+            ans.Append(Method); ans.Append(' '); ans.Append(Uri); ans.AppendLine();
+            foreach (var p in Headers)
             {
-                ans.Append(p.Key);ans.Append(":\t");ans.Append(p.Value);ans.AppendLine();
+                ans.Append(p.Key); ans.Append(":\t"); ans.Append(p.Value); ans.AppendLine();
             }
             ans.AppendLine();
             ans.AppendLine();
@@ -54,9 +70,9 @@ namespace GoogleDrive2
             Writing?.Invoke();
             if (writeBodyTask != null)
             {
-                using (var stream = await httpRequest.GetRequestStreamAsync())
+                using (var stream = await httpRequest.GetRequestStreamAsync() as MyStream)
                 {
-                    await writeBodyTask(stream);
+                    await writeBodyTask(stream, new Action<Tuple<long, long?>>((p) => { ProgressChanged?.Invoke(p); }));
                 }
             }
             Requesting?.Invoke();
@@ -74,25 +90,16 @@ namespace GoogleDrive2
                 response.Receiving += delegate { this.Receiving?.Invoke(); };
                 response.Received += delegate { this.Received?.Invoke(); };
                 response.Disposed += delegate { semaphore.Release(); this.Finished?.Invoke(); };
+                response.ProgressChanged += (p) => { this.ProgressChanged?.Invoke(p); };
                 return response;
             }
         }
-        Func<System.IO.Stream, Task> writeBodyTask = null;
-        DateTime start;
-        public MyHttpRequest(string method, string uri)
+        public static bool IsSuccessfulStatus(HttpStatusCode? code)
         {
-            Method = method;
-            Uri = uri;
-            start = DateTime.Now;
-            //this.Started += delegate { MyLogger.Debug($"Started {(DateTime.Now - start).TotalSeconds}"); };
-            //this.Writing += delegate { MyLogger.Debug($"Writing {(DateTime.Now - start).TotalSeconds}"); };
-            //this.Requesting += delegate { MyLogger.Debug($"Requesting {(DateTime.Now - start).TotalSeconds}"); };
-            //this.Responded += delegate { MyLogger.Debug($"Responded {(DateTime.Now - start).TotalSeconds}"); };
-            //this.Receiving += delegate { MyLogger.Debug($"Receiving {(DateTime.Now - start).TotalSeconds}"); };
-            //this.Received += delegate { MyLogger.Debug($"Received {(DateTime.Now - start).TotalSeconds}"); };
-            //this.Finished += delegate { MyLogger.Debug($"Finished {(DateTime.Now - start).TotalSeconds}"); };
-            NewRequestCreated?.Invoke(this);
+            return code == HttpStatusCode.OK || (int)code == 308;
         }
+        Func<MyStream, Action<Tuple<long, long?>>, Task> writeBodyTask = null;
+        DateTime start;
         byte[] EncodeToBytes(string s) { return Encoding.UTF8.GetBytes(s); }
         HttpWebRequest GetRequest()
         {
@@ -100,6 +107,7 @@ namespace GoogleDrive2
             realRequest.Method = Method;
             foreach (var header in Headers) realRequest.Headers[header.Key] = header.Value;
             realRequest.AllowReadStreamBuffering = false;
+            realRequest.Proxy = null;
             //realRequest.AllowWriteStreamBuffering = false;
             return realRequest;
         }
@@ -120,5 +128,30 @@ namespace GoogleDrive2
             }
             return response;
         }
+        static volatile int InstanceCount = 0;
+        public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
+        Libraries.MySemaphore semaphoreInstance = new Libraries.MySemaphore(1);
+        async void AddInstanceCount(int value)
+        {
+            await semaphoreInstance.WaitAsync();
+            InstanceCountChanged?.Invoke(InstanceCount+=value);
+            semaphoreInstance.Release();
+        }
+        public MyHttpRequest(string method, string uri)
+        {
+            AddInstanceCount(1);
+            Method = method;
+            Uri = uri;
+            start = DateTime.Now;
+            //this.Started += delegate { MyLogger.Debug($"Started {(DateTime.Now - start).TotalSeconds}"); };
+            //this.Writing += delegate { MyLogger.Debug($"Writing {(DateTime.Now - start).TotalSeconds}"); };
+            //this.Requesting += delegate { MyLogger.Debug($"Requesting {(DateTime.Now - start).TotalSeconds}"); };
+            //this.Responded += delegate { MyLogger.Debug($"Responded {(DateTime.Now - start).TotalSeconds}"); };
+            //this.Receiving += delegate { MyLogger.Debug($"Receiving {(DateTime.Now - start).TotalSeconds}"); };
+            //this.Received += delegate { MyLogger.Debug($"Received {(DateTime.Now - start).TotalSeconds}"); };
+            //this.Finished += delegate { MyLogger.Debug($"Finished {(DateTime.Now - start).TotalSeconds}"); };
+            NewRequestCreated?.Invoke(this);
+        }
+        ~MyHttpRequest() { AddInstanceCount(-1); }
     }
 }

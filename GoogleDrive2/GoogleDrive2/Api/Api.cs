@@ -17,11 +17,12 @@ namespace GoogleDrive2
         {
             public abstract Task StartAsync(bool startFromScratch);
         }
-        public class ApiOperator
+        public class ApiOperator:MyLoggerClass
         {
-            public event Libraries.Events.MyEventHandler<string> UploadCompleted, ErrorOccurred;
-            protected void OnUploadCompleted(string fileId) { UploadCompleted?.Invoke(fileId); }
-            protected void OnErrorOccurred(string msg) { ErrorOccurred?.Invoke(msg); }
+            public bool IsCompleted = false;
+            public event Libraries.Events.MyEventHandler<string> Completed;
+            protected void OnCompleted(string fileId) { Completed?.Invoke(fileId); }
+            protected ApiOperator() { Completed += (id) => { IsCompleted = true; }; }
         }
         public class ParametersClass
         {
@@ -80,12 +81,12 @@ namespace GoogleDrive2
             public string Method { get; private set; }
             public string Uri { get; private set; }
             public bool AuthorizationRequired { get; private set; }
+            protected bool CheckUri = true;
             public RequesterPrototype(string method, string uri, bool authorizationRequired)
             {
                 Method = method;
                 Uri = uri;
                 requester.AuthorizationRequired = AuthorizationRequired = authorizationRequired;
-                MyLogger.Assert(uri.IndexOf('?') == -1);
             }
             protected abstract Task<MyHttpRequest> GetHttpRequest();
             private RestRequests.RestRequester requester = new RestRequests.RestRequester();
@@ -109,7 +110,8 @@ namespace GoogleDrive2
             {
                 StringBuilder uri = new StringBuilder(Uri);
                 {
-                    bool isFirst = true;
+                    bool isFirst = (Uri.IndexOf('?') == -1);
+                    if (CheckUri) MyLogger.Assert(isFirst);
                     foreach (var p in Parameters)
                     {
                         if (isFirst)
@@ -189,6 +191,8 @@ namespace GoogleDrive2
             }
             public byte[] Body { get; protected set; } = null;
             public byte[] EncodeToBytes(string s) { return Encoding.UTF8.GetBytes(s); }
+            Func<System.IO.Stream, Action<Tuple<long, long?>>, Task> createBodyMethod = null;
+            long contentSize;
             public void CreateBody(Action<List<byte>> func)
             {
                 var list = new List<byte>();
@@ -201,13 +205,22 @@ namespace GoogleDrive2
                 await func(list);
                 Body = list.ToArray();
             }
+            public void CreateBody(Func<System.IO.Stream, Action<Tuple<long, long?>>, Task> method, long size)
+            {
+                createBodyMethod = method;
+                contentSize = size;
+            }
             protected override async Task<MyHttpRequest> GetHttpRequest()
             {
                 var request = await base.GetHttpRequest();
-                request.Headers["Content-Length"] = Body.Length.ToString();
+                request.Headers["Content-Length"] = Body == null ? contentSize.ToString() : Body.Length.ToString();
                 //await MyLogger.Alert(Encoding.UTF8.GetString(bd));
-                MyLogger.Assert(Body != null);
-                request.CreateGetBodyMethod(Body);
+                if(Body != null)request.CreateGetBodyMethod(Body);
+                else
+                {
+                    MyLogger.Assert(createBodyMethod != null);
+                    request.CreateGetBodyMethod(createBodyMethod);
+                }
                 return request;
             }
         }

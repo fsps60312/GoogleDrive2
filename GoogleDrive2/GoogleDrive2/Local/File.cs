@@ -24,5 +24,23 @@ namespace GoogleDrive2.Local
         {
             return await OpenSingleFilePrivateAsync();
         }
+        static volatile int InstanceCount = 0;
+        public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
+        Libraries.MySemaphore semaphoreInstance = new Libraries.MySemaphore(1);
+        async void AddInstanceCount(int value)
+        {
+            await semaphoreInstance.WaitAsync();
+            InstanceCountChanged?.Invoke(InstanceCount += value);
+            semaphoreInstance.Release();
+        }
+        public File()
+        {
+            AddInstanceCount(1);
+        }
+        ~File()
+        {
+            CloseFileIfNot();
+            AddInstanceCount(-1);
+        }
     }
 }

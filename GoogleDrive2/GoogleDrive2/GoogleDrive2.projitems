@@ -11,6 +11,7 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Api\Files\FullCloudFileMetadata.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Api\Files\FullCloudFileMetadata.MetadataUpdater.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Api\Files\ResumableUpload.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Api\Files\MultipartUpload.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Api\Files\Update.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)App.xaml.cs">
@@ -63,6 +64,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyWebView.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\FileBrowsePage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\MainTabbedPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\NetworkStatusBar.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\NetworkStatusBarViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\NetworkStatusPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\ButtonsPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\ColorTestPage.cs" />

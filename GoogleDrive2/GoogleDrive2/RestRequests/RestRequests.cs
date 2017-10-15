@@ -32,7 +32,10 @@ namespace GoogleDrive2.RestRequests
         public override async Task<MyHttpResponse> GetHttpResponseAsync(MyHttpRequest request)
         {
             var ans = await base.GetHttpResponseAsync(request);
-            if (ans?.StatusCode != HttpStatusCode.Accepted) this.Log(await LogHttpWebResponse(ans,true /*(int)(ans?.StatusCode ?? 0) / 100 != 2*/));
+            if (!MyHttpRequest.IsSuccessfulStatus(ans?.StatusCode))
+            {
+                this.LogError(await LogHttpWebResponse(ans, true /*(int)(ans?.StatusCode ?? 0) / 100 != 2*/));
+            }
             return ans;
         }
     }
@@ -60,8 +63,9 @@ namespace GoogleDrive2.RestRequests
              }), new Func<int, Task>(async(timeToWait) =>
               {
                   var msg = $"Trying again {timeToWait} ms later...\r\nResponse: {await LogHttpWebResponse(response, true)}";
+                  response.Dispose();
+                  response = null;
                   this.Log(msg);
-                  MyLogger.LogError(msg);
               })))
             {
                 this.LogError($"Attempted to reconnect but still failed.\r\nResponse: {await LogHttpWebResponse(response, true)}");
@@ -103,11 +107,12 @@ namespace GoogleDrive2.RestRequests
             var response = await base.GetHttpResponseAsync(request);
             if (response?.StatusCode == HttpStatusCode.Unauthorized)
             {
-                this.Log($"Http response: {await RestRequests.RestRequester.LogHttpWebResponse(response, true)}");
+                this.LogError($"Http response: {await RestRequests.RestRequester.LogHttpWebResponse(response, true)}");
                 await Task.Delay(500);
-                this.Log("Refreshing access token...");
+                this.LogError("Refreshing access token...");
                 //MyLogger.Assert(Array.IndexOf(request.Headers.AllKeys, "Authorization") != -1);
                 await UpdateRequestAuthorization(request, true);
+                response.Dispose();
                 response = await base.GetHttpResponseAsync(request);
                 if (response?.StatusCode == HttpStatusCode.Unauthorized)
                 {

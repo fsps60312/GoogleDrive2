@@ -19,7 +19,9 @@ namespace GoogleDrive2
                 CheckBox= "☑",
                 Upload= "⭱",
                 TrashCan= "🗑",
-                Star= "🌟";
+                Star= "🌟",
+                Clear="⎚",
+                Timers = "🕐🕑🕒🕓🕔🕕🕖🕗🕘🕙🕚🕛";
 
         }
         public const string FolderMimeType = "application/vnd.google-apps.folder";

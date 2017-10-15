@@ -69,6 +69,16 @@ namespace GoogleDrive2.Local
         {
             if (fileStream == null) fileStream = await O.OpenStreamForReadAsync();
         }
+        public async Task SeekAsync(long position)
+        {
+            await OpenReadIfNotAsync();
+            fileStream.Seek(position, SeekOrigin.Begin);
+        }
+        public async Task<int>ReadAsync(byte[]array,int offset,int count)
+        {
+            await OpenReadIfNotAsync();
+            return await fileStream.ReadAsync(array, offset, count);
+        }
         public async Task<byte[]> ReadBytesAsync(int count)
         {
             await OpenReadIfNotAsync();

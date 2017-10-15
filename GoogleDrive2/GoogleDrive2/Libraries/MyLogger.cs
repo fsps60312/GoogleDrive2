@@ -44,10 +44,15 @@ namespace GoogleDrive2
                 logger.StatusUpdated -= statusUpdatedEventHandler;
             }
         }
-        public void LogError(string log)
+        public void LogError(string log, bool printStackTrace = true)
         {
-            MyLogger.LogError(log);
-            this.Log(log);
+            MyLogger.LogError(log, printStackTrace);
+            this.Log(MyLogger.CreateLog(log,printStackTrace));
+        }
+        public void Debug(string log,bool printStackTrace=false)
+        {
+            MyLogger.Debug(log, printStackTrace);
+            this.Log(MyLogger.CreateLog(log, printStackTrace));
         }
     }
     partial class MyLogger
@@ -65,15 +70,19 @@ namespace GoogleDrive2
             ans = ans.Substring(ans.IndexOf(Environment.NewLine, ans.IndexOf(Environment.NewLine, ans.IndexOf(Environment.NewLine) + 1) + 1) + 2);
             return ans;
         }
-        public static void Debug(string log,bool printStackTrace=false)
+        public static string CreateLog(string log,bool printStackTrace)
         {
             var msg = log;
             if (printStackTrace) msg += $"\r\nStack Trace: {StackTrace()}";
-            ErrorLogged?.Invoke(msg);
+            return msg;
         }
-        public static void LogError(string log)
+        public static void Debug(string log,bool printStackTrace=false)
         {
-            ErrorLogged?.Invoke($"{log}\r\nStack Trace: {StackTrace()}");
+            ErrorLogged?.Invoke(CreateLog(log,printStackTrace));
+        }
+        public static void LogError(string log, bool printStackTrace = true)
+        {
+            ErrorLogged?.Invoke(CreateLog(log,printStackTrace));
         }
         public static void Assert(bool condition)
         {

@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace GoogleDrive2
 {
-    public class MyHttpResponse:IDisposable
+    public class MyHttpResponse : IDisposable
     {
         public HttpStatusCode StatusCode { get { return O.StatusCode; } }
         public List<byte> Bytes { get; private set; } = null;
-        public Dictionary<string,string> Headers
+        public Dictionary<string, string> Headers
         {
             get
             {
@@ -32,19 +32,19 @@ namespace GoogleDrive2
                 {
                     ans.Append(p.Key); ans.Append(":\t"); ans.Append(p.Value); ans.AppendLine();
                 }
+                if (dataLosed) ans.AppendLine("(Body data losed)");
+                else if (!proccessed) ans.AppendLine("(Body data not read yet)");
+                else if (Bytes == null) ans.AppendLine("(Null)");
+                else ans.AppendLine(DecodeToString(Bytes.ToArray()));
                 return ans.ToString();
             }
-            catch(Exception error)
+            catch (Exception error)
             {
                 return error.ToString();
             }
         }
-        public event Libraries.Events.EmptyEventHandler Receiving, Received,Disposed;
-        public MyHttpResponse(HttpWebResponse o)
-        {
-            MyLogger.Assert(o != null);
-            O = o;
-        }
+        public event Libraries.Events.EmptyEventHandler Receiving, Received, Disposed;
+        public event Libraries.Events.MyEventHandler<Tuple<long, long?>> ProgressChanged;
         public System.IO.Stream GetResponseStream()
         {
             dataLosed = true;
@@ -65,14 +65,31 @@ namespace GoogleDrive2
             Receiving?.Invoke();
             using (var stream = O.GetResponseStream())
             {
-                if(stream!=null)
+                if (stream != null)
                 {
+                    var totalSize = O.ContentLength;
                     Bytes = new List<byte>();
-                    var buffer = new byte[1<<10];
-                    for (int len = 0; (len = await stream.ReadAsync(buffer, 0, buffer.Length)) != 0;)
-                    {
-                        for (int i = 0; i < len; i++) Bytes.Add(buffer[i]);
-                    }
+                    ProgressChanged?.Invoke(new Tuple<long, long?>(0, totalSize));
+                    bool readFinished = false;
+                    var readTask = Task.Run(async () =>
+                      {
+                          var buffer = new byte[1 << 10];
+                          for (int len = 0; (len = await stream.ReadAsync(buffer, 0, buffer.Length)) != 0;)
+                          {
+                              for (int i = 0; i < len; i++) Bytes.Add(buffer[i]);
+                          }
+                          readFinished = true;
+                      });
+                    var monitorTask = Task.Run(async () =>
+                       {
+                           while (!readFinished)
+                           {
+                               ProgressChanged?.Invoke(new Tuple<long, long?>(Bytes.Count, totalSize));
+                               await Task.Delay(100);
+                           }
+                       });
+                    await Task.WhenAll(readTask, monitorTask);
+                    ProgressChanged?.Invoke(new Tuple<long, long?>(Bytes.Count, Bytes.Count));
                 }
             }
             Received?.Invoke();
@@ -90,5 +107,21 @@ namespace GoogleDrive2
         {
             return Encoding.UTF8.GetString(bytes);
         }
+        static volatile int InstanceCount = 0;
+        public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
+        Libraries.MySemaphore semaphoreInstance = new Libraries.MySemaphore(1);
+        async void AddInstanceCount(int value)
+        {
+            await semaphoreInstance.WaitAsync();
+            InstanceCountChanged?.Invoke(InstanceCount += value);
+            semaphoreInstance.Release();
+        }
+        public MyHttpResponse(HttpWebResponse o)
+        {
+            AddInstanceCount(1);
+            MyLogger.Assert(o != null);
+            O = o;
+        }
+        ~MyHttpResponse() { AddInstanceCount(-1); }
     }
 }

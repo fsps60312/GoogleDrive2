@@ -172,6 +172,7 @@
   <ItemGroup>
     <Folder Include="Api\Files\" />
     <Folder Include="MyControls\CloudFileListPanel\" />
+    <Folder Include="Pages\NetworkStatusPage\" />
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
