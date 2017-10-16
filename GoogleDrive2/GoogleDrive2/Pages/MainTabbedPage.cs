@@ -12,6 +12,7 @@ namespace GoogleDrive2.Pages
             //this.Children.Add(new MyContentPage { Title = "A" });
             //this.Children.Add(new MyContentPage { Title = "B" });
             this.Children.Add(new FileBrowsePage());
+            this.Children.Add(new UploadStatusPage.UploadStatusPage());
             this.Children.Add(new NetworkStatusPage.NetworkStatusPage());
             this.Children.Add(new TestPage.TestTabbedPage());
         }

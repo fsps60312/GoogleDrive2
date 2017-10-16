@@ -5,10 +5,6 @@ namespace GoogleDrive2.MyControls.BarsListPanel
 {
     public partial class Treap<DataType>
     {
-        //public Treap()
-        //{
-        //    Insert(, 0);
-        //}
         public event Libraries.Events.MyEventHandler<TreapNode> TreapNodeAdded, TreapNodeRemoved;
         TreapNode root = new TreapNode(default(DataType), 0);
         public static double animationDuration = 500;
@@ -19,16 +15,6 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             return Math.Min(1.0, timeRatio);
         }
         public int Count { get { return TreapNode.GetSize(root) - 1; } }
-        //public void DisposeAll(bool animated=true)
-        //{
-        //    for (int i = Count - 1; i >= 0; i--)
-        //    {
-        //        Query(i, new Action<TreapNode>(async (o) =>
-        //         {
-        //             await (o.data as MyDisposable).OnDisposed(animated);
-        //         }));
-        //    }
-        //}
         public List<DataType> ToList()
         {
             var list = new List<DataType>();

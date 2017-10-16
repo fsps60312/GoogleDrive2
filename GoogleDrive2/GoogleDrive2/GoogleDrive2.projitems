@@ -80,6 +80,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)Api\Files\List.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\TouchEventImplementPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\TouchEventPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\UploadStatusPage\OperationalPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\UploadStatusPage\UploadStatusPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RestRequests\MyHttpRequest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RestRequests\MyHttpResponse.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RestRequests\RestRequests.cs" />
