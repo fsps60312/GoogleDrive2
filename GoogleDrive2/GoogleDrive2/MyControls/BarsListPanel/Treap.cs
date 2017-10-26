@@ -10,10 +10,32 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         TreapNode root = new TreapNode(default(DataType), 0);
         public static double animationDuration = 500;
         public double itemHeight = 50;
+        public Func<DataType, bool> FilterCondition = null;
+        public void UnfilterIfNot()
+        {
+            lock(root)
+            {
+                if (FilterCondition == null) return;
+                // TODO
+                FilterCondition = null;
+            }
+        }
+        public void Filter(Func<DataType,bool>condition)
+        {
+            lock(root)
+            {
+                UnfilterIfNot();
+                if (condition == null) return;
+                // TODO
+                FilterCondition = condition;
+            }
+        }
         public void Sort(Comparison<DataType> comparer)
         {
             lock (root)
             {
+                var filterCondition = FilterCondition;
+                UnfilterIfNot();
                 Dictionary<TreapNode, double> heights = new Dictionary<TreapNode, double>();
                 List<TreapNode> list = new List<TreapNode>();
                 root?.ForEach((o) => list.Add(o));
@@ -29,6 +51,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
                     o.CutArmsAndLegs();
                     Insert(o, heights[o], i, true);
                 }
+                Filter(filterCondition);
                 //MyLogger.Debug("sorted");
             }
         }
@@ -45,14 +68,14 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         public int Count { get { return TreapNode.GetSize(root) - 1; } }
         public List<DataType> ToList()
         {
-            var list = new List<DataType>();
             lock (root)
             {
+                var list = new List<DataType>();
                 this.root?.ForEach((o) => list.Add(o.data));
+                MyLogger.Assert(list.Count >= 1);
+                list.RemoveAt(list.Count - 1);
+                return list;
             }
-            MyLogger.Assert(list.Count >= 1);
-            list.RemoveAt(list.Count - 1);
-            return list;
         }
         public void AppendAnimation(int l,int r,double offset)
         {
@@ -66,23 +89,26 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         }
         public void MoveItem(int from,int to)
         {
-            MyLogger.Assert(0 <= from && 0 <= to);
-            MyLogger.Assert(from < Count && to < Count);
-            if (from == to) return;
-            var height = QueryItemHeight(from);
-            if (from<to)
+            lock (root)
             {
-                var blockH = QueryFinal(to + 1) - QueryFinal(from + 1);
-                AppendAnimation(from + 1, to, -height);
-                AppendAnimation(from, from, blockH);
+                MyLogger.Assert(0 <= from && 0 <= to);
+                MyLogger.Assert(from < Count && to < Count);
+                if (from == to) return;
+                var height = QueryItemHeight(from);
+                if (from < to)
+                {
+                    var blockH = QueryFinal(to + 1) - QueryFinal(from + 1);
+                    AppendAnimation(from + 1, to, -height);
+                    AppendAnimation(from, from, blockH);
+                }
+                else
+                {
+                    var blockH = QueryFinal(from) - QueryFinal(to);
+                    AppendAnimation(to, from - 1, height);
+                    AppendAnimation(from, from, -blockH);
+                }
+                MoveTreapNode(from, to);
             }
-            else
-            {
-                var blockH = QueryFinal(from) - QueryFinal(to);
-                AppendAnimation(to, from - 1, height);
-                AppendAnimation(from, from, -blockH);
-            }
-            MoveTreapNode(from, to);
         }
         public void MoveTreapNode(int from,int to)
         {
@@ -107,31 +133,44 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         }
         public double QueryItemHeight(int position)
         {
-            MyLogger.Assert(0<=position);
-            MyLogger.Assert(position < Count);
-            var ans= QueryFinal(position + 1) - QueryFinal(position);
-            return ans;
-        }
-        public void Insert(TreapNode o, double height, int position,bool suppressAddEvent=false)
-        {
-            if (o == null) return;
-            MyLogger.Assert(0 <= position && position <= Count);
-            var y = QueryFinal(position);
             lock (root)
             {
+                MyLogger.Assert(0 <= position);
+                MyLogger.Assert(position < Count);
+                var ans = QueryFinal(position + 1) - QueryFinal(position);
+                return ans;
+            }
+        }
+        public void Insert(TreapNode o, double height, int position)
+        {
+            lock(root)
+            {
+                Insert(o, height, position, false);
+            }
+        }
+        private void Insert(TreapNode o, double height, int position, bool suppressAddEvent)
+        {
+            lock (root)
+            {
+                if (o == null) return;
+                MyLogger.Assert(0 <= position && position <= Count);
+                var y = QueryFinal(position);
                 TreapNode.Split(root, out TreapNode a, out TreapNode b, position);
                 MyLogger.Assert(b != null);
-                o.AppendAnimation(DateTime.Now, y-o.Front().QueryFinalYOffset());
-               if(!suppressAddEvent) o.ForEach((u) => TreapNodeAdded?.Invoke(u));
+                o.AppendAnimation(DateTime.Now, y - o.Front().QueryFinalYOffset());
+                if (!suppressAddEvent) o.ForEach((u) => TreapNodeAdded?.Invoke(u));
                 b.AppendAnimation(DateTime.Now, height);
                 root = TreapNode.Merge(a, TreapNode.Merge(o, b));
             }
         }
         public TreapNode Insert(DataType data, int position)
         {
-            var o = new TreapNode(data,QueryFinal(position));
-            Insert(o, itemHeight, position);
-            return o;
+            lock (root)
+            {
+                var o = new TreapNode(data, QueryFinal(position));
+                Insert(o, itemHeight, position);
+                return o;
+            }
         }
         public int QueryLowerBound(double targetY)
         {
@@ -142,21 +181,21 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         }
         private double QueryFinal(int position)
         {
-            double ans;
             lock (root)
             {
+                double ans;
                 TreapNode.Split(root, out TreapNode b, out TreapNode c, position + 1);
                 TreapNode.Split(b, out TreapNode a, out b, position);
                 ans = b.QueryFinalYOffset();
                 root = TreapNode.Merge(a, TreapNode.Merge(b, c));
+                return ans;
             }
-            return ans;
         }
         public Tuple<TreapNode,double> Cut(int l,int r)
         {
-            MyLogger.Assert(0 <= l && l <= r && r < Count);
             lock (root)
             {
+                MyLogger.Assert(0 <= l && l <= r && r < Count);
                 var yDiff = QueryFinal(r + 1) - QueryFinal(l);
                 TreapNode.Split(root, out TreapNode b, out TreapNode c, r + 1);
                 TreapNode.Split(b, out TreapNode a, out b, l);
@@ -168,27 +207,33 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         }
         public Tuple<TreapNode, double> Cut(int position)
         {
-            var ans=Cut(position, position);
-            MyLogger.Assert(TreapNode.GetSize(ans.Item1) == 1);
-            return ans;
+            lock (root)
+            {
+                var ans = Cut(position, position);
+                MyLogger.Assert(TreapNode.GetSize(ans.Item1) == 1);
+                return ans;
+            }
         }
         public void Delete(TreapNode o)
         {
-            Cut(o.GetPosition());
+            lock (root)
+            {
+                Cut(o.GetPosition());
+            }
         }
         public double Query(int position, Action<TreapNode> callBack = null)
         {
-            double ans;
-            TreapNode b;
             lock (root)
             {
+                double ans;
+                TreapNode b;
                 TreapNode.Split(root, out b, out TreapNode c, position + 1);
                 TreapNode.Split(b, out TreapNode a, out b, position);
                 ans = b.QueryYOffset();
                 root = TreapNode.Merge(a, TreapNode.Merge(b, c));
+                callBack?.Invoke(b);
+                return ans;
             }
-            callBack?.Invoke(b);
-            return ans;
         }
         public void ChangeHeight(TreapNode o,double difference)
         {

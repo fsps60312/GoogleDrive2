@@ -10,6 +10,36 @@ namespace GoogleDrive2.Pages.TestPage
     class ButtonsPage:MyContentPage
     {
         MyStackPanel SPmain;
+        private void AddButtons()
+        {
+            AddButton1();
+            AddButton2();
+            AddButton3();
+        }
+        void AddButton3()
+        {
+            AddButton("Recursive lock", new Func<Task>(async() =>
+             {
+                 MyBoxView o = new MyBoxView();
+                 Action<int> dfs = null;
+                 List<string> log = new List<string>();
+                 dfs = new Action<int>((dep) =>
+                   {
+                       lock (o)
+                       {
+                           log.Add($"Lock {dep}");
+                           try
+                           {
+                               if (dep == 5) return;
+                               dfs(dep + 1);
+                           }
+                           finally { log.Add($"Unlock {dep}"); }
+                       }
+                   });
+                 dfs(0);
+                 await MyLogger.Alert($"{string.Join("\r\n", log)}\r\nCompleted without problems");
+             }));
+        }
         class TemporaryClass2
         {
 #pragma warning disable 0649 // Fields are assigned to by JSON deserialization
@@ -62,11 +92,6 @@ namespace GoogleDrive2.Pages.TestPage
                     }
                 }
             }));
-        }
-        private void AddButtons()
-        {
-            AddButton1();
-            AddButton2();
         }
         private void AddButton(string name,Func<Task>func)
         {

@@ -73,7 +73,7 @@ namespace GoogleDrive2
         }
         public static void Debug(string log,bool printStackTrace=false)
         {
-            ErrorLogged?.Invoke(CreateLog(log,printStackTrace));
+            Debugged?.Invoke(CreateLog(log,printStackTrace));
         }
         public static void LogError(string log, bool printStackTrace = true)
         {

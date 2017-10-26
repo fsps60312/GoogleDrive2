@@ -87,5 +87,9 @@ namespace GoogleDrive2
         {
             await ActionSheet("", msg, new List<string> { "OK" });
         }
+        public static async void FireAlert(string msg)
+        {
+            await Alert(msg);
+        }
     }
 }
