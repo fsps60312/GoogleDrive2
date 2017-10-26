@@ -1,9 +1,9 @@
 ﻿using System.ComponentModel;
 using System.Threading.Tasks;
 
-namespace GoogleDrive2.Pages.NetworkStatusPage
+namespace GoogleDrive2.Pages.HttpStatusPage
 {
-    partial class NetworkStatusPage
+    partial class HttpStatusPage
     {
         class HttpStatistics : INotifyPropertyChanged
         {

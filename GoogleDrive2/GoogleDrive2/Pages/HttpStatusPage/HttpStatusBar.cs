@@ -3,13 +3,13 @@ using System.Threading.Tasks;
 using GoogleDrive2.MyControls;
 using Xamarin.Forms;
 
-namespace GoogleDrive2.Pages.NetworkStatusPage
+namespace GoogleDrive2.Pages.HttpStatusPage
 {
-    class NetworkStatusBar : MyGrid, MyControls.BarsListPanel.IDataBindedView<NetworkStatusBarViewModel>
+    class HttpStatusBar : MyGrid, MyControls.BarsListPanel.IDataBindedView<HttpStatusBarViewModel>
     {
-        public event MyControls.BarsListPanel.DataBindedViewEventHandler<NetworkStatusBarViewModel> Appeared;
+        public event MyControls.BarsListPanel.DataBindedViewEventHandler<HttpStatusBarViewModel> Appeared;
         public Func<Task> Disappearing { get; set; }
-        public void Reset(NetworkStatusBarViewModel source)
+        public void Reset(HttpStatusBarViewModel source)
         {
             if (this.BindingContext != null) (this.BindingContext as MyControls.BarsListPanel.MyDisposable).UnregisterDisposingEvents();
             this.BindingContext = source;
@@ -20,7 +20,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
         MyScrollView SVstatus;
         MyButton BTNdetail;
         MyProgressBar PBprogress;
-        public NetworkStatusBar()
+        public HttpStatusBar()
         {
             this.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) });
             this.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });

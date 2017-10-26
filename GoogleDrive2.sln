@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.12
+VisualStudioVersion = 15.0.27004.2005
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "GoogleDrive2", "GoogleDrive2\GoogleDrive2\GoogleDrive2.shproj", "{E2B1497F-A98C-4EE4-BA15-CEB32B78F974}"
 EndProject
@@ -13,8 +13,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GoogleDrive2.UWP", "GoogleD
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		GoogleDrive2\GoogleDrive2\GoogleDrive2.projitems*{1b527359-7433-48e0-bfcc-86dcddbbad4e}*SharedItemsImports = 4
-		GoogleDrive2\GoogleDrive2\GoogleDrive2.projitems*{5779de3f-fe28-46dc-863b-adc7fa9df4a1}*SharedItemsImports = 4
 		GoogleDrive2\GoogleDrive2\GoogleDrive2.projitems*{7151cba0-99e7-4262-89f1-8927c4ce96c3}*SharedItemsImports = 4
 		GoogleDrive2\GoogleDrive2\GoogleDrive2.projitems*{e2b1497f-a98c-4ee4-ba15-ceb32b78f974}*SharedItemsImports = 13
 	EndGlobalSection
@@ -192,6 +190,8 @@ Global
 		{7151CBA0-99E7-4262-89F1-8927C4CE96C3}.Debug|ARM.Build.0 = Debug|ARM
 		{7151CBA0-99E7-4262-89F1-8927C4CE96C3}.Debug|ARM.Deploy.0 = Debug|ARM
 		{7151CBA0-99E7-4262-89F1-8927C4CE96C3}.Debug|iPhone.ActiveCfg = Debug|x86
+		{7151CBA0-99E7-4262-89F1-8927C4CE96C3}.Debug|iPhone.Build.0 = Debug|x86
+		{7151CBA0-99E7-4262-89F1-8927C4CE96C3}.Debug|iPhone.Deploy.0 = Debug|x86
 		{7151CBA0-99E7-4262-89F1-8927C4CE96C3}.Debug|iPhoneSimulator.ActiveCfg = Debug|x86
 		{7151CBA0-99E7-4262-89F1-8927C4CE96C3}.Debug|x64.ActiveCfg = Debug|x64
 		{7151CBA0-99E7-4262-89F1-8927C4CE96C3}.Debug|x64.Build.0 = Debug|x64

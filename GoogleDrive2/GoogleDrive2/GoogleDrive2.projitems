@@ -64,10 +64,11 @@
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyWebView.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\FileBrowsePage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\MainTabbedPage.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\NetworkStatusBar.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\NetworkStatusBarViewModel.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\NetworkStatusPage.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\NetworkStatusPage.HttpStatistics.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\HttpStatusPage\HttpStatusBar.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\HttpStatusPage\HttpStatusBarViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\HttpStatusPage\HttpStatusPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\HttpStatusPage\HttpStatusPage.HttpStatistics.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\FileUploadPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\ButtonsPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\ColorTestPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\FilesListRequestPage.cs" />
@@ -80,8 +81,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)Api\Files\List.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\TouchEventImplementPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\TouchEventPage.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Pages\UploadStatusPage\OperationalPage.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Pages\UploadStatusPage\UploadStatusPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\OperationalPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\NetworkStatusPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RestRequests\MyHttpRequest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RestRequests\MyHttpResponse.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RestRequests\RestRequests.cs" />

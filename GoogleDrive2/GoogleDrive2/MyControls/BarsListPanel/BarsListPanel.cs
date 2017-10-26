@@ -41,6 +41,11 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         {
             treap.ChangeHeight(node, difference);
         }
+        public void Sort(Comparison<DataType>comparer)
+        {
+            treap.Sort(comparer);
+            OnTreapLayoutChanged();
+        }
         public async Task ClearAsync()
         {
             if (treap.Count > 0)

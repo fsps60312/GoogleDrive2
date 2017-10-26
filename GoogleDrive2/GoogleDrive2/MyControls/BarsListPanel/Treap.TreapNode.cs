@@ -43,6 +43,11 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             {
                 size = GetSize(l) + 1 + GetSize(r);
             }
+            public void CutArmsAndLegs()
+            {
+                l = r = parent = null;
+                size = 1;
+            }
             private double AppendAnimation(ref DateTime time1, ref double offset1, DateTime time2, double offset2)
             {
                 if (time1 == DateTime.MinValue)

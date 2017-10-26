@@ -136,7 +136,7 @@ namespace GoogleDrive2.Pages.TestPage
                 BLmain.PushBack(new ColorItemBarViewModel(l));
             }
         }
-        async void SortLabels(bool sortByName)
+        void SortLabels(bool sortByName)
         {
             var cp = sortByName ? new Comparison<Tuple<Color, string>>((a, b) =>
                {
@@ -151,7 +151,8 @@ namespace GoogleDrive2.Pages.TestPage
             });
             LBs.Sort(cp);
             AllLBs.Sort(cp);
-            await RefreshLabels();
+            BLmain.Sort(new Comparison<ColorItemBarViewModel>((a, b) => { return cp(new Tuple<Color, string>(a.BackgroundColor, a.Text), new Tuple<Color, string>(b.BackgroundColor, b.Text)); }));
+            //await RefreshLabels();
         }
         private void InitializeViews()
         {
@@ -186,7 +187,6 @@ namespace GoogleDrive2.Pages.TestPage
                         //MyLogger.LogError($"{f.GetValue(null)}");
                         //MyLogger.LogError($"{f.Name}");
                     }
-                    SortLabels(false);
                 }
                 GDmain.Children.Add(BLmain, 0, 1);
                 MyGrid.SetColumnSpan(BLmain, GDmain.ColumnDefinitions.Count);
@@ -233,10 +233,15 @@ namespace GoogleDrive2.Pages.TestPage
                 this.BLmain.GestureRecognizers.Add(r);
             }
         }
+        private async void DoAsyncInitializationTasks()
+        {
+            await RefreshLabels();
+        }
         public ColorTestPage()
         {
             InitializeViews();
             RegisterEvents();
+            DoAsyncInitializationTasks();
         }
     }
 }

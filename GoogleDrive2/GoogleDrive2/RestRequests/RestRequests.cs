@@ -65,7 +65,7 @@ namespace GoogleDrive2.RestRequests
                   var msg = $"Trying again {timeToWait} ms later...\r\nResponse: {await LogHttpWebResponse(response, true)}";
                   response.Dispose();
                   response = null;
-                  this.Log(msg);
+                  this.LogError(msg);
               })))
             {
                 this.LogError($"Attempted to reconnect but still failed.\r\nResponse: {await LogHttpWebResponse(response, true)}");

@@ -105,7 +105,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     //await MyLogger.Alert(file.MimeType);
                     var uploader = file.GetUploader();
                     uploader.FileMetadata.parents = new List<string> { cloud.id };
-                    uploader.LogAppended += async (msg) =>
+                    uploader.ErrorLogged += async (msg) =>
                     {
                         await MyLogger.Alert($"Error:\r\n{msg}");
                     };
@@ -128,7 +128,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         await Task.WhenAll(Parent.ToggledItems.Select(async (f) =>
                         {
                             var trasher = f.File.GetTrasher(!f.File.trashed.Value);
-                            trasher.LogAppended += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };
+                            trasher.ErrorLogged += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };
                             await trasher.StartAsync();
                         }));
                     }
@@ -136,7 +136,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     {
                         var cloud = this.Parent.ClickedItem.File;
                         var trasher = cloud.GetTrasher(!cloud.trashed.Value);
-                        trasher.LogAppended += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };
+                        trasher.ErrorLogged += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };
                         await trasher.StartAsync();
                     }
                     Parent.Refresh();
@@ -153,7 +153,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         await Task.WhenAll(Parent.ToggledItems.Select(async (f) =>
                         {
                             var starrer = f.File.GetStarrer(!f.File.starred.Value);
-                            starrer.LogAppended += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };
+                            starrer.ErrorLogged += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };
                             await starrer.StartAsync();
                         }));
                     }
@@ -161,7 +161,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     {
                         var cloud = this.Parent.ClickedItem.File;
                         var starrer = cloud.GetStarrer(!cloud.starred.Value);
-                        starrer.LogAppended += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };
+                        starrer.ErrorLogged += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };
                         await starrer.StartAsync();
                     }
                     Parent.Refresh();
@@ -194,7 +194,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         }
                     }
                     var creator = cloud.GetFolderCreater(name.Item1);
-                    creator.LogAppended += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };
+                    creator.ErrorLogged += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };
                     await creator.StartAsync();
                 }
                 private void RegisterEvents()

@@ -8,58 +8,53 @@ namespace GoogleDrive2
 {
     public class MyLoggerClass
     {
-        public delegate void LogAppendedEventHandler(string log);
-        public LogAppendedEventHandler LogAppended,StatusUpdated;
-        public void Log(string log) { LogAppended?.Invoke(log); }
-        public void UpdateStatus(string status) { StatusUpdated?.Invoke(status); }
+        public event Libraries.Events.MyEventHandler<string> ErrorLogged,Debugged;
         public void RunLogger(MyLoggerClass logger,Action action,string name=null)
         {
-            var logAppendedEventHandler = new LogAppendedEventHandler((log) => { this.Log($"{(name == null ? "" : $"[{name}]")}{log}"); });
-            var statusUpdatedEventHandler = new LogAppendedEventHandler((status) => { this.UpdateStatus($"{(name == null ? "" : $"[{name}]")}{status}"); });
-            logger.LogAppended += logAppendedEventHandler;
-            logger.StatusUpdated += statusUpdatedEventHandler;
+            var errorLoggedEventHandler = new Libraries.Events.MyEventHandler<string>((log) => { this.ErrorLogged?.Invoke($"{(name == null ? "" : $"[{name}]")}{log}"); });
+            var debuggedEventHandler = new Libraries.Events.MyEventHandler<string>((status) => { this.Debugged?.Invoke($"{(name == null ? "" : $"[{name}]")}{status}"); });
+            logger.ErrorLogged += errorLoggedEventHandler;
+            logger.Debugged += debuggedEventHandler;
             try
             {
                 action.Invoke();
             }
             finally
             {
-                logger.LogAppended -= logAppendedEventHandler;
-                logger.StatusUpdated -= statusUpdatedEventHandler;
+                logger.ErrorLogged -= errorLoggedEventHandler;
+                logger.Debugged -= debuggedEventHandler;
             }
         }
-        public async Task RunLogger(MyLoggerClass logger, Func<Task> action, string name = null)
+        public async Task RunLogger(MyLoggerClass logger, Task action, string name = null)
         {
-            var logAppendedEventHandler = new LogAppendedEventHandler((log) => { this.Log($"{(name == null ? "" : $"[{name}]")}{log}"); });
-            var statusUpdatedEventHandler = new LogAppendedEventHandler((status) => { this.UpdateStatus($"{(name == null ? "" : $"[{name}]")}{status}"); });
-            logger.LogAppended += logAppendedEventHandler;
-            logger.StatusUpdated += statusUpdatedEventHandler;
+            var errorLoggedEventHandler = new Libraries.Events.MyEventHandler<string>((log) => { this.ErrorLogged?.Invoke($"{(name == null ? "" : $"[{name}]")}{log}"); });
+            var debuggedEventHandler = new Libraries.Events.MyEventHandler<string>((status) => { this.Debugged?.Invoke($"{(name == null ? "" : $"[{name}]")}{status}"); });
+            logger.ErrorLogged += errorLoggedEventHandler;
+            logger.Debugged += debuggedEventHandler;
             try
             {
-                await action.Invoke();
+                await action.AsAsyncAction();
             }
             finally
             {
-                logger.LogAppended -= logAppendedEventHandler;
-                logger.StatusUpdated -= statusUpdatedEventHandler;
+                logger.ErrorLogged -= errorLoggedEventHandler;
+                logger.Debugged -= debuggedEventHandler;
             }
         }
         public void LogError(string log, bool printStackTrace = true)
         {
             MyLogger.LogError(log, printStackTrace);
-            this.Log(MyLogger.CreateLog(log,printStackTrace));
+            ErrorLogged?.Invoke(MyLogger.CreateLog(log, printStackTrace));
         }
         public void Debug(string log,bool printStackTrace=false)
         {
             MyLogger.Debug(log, printStackTrace);
-            this.Log(MyLogger.CreateLog(log, printStackTrace));
+            Debugged?.Invoke(MyLogger.CreateLog(log, printStackTrace));
         }
     }
     partial class MyLogger
     {
-        public delegate void LogAppendedEventHandler(string log);
-        public static LogAppendedEventHandler ErrorLogged;
-        public static Libraries.Events.MyEventHandler<string> Debugged;
+        public static event Libraries.Events.MyEventHandler<string> ErrorLogged,Debugged;
         //public static async Task Alert(string msg)
         //{
         //    await App.Current.MainPage.DisplayAlert("", msg, "OK");

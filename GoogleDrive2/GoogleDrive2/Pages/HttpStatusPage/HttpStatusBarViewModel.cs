@@ -5,9 +5,9 @@ using Xamarin.Forms;
 using System.ComponentModel;
 using System.Linq;
 
-namespace GoogleDrive2.Pages.NetworkStatusPage
+namespace GoogleDrive2.Pages.HttpStatusPage
 {
-    class NetworkStatusBarViewModel : MyControls.BarsListPanel.MyDisposable, INotifyPropertyChanged
+    class HttpStatusBarViewModel : MyControls.BarsListPanel.MyDisposable, INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
         private void OnPropertyChanged(string propertyName)
@@ -115,7 +115,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
             await this.OnDisposed();
         }
         bool inDialog = false;
-        public NetworkStatusBarViewModel(MyHttpRequest request)
+        public HttpStatusBarViewModel(MyHttpRequest request)
         {
             Request = request;
             Status = "Unknown";

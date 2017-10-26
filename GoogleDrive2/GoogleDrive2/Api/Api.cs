@@ -15,7 +15,26 @@ namespace GoogleDrive2
         }
         public abstract class AdvancedApiOperator:ApiOperator
         {
-            public abstract Task StartAsync(bool startFromScratch);
+            public event Libraries.Events.EmptyEventHandler Started,Pausing,Paused;
+            public event Libraries.Events.MyEventHandler<string> MessageAppended;
+            protected void OnPausing() { Pausing?.Invoke(); }
+            protected void OnPaused() { Paused?.Invoke(); }
+            protected abstract Task StartPrivateAsync(bool startFromScratch);
+            public async Task StartAsync(bool startFromScratch)
+            {
+                Started?.Invoke();
+                if (IsCompleted)
+                {
+                    this.LogError("Operation has already completed");
+                    return;
+                }
+                await StartPrivateAsync(startFromScratch);
+            }
+            public AdvancedApiOperator()
+            {
+                this.ErrorLogged += (error) => MessageAppended?.Invoke(Constants.Icons.Warning + error);
+                this.Debugged += (msg) => MessageAppended?.Invoke(Constants.Icons.Info + msg);
+            }
         }
         public class ApiOperator:MyLoggerClass
         {
@@ -193,6 +212,7 @@ namespace GoogleDrive2
             public byte[] EncodeToBytes(string s) { return Encoding.UTF8.GetBytes(s); }
             Func<System.IO.Stream, Action<Tuple<long, long?>>, Task> createBodyMethod = null;
             long contentSize;
+            public void ClearBody() { Body = null; }
             public void CreateBody(Action<List<byte>> func)
             {
                 var list = new List<byte>();

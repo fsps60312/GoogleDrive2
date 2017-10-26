@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace GoogleDrive2.MyControls.BarsListPanel
 {
@@ -9,8 +10,35 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         TreapNode root = new TreapNode(default(DataType), 0);
         public static double animationDuration = 500;
         public double itemHeight = 50;
+        public void Sort(Comparison<DataType> comparer)
+        {
+            lock (root)
+            {
+                Dictionary<TreapNode, double> heights = new Dictionary<TreapNode, double>();
+                List<TreapNode> list = new List<TreapNode>();
+                root?.ForEach((o) => list.Add(o));
+                for (int i = 1; i < list.Count; i++) heights[list[i - 1]] = list[i].QueryFinalYOffset() - list[i - 1].QueryFinalYOffset();
+                var empty = list.Last(); list.RemoveAt(list.Count - 1);
+                empty.CutArmsAndLegs();
+                empty.AppendAnimation(DateTime.Now, -empty.QueryFinalYOffset());
+                root = empty;
+                list.Sort(new Comparison<TreapNode>((a, b) => { return comparer(a.data, b.data); }));
+                for (int i = 0; i < list.Count; i++)
+                {
+                    var o = list[i];
+                    o.CutArmsAndLegs();
+                    Insert(o, heights[o], i, true);
+                }
+                //MyLogger.Debug("sorted");
+            }
+        }
         private static double AnimationOffsetRatio(double timeRatio)
         {
+            if(timeRatio<0)
+            {
+                MyLogger.LogError($"timeRatio={timeRatio}");
+                timeRatio = 0;
+            }
             MyLogger.Assert(timeRatio >= 0);
             return Math.Min(1.0, timeRatio);
         }
@@ -84,7 +112,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             var ans= QueryFinal(position + 1) - QueryFinal(position);
             return ans;
         }
-        public void Insert(TreapNode o, double height, int position)
+        public void Insert(TreapNode o, double height, int position,bool suppressAddEvent=false)
         {
             if (o == null) return;
             MyLogger.Assert(0 <= position && position <= Count);
@@ -94,7 +122,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
                 TreapNode.Split(root, out TreapNode a, out TreapNode b, position);
                 MyLogger.Assert(b != null);
                 o.AppendAnimation(DateTime.Now, y-o.Front().QueryFinalYOffset());
-                o.ForEach((u) => TreapNodeAdded?.Invoke(u));
+               if(!suppressAddEvent) o.ForEach((u) => TreapNodeAdded?.Invoke(u));
                 b.AppendAnimation(DateTime.Now, height);
                 root = TreapNode.Merge(a, TreapNode.Merge(o, b));
             }
