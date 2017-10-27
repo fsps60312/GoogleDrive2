@@ -6,17 +6,8 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
 {
     partial class CloudFileListPanel
     {
-        public class CloudFileItemBar : MyGrid, BarsListPanel.IDataBindedView<CloudFileListPanelViewModel.CloudFileItemBarViewModel>
+        public class CloudFileItemBar : BarsListPanel.DataBindedGrid<CloudFileListPanelViewModel.CloudFileItemBarViewModel>
         {
-            public event BarsListPanel.DataBindedViewEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel> Appeared;
-            public Func<Task> Disappearing { get; set; }
-            public void Reset(CloudFileListPanelViewModel.CloudFileItemBarViewModel source)
-            {
-                if (this.BindingContext != null) (this.BindingContext as MyControls.BarsListPanel.MyDisposable).UnregisterDisposingEvents();
-                this.BindingContext = source;
-                if (source != null) source.Disposing = new Func<Task>(async () => { await Disappearing?.Invoke(); }); //MyDispossable will automatically unregister all Disposing events after disposed
-                Appeared?.Invoke(this);
-            }
             MyButton BTNmain;
             public CloudFileItemBar()
             {
@@ -44,20 +35,6 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     BTNmain.SetBinding(MyButton.BackgroundColorProperty, "BackgroundColor");
                     this.Children.Add(BTNmain, 0, 0);
                 }
-                System.Threading.SemaphoreSlim semaphoreSlim = new System.Threading.SemaphoreSlim(1, 1);
-                this.Appeared += async (sender) =>
-                {
-                    this.Opacity = 0;
-                    await semaphoreSlim.WaitAsync();
-                    await this.FadeTo(1, 500);
-                    lock (semaphoreSlim) semaphoreSlim.Release();
-                };
-                this.Disappearing = new Func<Task>(async () =>
-                {
-                    await semaphoreSlim.WaitAsync();
-                    await this.FadeTo(0, 500);
-                    lock (semaphoreSlim) semaphoreSlim.Release();
-                });
             }
         }
     }

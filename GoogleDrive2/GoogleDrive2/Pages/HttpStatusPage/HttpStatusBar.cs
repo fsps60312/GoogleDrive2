@@ -5,17 +5,8 @@ using Xamarin.Forms;
 
 namespace GoogleDrive2.Pages.HttpStatusPage
 {
-    class HttpStatusBar : MyGrid, MyControls.BarsListPanel.IDataBindedView<HttpStatusBarViewModel>
+    class HttpStatusBar : MyControls.BarsListPanel.DataBindedGrid<HttpStatusBarViewModel>
     {
-        public event MyControls.BarsListPanel.DataBindedViewEventHandler<HttpStatusBarViewModel> Appeared;
-        public Func<Task> Disappearing { get; set; }
-        public void Reset(HttpStatusBarViewModel source)
-        {
-            if (this.BindingContext != null) (this.BindingContext as MyControls.BarsListPanel.MyDisposable).UnregisterDisposingEvents();
-            this.BindingContext = source;
-            if (source != null) source.Disposing = new Func<Task>(async () => { await Disappearing?.Invoke(); }); //MyDispossable will automatically unregister all Disposing events after disposed
-            Appeared?.Invoke(this);
-        }
         MyLabel LBuri, LBstatus;
         MyScrollView SVstatus;
         MyButton BTNdetail;
@@ -62,20 +53,6 @@ namespace GoogleDrive2.Pages.HttpStatusPage
                 BTNdetail.SetBinding(MyButton.CommandProperty, "Clicked");
                 this.Children.Add(BTNdetail, 2, 0);
             }
-            System.Threading.SemaphoreSlim semaphoreSlim = new System.Threading.SemaphoreSlim(1, 1);
-            this.Appeared += async (sender) =>
-            {
-                this.Opacity = 0;
-                await semaphoreSlim.WaitAsync();
-                await this.FadeTo(1, 500);
-                lock (semaphoreSlim) semaphoreSlim.Release();
-            };
-            this.Disappearing = new Func<Task>(async () =>
-            {
-                await semaphoreSlim.WaitAsync();
-                await this.FadeTo(0, 500);
-                lock (semaphoreSlim) semaphoreSlim.Release();
-            });
         }
     }
 }

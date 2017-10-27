@@ -7,10 +7,67 @@ using System.Linq;
 
 namespace GoogleDrive2.MyControls.BarsListPanel
 {
-    public delegate void DataBindedViewEventHandler<T>(IDataBindedView<T> sender) where T : MyDisposable;
+    public class DataBindedLabel<DataType> : MyLabel, IDataBindedView<DataType> where DataType : MyDisposable
+    {
+        public event Libraries.Events.EmptyEventHandler Appeared;
+        public Func<Task> Disappearing { get; set; }
+        public void Reset(DataType source)
+        {
+            if (this.BindingContext != null) (this.BindingContext as MyControls.BarsListPanel.MyDisposable).UnregisterDisposingEvents();
+            this.BindingContext = source;
+            if (source != null) source.Disposing = new Func<Task>(async () => { await Disappearing?.Invoke(); }); //MyDispossable will automatically unregister all Disposing events after disposed
+            Appeared?.Invoke();
+        }
+        public DataBindedLabel()
+        {
+            System.Threading.SemaphoreSlim semaphoreSlim = new System.Threading.SemaphoreSlim(1, 1);
+            this.Appeared += async () =>
+            {
+                this.Opacity = 0;
+                await semaphoreSlim.WaitAsync();
+                await this.FadeTo(1, 500);
+                lock (semaphoreSlim) semaphoreSlim.Release();
+            };
+            this.Disappearing = new Func<Task>(async () =>
+            {
+                await semaphoreSlim.WaitAsync();
+                await this.FadeTo(0, 500);
+                lock (semaphoreSlim) semaphoreSlim.Release();
+            });
+        }
+    }
+    public class DataBindedGrid<DataType> :MyGrid, IDataBindedView<DataType> where DataType : MyDisposable
+    {
+        public event Libraries.Events.EmptyEventHandler Appeared;
+        public Func<Task> Disappearing { get; set; }
+        public void Reset(DataType source)
+        {
+            if (this.BindingContext != null) (this.BindingContext as MyControls.BarsListPanel.MyDisposable).UnregisterDisposingEvents();
+            this.BindingContext = source;
+            if (source != null) source.Disposing = new Func<Task>(async () => { await Disappearing?.Invoke(); }); //MyDispossable will automatically unregister all Disposing events after disposed
+            Appeared?.Invoke();
+        }
+        public DataBindedGrid()
+        {
+            System.Threading.SemaphoreSlim semaphoreSlim = new System.Threading.SemaphoreSlim(1, 1);
+            this.Appeared += async () =>
+            {
+                this.Opacity = 0;
+                await semaphoreSlim.WaitAsync();
+                await this.FadeTo(1, 500);
+                lock (semaphoreSlim) semaphoreSlim.Release();
+            };
+            this.Disappearing = new Func<Task>(async () =>
+            {
+                await semaphoreSlim.WaitAsync();
+                await this.FadeTo(0, 500);
+                lock (semaphoreSlim) semaphoreSlim.Release();
+            });
+        }
+    }
     public interface IDataBindedView<DataType> where DataType: MyDisposable
     {
-        event DataBindedViewEventHandler<DataType> Appeared;
+        event Libraries.Events.EmptyEventHandler Appeared;
         Func<Task> Disappearing { get; set; }
         void Reset(DataType data);
     }
@@ -86,7 +143,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         private void RegisterData(Treap<DataType>.TreapNode o, DataType data)
         {
             Libraries.Events.MyEventHandler<object> disposedEventHandler = null;
-            MyDisposable.HeightChangedEventHandler heightChangedEventHandler = null;
+            Libraries.Events.MyEventHandler<double> heightChangedEventHandler = null;
             disposedEventHandler = new Libraries.Events.MyEventHandler<object>(delegate
             {
                 data.Disposed -= disposedEventHandler;
@@ -95,7 +152,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
                 OnTreapLayoutChanged();
                 OnDataRemoved(data);
             });
-            heightChangedEventHandler = new MyDisposable.HeightChangedEventHandler((difference) =>
+            heightChangedEventHandler = new Libraries.Events.MyEventHandler<double>((difference) =>
               {
                   treap.ChangeHeight(o, difference);
                   OnTreapLayoutChanged();

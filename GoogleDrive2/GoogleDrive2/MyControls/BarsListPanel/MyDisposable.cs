@@ -1,14 +1,19 @@
 ﻿using System;
+using System.ComponentModel;
 
 namespace GoogleDrive2.MyControls.BarsListPanel
 {
-    public abstract class MyDisposable
+    public abstract class MyDisposable:INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
         public event Libraries.Events.MyEventHandler<object> Disposed;
         public Func<System.Threading.Tasks.Task>Disposing = null;
         public void UnregisterDisposingEvents() { Disposing = null; }
-        public delegate void HeightChangedEventHandler(double difference);
-        public event HeightChangedEventHandler HeightChanged;
+        public event Libraries.Events.MyEventHandler<double> HeightChanged;
         public void OnHeightChanged(double difference)
         {
             HeightChanged?.Invoke(difference);

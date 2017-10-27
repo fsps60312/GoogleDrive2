@@ -7,13 +7,8 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
 {
     partial class CloudFileListPanelViewModel
     {
-        public class CloudFileItemBarViewModel : BarsListPanel.MyDisposable, INotifyPropertyChanged
+        public class CloudFileItemBarViewModel : BarsListPanel.MyDisposable
         {
-            public event PropertyChangedEventHandler PropertyChanged;
-            private void OnPropertyChanged(string propertyName)
-            {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-            }
             private System.Windows.Input.ICommand __Clicked__;
             private string __Text__;
             public System.Windows.Input.ICommand Clicked

@@ -12,13 +12,8 @@ namespace GoogleDrive2.Pages.TestPage
 {
     class ColorTestPage:MyContentPage
     {
-        public class ColorItemBarViewModel : MyControls.BarsListPanel.MyDisposable, INotifyPropertyChanged
+        public class ColorItemBarViewModel : MyControls.BarsListPanel.MyDisposable
         {
-            public event PropertyChangedEventHandler PropertyChanged;
-            private void OnPropertyChanged(string propertyName)
-            {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-            }
             private string __Text__;
             public string Text
             {
@@ -64,17 +59,8 @@ namespace GoogleDrive2.Pages.TestPage
                 TextColor = GetTextColor(c.Item1);
             }
         }
-        class ColorItemBar : MyLabel,MyControls.BarsListPanel.IDataBindedView<ColorItemBarViewModel>
+        class ColorItemBar : MyControls.BarsListPanel.DataBindedLabel<ColorItemBarViewModel>
         {
-            public event MyControls.BarsListPanel.DataBindedViewEventHandler<ColorItemBarViewModel> Appeared;
-            public Func<Task> Disappearing { get; set; }
-            public void Reset(ColorItemBarViewModel source)
-            {
-                if (this.BindingContext != null) (this.BindingContext as MyControls.BarsListPanel.MyDisposable).UnregisterDisposingEvents();
-                this.BindingContext = source;
-                if (source != null) source.Disposing = new Func<Task>(async () => { await Disappearing?.Invoke(); }); //MyDispossable will automatically unregister all Disposing events after disposed
-                Appeared?.Invoke(this);
-            }
             public ColorItemBar()
             {
                 HeightRequest = 40;
@@ -94,20 +80,6 @@ namespace GoogleDrive2.Pages.TestPage
                     this.GestureRecognizers.Add(r);
                 }
                 this.Margin = new Thickness(5);
-                System.Threading.SemaphoreSlim semaphoreSlim = new System.Threading.SemaphoreSlim(1, 1);
-                this.Appeared += async (sender) =>
-                {
-                    this.Opacity = 0;
-                    await semaphoreSlim.WaitAsync();
-                    await this.FadeTo(1, 500);
-                    lock (semaphoreSlim) semaphoreSlim.Release();
-                };
-                this.Disappearing = new Func<Task>(async () =>
-                {
-                    await semaphoreSlim.WaitAsync();
-                    await this.FadeTo(0, 500);
-                    lock (semaphoreSlim) semaphoreSlim.Release();
-                });
                 //{
                 //    var r = new Xamarin.Forms.TapGestureRecognizer
                 //    {

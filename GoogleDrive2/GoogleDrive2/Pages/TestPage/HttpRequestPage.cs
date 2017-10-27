@@ -256,17 +256,8 @@ namespace GoogleDrive2.Pages.TestPage
                 RegisterEvents();
             }
         }
-        class KeyValueItemBar : MyGrid, MyControls.BarsListPanel.IDataBindedView<KeyValueItemBarViewModel>
+        class KeyValueItemBar : MyControls.BarsListPanel.DataBindedGrid<KeyValueItemBarViewModel>
         {
-            public event MyControls.BarsListPanel.DataBindedViewEventHandler<KeyValueItemBarViewModel> Appeared;
-            public Func<Task> Disappearing { get; set; }
-            public void Reset(KeyValueItemBarViewModel source)
-            {
-                if (this.BindingContext != null) (this.BindingContext as MyControls.BarsListPanel.MyDisposable).UnregisterDisposingEvents();
-                this.BindingContext = source;
-                if (source != null) source.Disposing = new Func<Task>(async () => { await Disappearing?.Invoke(); }); //MyDispossable will automatically unregister all Disposing events after disposed
-                Appeared?.Invoke(this);
-            }
             MyEntry ETkey, ETvalue;
             MyButton BTNcancel;
             public KeyValueItemBar()
@@ -295,31 +286,10 @@ namespace GoogleDrive2.Pages.TestPage
                     };
                     this.Children.Add(BTNcancel, 2, 0);
                 }
-                System.Threading.SemaphoreSlim semaphoreSlim = new System.Threading.SemaphoreSlim(1, 1);
-                this.Appeared += async (sender) =>
-                {
-                    this.Opacity = 0;
-                    await semaphoreSlim.WaitAsync();
-                        //this.Opacity = 1;
-                        await this.FadeTo(1, 500);
-                    lock (semaphoreSlim) semaphoreSlim.Release();
-                };
-                this.Disappearing = new Func<Task>(async () =>
-                {
-                    await semaphoreSlim.WaitAsync();
-                        //this.Opacity = 0;
-                        await this.FadeTo(0, 500);
-                    lock (semaphoreSlim) semaphoreSlim.Release();
-                });
             }
         }
         class KeyValueItemBarViewModel : MyControls.BarsListPanel.MyDisposable, INotifyPropertyChanged
         {
-            public event PropertyChangedEventHandler PropertyChanged;
-            private void OnPropertyChanged(string propertyName)
-            {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-            }
             string __Key__, __Value__;
             public string Key
             {

@@ -7,13 +7,8 @@ using System.Linq;
 
 namespace GoogleDrive2.Pages.HttpStatusPage
 {
-    class HttpStatusBarViewModel : MyControls.BarsListPanel.MyDisposable, INotifyPropertyChanged
+    class HttpStatusBarViewModel : MyControls.BarsListPanel.MyDisposable
     {
-        public event PropertyChangedEventHandler PropertyChanged;
-        private void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
         public MyHttpRequest Request { get; private set; }
         private string __Uri__;
         public string Uri
