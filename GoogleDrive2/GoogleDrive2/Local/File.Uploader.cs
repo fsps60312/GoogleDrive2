@@ -9,6 +9,12 @@ namespace GoogleDrive2.Local
     {
         public abstract class UploaderPrototype : Api.AdvancedApiOperator
         {
+            public event Libraries.Events.MyEventHandler<string> UploadCompleted;
+            protected void OnUploadCompleted(string id)
+            {
+                UploadCompleted?.Invoke(id);
+                OnCompleted();
+            }
             public static async Task StartPrivateStaticAsync(UploaderPrototype up, bool startFromScratch)
             {
                 await up.StartPrivateAsync(startFromScratch);
@@ -80,7 +86,7 @@ namespace GoogleDrive2.Local
                     if (response?.StatusCode == System.Net.HttpStatusCode.OK)
                     {
                         BytesUploaded = TotalSize;
-                        OnCompleted(ParseCloudId(await request.GetResponseTextAsync(response)));
+                        OnUploadCompleted(ParseCloudId(await request.GetResponseTextAsync(response)));
                     }
                     else this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
                 }
@@ -147,7 +153,8 @@ namespace GoogleDrive2.Local
                             {
                                 case System.Net.HttpStatusCode.OK:
                                 case System.Net.HttpStatusCode.Created:
-                                    OnCompleted(ParseCloudId(await response.GetResponseString()));
+                                    BytesUploaded = TotalSize;
+                                    OnUploadCompleted(ParseCloudId(await response.GetResponseString()));
                                     break;
                                 default:
                                     if ((int)response?.StatusCode == 308)
@@ -233,6 +240,7 @@ namespace GoogleDrive2.Local
         {
             public static event Libraries.Events.MyEventHandler<Uploader> NewUploaderCreated;
             public event Libraries.Events.MyEventHandler<Tuple<long, long>> ProgressChanged;
+            public event Libraries.Events.MyEventHandler<string> UploadCompleted;
             public File F { get; private set; }
             public Api.Files.FullCloudFileMetadata FileMetadata
             {
@@ -248,13 +256,18 @@ namespace GoogleDrive2.Local
                     up.ProgressChanged += (p) => ProgressChanged?.Invoke(p);
                     up.Paused += () => OnPaused();
                     up.Pausing += () => OnPausing();
-                    // TODO add other events
+                    up.Completed += () => OnCompleted();
+                    up.Debugged += (msg) => OnDebugged(msg);
+                    up.ErrorLogged += (msg) => OnErrorLogged(msg);// No need to add stacktrace again
+                    up.UploadCompleted += (id) => UploadCompleted?.Invoke(id);
+                    //up.MessageAppended is triggered by Debug & LogError
                 }
                 await this.RunLogger(up, UploaderPrototype.StartPrivateStaticAsync(up, startFromScratch));
             }
             public Uploader(File file)
             {
                 F = file;
+                NewUploaderCreated?.Invoke(this);
             }
         }
     }

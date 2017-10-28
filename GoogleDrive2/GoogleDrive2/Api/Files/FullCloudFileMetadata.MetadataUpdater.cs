@@ -8,6 +8,12 @@ namespace GoogleDrive2.Api.Files
     {
         public class FolderCreate : SimpleApiOperator
         {
+            public event Libraries.Events.MyEventHandler<string> FolderCreateCompleted;
+            private void OnFolderCreateCompleted(string id)
+            {
+                FolderCreateCompleted?.Invoke(id);
+                OnCompleted();
+            }
             object metaData;
             public override async Task StartAsync()
             {
@@ -17,7 +23,7 @@ namespace GoogleDrive2.Api.Files
                     if (response?.StatusCode == HttpStatusCode.OK)
                     {
                         var f = JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(await request.GetResponseTextAsync(response));
-                        OnCompleted(f.id);
+                        OnFolderCreateCompleted(f.id);
                     }
                     else this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
                 }
@@ -51,7 +57,8 @@ namespace GoogleDrive2.Api.Files
                     if(response?.StatusCode==HttpStatusCode.OK)
                     {
                         var f = JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(await request.GetResponseTextAsync(response));
-                        OnCompleted(f.id);
+                        MyLogger.Assert(f.id == fileId);
+                        OnCompleted();
                     }
                     else this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
                 }

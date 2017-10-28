@@ -24,6 +24,10 @@ namespace GoogleDrive2.Local
         {
             return await OpenSingleFilePrivateAsync();
         }
+        public static async Task<List<File>>OpenMultipleFilesAsync()
+        {
+            return await OpenMultipleFilesPrivateAsync();
+        }
         static volatile int InstanceCount = 0;
         public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
         static void AddInstanceCount(int value)

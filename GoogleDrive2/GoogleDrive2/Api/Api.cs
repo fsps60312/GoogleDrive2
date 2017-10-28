@@ -19,6 +19,8 @@ namespace GoogleDrive2
             public event Libraries.Events.MyEventHandler<string> MessageAppended;
             protected void OnPausing() { Pausing?.Invoke(); }
             protected void OnPaused() { Paused?.Invoke(); }
+            protected void OnDebugged(string msg) { Debug(msg, false); }
+            protected void OnErrorLogged(string msg) { LogError(msg, false); }
             protected abstract Task StartPrivateAsync(bool startFromScratch);
             public async Task StartAsync(bool startFromScratch)
             {
@@ -39,9 +41,9 @@ namespace GoogleDrive2
         public class ApiOperator:MyLoggerClass
         {
             public bool IsCompleted = false;
-            public event Libraries.Events.MyEventHandler<string> Completed;
-            protected void OnCompleted(string fileId) { Completed?.Invoke(fileId); }
-            protected ApiOperator() { Completed += (id) => { IsCompleted = true; }; }
+            public event Libraries.Events.EmptyEventHandler Completed;
+            protected void OnCompleted() { Completed?.Invoke(); }
+            protected ApiOperator() { Completed += delegate { IsCompleted = true; }; }
         }
         public class ParametersClass
         {

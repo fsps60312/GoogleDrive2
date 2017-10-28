@@ -117,6 +117,19 @@ namespace GoogleDrive2.Local
                 writeStream = null;
             }
         }
+        private static async Task<List<File>>OpenMultipleFilesPrivateAsync()
+        {
+            var picker = new Windows.Storage.Pickers.FileOpenPicker()
+            {
+                ViewMode = Windows.Storage.Pickers.PickerViewMode.List,
+                SuggestedStartLocation = Windows.Storage.Pickers.PickerLocationId.PicturesLibrary
+            };
+            picker.FileTypeFilter.Clear();
+            picker.FileTypeFilter.Add("*");
+            var files = await picker.PickMultipleFilesAsync();
+            if (files != null) return files.Select(f => new File { O = f }).ToList();
+            else return null;
+        }
         private static async Task<File> OpenSingleFilePrivateAsync()
         {
             var picker = new Windows.Storage.Pickers.FileOpenPicker()

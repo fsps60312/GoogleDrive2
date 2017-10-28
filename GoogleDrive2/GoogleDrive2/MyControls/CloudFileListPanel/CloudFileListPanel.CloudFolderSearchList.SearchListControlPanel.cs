@@ -65,6 +65,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                 private bool SelectAllState = false;
                 private async Task Select(bool all)
                 {
+                    SelectAllState = all;
                     await Task.WhenAll((this.Parent as CloudFolderSearchList).BLmain.ToList().Select((o) =>
                      {
                          o.IsToggled = all;
@@ -78,11 +79,10 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     {
                         BTNselectAll.BackgroundColor = Color.Default;
                     }
-                    SelectAllState = all;
                 }
                 void UpdateText()
                 {
-                    var s1 = Constants.Icons.CheckBox;
+                    var s1 = SelectAllState ? Constants.Icons.CheckBox : Constants.Icons.SelectedCheckBox;
                     var s2 = (SelectedFolderCount == 0 ? "" : $" | {Constants.Icons.Folder}{SelectedFolderCount}") + (SelectedFileCount == 0 ? "" : $" | {Constants.Icons.File}{SelectedFileCount}");
                     if (string.IsNullOrEmpty(s2)) s2 = $" | {Constants.Icons.Mushroom}0";
                     BTNselectAll.Text = s1 + s2;
@@ -100,20 +100,15 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         await MyLogger.Alert($"{Constants.Icons.Info} Item of Folder type expected");
                         return;
                     }
-                    var file = await Local.File.OpenSingleFileAsync();
-                    if (file == null) return;
+                    var files = await Local.File.OpenMultipleFilesAsync();
+                    if (files == null) return;
                     //await MyLogger.Alert(file.MimeType);
-                    var uploader = file.GetUploader();
-                    uploader.FileMetadata.parents = new List<string> { cloud.id };
-                    uploader.ErrorLogged += async (msg) =>
+                    await Task.WhenAll(files.Select(async (f) =>
                     {
-                        await MyLogger.Alert($"Error:\r\n{msg}");
-                    };
-                    uploader.Completed += async (msg) =>
-                    {
-                        await MyLogger.Alert($"Completed:\r\n{msg}");
-                    };
-                    await uploader.StartAsync(true);
+                        var uploader = f.GetUploader();
+                        uploader.FileMetadata.parents = new List<string> { cloud.id };
+                        await uploader.StartAsync(true);
+                    }));
                     //await MyLogger.Alert("Completed");
                 }
                 async Task TrashButtonClicked()
