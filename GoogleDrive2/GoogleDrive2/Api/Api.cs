@@ -24,13 +24,20 @@ namespace GoogleDrive2
             protected abstract Task StartPrivateAsync(bool startFromScratch);
             public async Task StartAsync(bool startFromScratch)
             {
-                Started?.Invoke();
-                if (IsCompleted)
+                try
                 {
-                    this.LogError("Operation has already completed");
-                    return;
+                    Started?.Invoke();
+                    if (IsCompleted)
+                    {
+                        this.LogError("Operation has already completed");
+                        return;
+                    }
+                    await StartPrivateAsync(startFromScratch);
                 }
-                await StartPrivateAsync(startFromScratch);
+                catch(Exception error)
+                {
+                    this.LogError(error.ToString());
+                }
             }
             public AdvancedApiOperator()
             {

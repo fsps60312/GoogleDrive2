@@ -63,7 +63,7 @@ namespace GoogleDrive2.RestRequests
              }), new Func<int, Task>(async(timeToWait) =>
               {
                   var msg = $"Trying again {timeToWait} ms later...\r\nResponse: {await LogHttpWebResponse(response, true)}";
-                  response.Dispose();
+                  response?.Dispose();
                   response = null;
                   this.LogError(msg);
               })))
@@ -112,7 +112,7 @@ namespace GoogleDrive2.RestRequests
                 this.LogError("Refreshing access token...");
                 //MyLogger.Assert(Array.IndexOf(request.Headers.AllKeys, "Authorization") != -1);
                 await UpdateRequestAuthorization(request, true);
-                response.Dispose();
+                response?.Dispose();
                 response = await base.GetHttpResponseAsync(request);
                 if (response?.StatusCode == HttpStatusCode.Unauthorized)
                 {

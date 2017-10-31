@@ -66,6 +66,7 @@ namespace GoogleDrive2.Local
                     BytesUploaded = 0;
                     await StartUploadAsync(startFromScratch);
                 }
+                catch(Exception error) { this.LogError(error.ToString()); }
                 finally { F.CloseReadIfNot(); }
             }
             public UploaderPrototype(File file, Api.Files.FullCloudFileMetadata fileMetadata)
@@ -157,7 +158,7 @@ namespace GoogleDrive2.Local
                                     OnUploadCompleted(ParseCloudId(await response.GetResponseString()));
                                     break;
                                 default:
-                                    if ((int)response?.StatusCode == 308)
+                                    if ((int?)response?.StatusCode == 308)
                                     {
                                         var newPosition = ParseRangeHeader(response);
                                         //MyLogger.Assert(newPosition == totalSize || newPosition % MinChunkSize == 0);
@@ -199,7 +200,7 @@ namespace GoogleDrive2.Local
                             this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
                             return;
                         default:
-                            if ((int)response?.StatusCode == 308)
+                            if ((int?)response?.StatusCode == 308)
                             {
                                 startPosition = ParseRangeHeader(response);
                                 break;
@@ -249,7 +250,7 @@ namespace GoogleDrive2.Local
             UploaderPrototype up = null;
             protected override async Task StartPrivateAsync(bool startFromScratch)
             {
-                if(up==null)
+                if (up == null)
                 {
                     if (await F.GetSizeAsync() < UploaderPrototype.MinChunkSize) up = new MultipartUploader(F, this.FileMetadata);
                     else up = new ResumableUploader(F, this.FileMetadata);

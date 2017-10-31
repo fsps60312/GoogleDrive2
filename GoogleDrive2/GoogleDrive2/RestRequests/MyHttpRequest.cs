@@ -96,7 +96,7 @@ namespace GoogleDrive2
         }
         public static bool IsSuccessfulStatus(HttpStatusCode? code)
         {
-            return code == HttpStatusCode.OK || (int)code == 308;
+            return code == HttpStatusCode.OK || (int?)code == 308;
         }
         Func<MyStream, Action<Tuple<long, long?>>, Task> writeBodyTask = null;
         DateTime start;

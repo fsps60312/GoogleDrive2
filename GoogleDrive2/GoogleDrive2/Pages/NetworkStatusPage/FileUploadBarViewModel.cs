@@ -244,7 +244,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
         public FileUploadBarViewModel(Local.File.Uploader up)
         {
             Name = up.F.Name;
-            up.Completed += async delegate
+            up.Completed += delegate
             {
                 WhenMessageAppended($"{Constants.Icons.Completed} Completed");
                 Icon = Constants.Icons.Completed;
@@ -260,9 +260,9 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
             up.Started += delegate { Icon = Constants.Icons.Hourglass; };
             up.ProgressChanged += (p) =>
               {
-                  SetStatusText(p);
                   if (p.Item2 == 0) Progress = 0;
                   else Progress = (double)p.Item1 / p.Item2;
+                  SetStatusText(p);
               };
             InfoClicked = new Xamarin.Forms.Command(async () =>
               {
@@ -270,13 +270,13 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
                   await MyLogger.Alert(messages.Count==0?$"{Constants.Icons.Info}No messages": string.Join(Environment.NewLine, messages));
                   InfoEnabled = true;
               });
-            progressHistoryMaintainer.SpeedUpdated +=async (v) =>
+            progressHistoryMaintainer.SpeedUpdated += (v) =>
               {
                   if (v == 0) Speed = null;
                   else Speed = $"{ByteCountToString((long)v, 3)}/s";
                   SpeedHistory.Add(new Tuple<double, double>(Progress, v));
-                  var stream = await ImageProcessor.GetImageStream(500, 20, SpeedHistory);
-                  SpeedGraph = Xamarin.Forms.ImageSource.FromStream(new Func<System.IO.Stream>(() => stream));
+                  //MyLogger.Debug(Progress.ToString());
+                  SpeedGraph = Xamarin.Forms.ImageSource.FromStream(new Func<System.IO.Stream>(() => ImageProcessor.GetImageStream(200, 20, SpeedHistory)));
               };
             progressHistoryMaintainer.TimeRemainUpdated += (v) =>
               {

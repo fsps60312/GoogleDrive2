@@ -161,7 +161,7 @@ namespace GoogleDrive2.Pages.HttpStatusPage
                         }
                     default:
                         {
-                            bool isResumeIncomplete = (int)r?.StatusCode == 308;
+                            bool isResumeIncomplete = (int?)r?.StatusCode == 308;
                             Color = isResumeIncomplete ? Color.Gold : Color.Red;
                             if (!inDialog)
                             {
