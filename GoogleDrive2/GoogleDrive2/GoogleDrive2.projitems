@@ -52,6 +52,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyEditor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyEntry.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyGrid.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyImage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyLabel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyNavigationPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyProgressBar.cs" />
@@ -68,6 +69,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)Pages\HttpStatusPage\HttpStatusBarViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\HttpStatusPage\HttpStatusPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\HttpStatusPage\HttpStatusPage.HttpStatistics.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\FileUploadBarViewModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\FileUploadBarViewModel.ImageProcessor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\FileUploadPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\ButtonsPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\ColorTestPage.cs" />
