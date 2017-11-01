@@ -12,7 +12,7 @@ namespace GoogleDrive2.Api.Files
             private void OnFolderCreateCompleted(string id)
             {
                 FolderCreateCompleted?.Invoke(id);
-                OnCompleted();
+                OnCompleted(true);
             }
             object metaData;
             public override async Task StartAsync()
@@ -58,7 +58,7 @@ namespace GoogleDrive2.Api.Files
                     {
                         var f = JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(await request.GetResponseTextAsync(response));
                         MyLogger.Assert(f.id == fileId);
-                        OnCompleted();
+                        OnCompleted(true);
                     }
                     else this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
                 }

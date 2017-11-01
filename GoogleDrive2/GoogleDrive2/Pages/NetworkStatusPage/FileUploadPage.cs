@@ -18,7 +18,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
     class FileUploadBar:MyControls.BarsListPanel.DataBindedGrid<FileUploadBarViewModel>
     {
         MyLabel LBicon, LBname, LBuploaded,LBtotal,LBpercentage,LBspeed,LBtimeRemaining,LBtimePassed;
-        MyButton BTNinfo;
+        MyButton BTNinfo,BTNpause;
         MyImage IMGspeedGraph;
         MyProgressBar PBprogress;
         private void SetBindings()
@@ -36,6 +36,9 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
             BTNinfo.SetBinding(MyButton.IsEnabledProperty, "InfoEnabled");
             PBprogress.SetBinding(MyProgressBar.ProgressProperty, "Progress");
             IMGspeedGraph.SetBinding(MyImage.SourceProperty, "SpeedGraph");
+            BTNpause.SetBinding(MyButton.TextProperty, "PauseButtonText");
+            BTNpause.SetBinding(MyButton.CommandProperty, "PauseClicked");
+            BTNpause.SetBinding(MyButton.IsEnabledProperty, "PauseButtonEnabled");
         }
         private void ArrangeViews()
         {
@@ -46,6 +49,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
             this.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });//uploaded, time passed
             this.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100, GridUnitType.Absolute) });//total, time remaining
             this.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });//info
+            this.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(50, GridUnitType.Absolute) });//pause button
             this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(20, GridUnitType.Absolute) });
             this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(20, GridUnitType.Absolute) });
             {
@@ -65,6 +69,8 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
                 this.Children.Add(LBtotal, 4, 1);
                 this.Children.Add(BTNinfo, 5, 0);
                 MyGrid.SetRowSpan(BTNinfo, 2);
+                this.Children.Add(BTNpause, 6, 0);
+                MyGrid.SetRowSpan(BTNpause, 2);
             }
         }
         private void InitializeViews()
@@ -81,6 +87,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
                 BTNinfo = new MyButton();
                 PBprogress = new MyProgressBar();
                 IMGspeedGraph = new MyImage {Aspect=Aspect.Fill };
+                BTNpause = new MyButton();
             }
         }
         public FileUploadBar()

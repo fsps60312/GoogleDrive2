@@ -17,19 +17,56 @@ namespace GoogleDrive2
         {
             public event Libraries.Events.EmptyEventHandler Started,Pausing,Paused;
             public event Libraries.Events.MyEventHandler<string> MessageAppended;
+            protected void OnStarted() { Started?.Invoke(); }
             protected void OnPausing() { Pausing?.Invoke(); }
             protected void OnPaused() { Paused?.Invoke(); }
+            protected bool CheckPause()
+            {
+                //this.Debug($"pauseRequest = {pauseRequest}");
+                if (System.Threading.Interlocked.CompareExchange(ref pauseRequest, 2, 1) == 1)
+                {
+                    OnPaused();
+                    return true;
+                }
+                else return false;
+            }
             protected void OnDebugged(string msg) { Debug(msg, false); }
             protected void OnErrorLogged(string msg) { LogError(msg, false); }
+            public bool IsActive { get { return pauseRequest == 0; } }
+            private int pauseRequest = 0;// 0: Normal, 1: Pausing, 2: Paused
+            public void Pause()
+            {
+                pauseRequest = 1;
+                OnPausing();
+                if (IsCompleted)
+                {
+                    this.Debug("Pause: Operation has already completed");
+                    return;
+                }
+            }
             protected abstract Task StartPrivateAsync(bool startFromScratch);
             public async Task StartAsync(bool startFromScratch)
             {
                 try
                 {
                     Started?.Invoke();
+                    int prePauseRequest = System.Threading.Interlocked.Exchange(ref pauseRequest, 0);
+                    if (prePauseRequest == 1)
+                    {
+                        this.Debug("Pause Request Canceled");
+                        return;// Cancel pauseRequest
+                    }
+                    else if(prePauseRequest==2)
+                    {
+                        this.Debug("Resumed");
+                    }
+                    else
+                    {
+                        this.Debug("Started");
+                    }
                     if (IsCompleted)
                     {
-                        this.LogError("Operation has already completed");
+                        this.LogError("StartAsync: Operation has already completed");
                         return;
                     }
                     await StartPrivateAsync(startFromScratch);
@@ -43,14 +80,15 @@ namespace GoogleDrive2
             {
                 this.ErrorLogged += (error) => MessageAppended?.Invoke(Constants.Icons.Warning + error);
                 this.Debugged += (msg) => MessageAppended?.Invoke(Constants.Icons.Info + msg);
+                this.Completed += (success)=> { pauseRequest = success ? 0 : 2; };
             }
         }
         public class ApiOperator:MyLoggerClass
         {
             public bool IsCompleted = false;
-            public event Libraries.Events.EmptyEventHandler Completed;
-            protected void OnCompleted() { Completed?.Invoke(); }
-            protected ApiOperator() { Completed += delegate { IsCompleted = true; }; }
+            public event Libraries.Events.MyEventHandler<bool> Completed;
+            protected void OnCompleted(bool success) { Completed?.Invoke(success); }
+            protected ApiOperator() { Completed += (success) => { if (success) IsCompleted = true; }; }
         }
         public class ParametersClass
         {

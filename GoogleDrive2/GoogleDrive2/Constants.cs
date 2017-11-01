@@ -24,7 +24,7 @@ namespace GoogleDrive2
                 Clear = "⎚",
                 Completed = "✔",
                 Pause = "⏸",
-                Pausing = Pause + Hourglass,
+                Pausing = Hourglass + Pause,
                 Play = "▶",
                 Initial = Play + Hourglass,
                 Timers = "🕐🕑🕒🕓🕔🕕🕖🕗🕘🕙🕚🕛";

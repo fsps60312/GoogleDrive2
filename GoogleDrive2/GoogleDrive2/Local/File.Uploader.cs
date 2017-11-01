@@ -2,6 +2,8 @@
 using System.IO;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace GoogleDrive2.Local
 {
@@ -13,7 +15,7 @@ namespace GoogleDrive2.Local
             protected void OnUploadCompleted(string id)
             {
                 UploadCompleted?.Invoke(id);
-                OnCompleted();
+                OnCompleted(true);
             }
             public static async Task StartPrivateStaticAsync(UploaderPrototype up, bool startFromScratch)
             {
@@ -63,7 +65,6 @@ namespace GoogleDrive2.Local
                 {
                     F.CloseReadIfNot();
                     await AssignFileMetadata();
-                    BytesUploaded = 0;
                     await StartUploadAsync(startFromScratch);
                 }
                 catch(Exception error) { this.LogError(error.ToString()); }
@@ -96,6 +97,7 @@ namespace GoogleDrive2.Local
         }
         public class ResumableUploader : UploaderPrototype
         {
+            public const long FileBufferSize = 1 << 20;
             public const double DesiredProgressUpdateInterval = 0.5;
             string resumableUri = null;
             long ParseRangeHeader(MyHttpResponse response)
@@ -127,10 +129,36 @@ namespace GoogleDrive2.Local
                     }
                 }
             }
+            Queue<byte> fileContentBuffer = new Queue<byte>();
+            long fileContentBufferPosition = 0;
+            async Task<byte[]>ReadBytesAsync(long position,int chunkSize)
+            {
+                //await F.SeekReadAsync(position);
+                //return await F.ReadBytesAsync(chunkSize);
+                if (fileContentBufferPosition != position)
+                {
+                    MyLogger.Debug("Resumable: File Buffer Cleared");
+                    fileContentBuffer.Clear();
+                    fileContentBufferPosition = position;
+                }
+                await F.SeekReadAsync(fileContentBufferPosition + fileContentBuffer.Count);
+                while (fileContentBuffer.Count < chunkSize)
+                {
+                    byte[] buffer = new byte[FileBufferSize];
+                    int sz = await F.ReadAsync(buffer, 0, buffer.Length);
+                    for (int i = 0; i < sz; i++) fileContentBuffer.Enqueue(buffer[i]);
+                }
+                byte[] answer = new byte[chunkSize];
+                for (int i = 0; i < chunkSize; i++)
+                {
+                    answer[i] = fileContentBuffer.Dequeue();
+                    fileContentBufferPosition++;
+                }
+                return answer;
+            }
             async Task<MyHttpResponse> DoSingleResumableUploadAsync(long position, long chunkSize)
             {
-                await F.SeekReadAsync(position);
-                var request = new Api.Files.ResumableUpload(resumableUri, TotalSize, position, position + chunkSize - 1, await F.ReadBytesAsync((int)chunkSize));
+                var request = new Api.Files.ResumableUpload(resumableUri, TotalSize, position, position + chunkSize - 1, await ReadBytesAsync(position,(int)chunkSize));
                 var ans = await request.GetHttpResponseAsync();
                 request.ClearBody();
                 return ans;
@@ -174,10 +202,12 @@ namespace GoogleDrive2.Local
                                     else
                                     {
                                         this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                                        OnCompleted(false);
                                         return;
                                     }
                             }
                         }
+                        if (CheckPause()) return;
                     }
                 }
                 finally { F.CloseReadIfNot(); }
@@ -192,12 +222,12 @@ namespace GoogleDrive2.Local
                     {
                         case System.Net.HttpStatusCode.OK:
                         case System.Net.HttpStatusCode.Created:
-                            this.LogError("The upload was completed, and no further action is necessary.");
-                            this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                            this.Debug("The upload was completed, and no further action is necessary.");
+                            this.Debug(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
                             return;
                         case System.Net.HttpStatusCode.NotFound:
-                            this.LogError("The upload session has expired and the upload needs to be restarted from the beginning");
-                            this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                            this.Debug("The upload session has expired and the upload needs to be restarted from the beginning");
+                            this.Debug(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
                             return;
                         default:
                             if ((int?)response?.StatusCode == 308)
@@ -217,6 +247,7 @@ namespace GoogleDrive2.Local
             }
             protected override async Task StartUploadAsync(bool startFromScratch)
             {
+                if (CheckPause()) return;
                 if (startFromScratch)
                 {
                     if (!await CreateResumableUploadAsync())
@@ -225,9 +256,10 @@ namespace GoogleDrive2.Local
                         return;
                     }
                 }
+                if (CheckPause()) return;
                 if (resumableUri == null)
                 {
-                    this.LogError("Seems upload not created yet, starting from scratch...");
+                    this.Debug("Seems upload not created yet, starting from scratch...");
                     await StartUploadAsync(true);
                 }
                 else
@@ -248,23 +280,39 @@ namespace GoogleDrive2.Local
                 get;private set;
             } = new Api.Files.FullCloudFileMetadata();
             UploaderPrototype up = null;
-            protected override async Task StartPrivateAsync(bool startFromScratch)
+            protected override Task StartPrivateAsync(bool startFromScratch)
+            {
+                //should not be called
+                throw new NotImplementedException();
+            }
+            public new async Task StartAsync(bool startFromScratch)
             {
                 if (up == null)
                 {
                     if (await F.GetSizeAsync() < UploaderPrototype.MinChunkSize) up = new MultipartUploader(F, this.FileMetadata);
                     else up = new ResumableUploader(F, this.FileMetadata);
+                    up.Started += () => OnStarted();
                     up.ProgressChanged += (p) => ProgressChanged?.Invoke(p);
-                    up.Paused += () => OnPaused();
-                    up.Pausing += () => OnPausing();
-                    up.Completed += () => OnCompleted();
+                    up.Paused += () =>
+                    {
+                        OnDebugged("Paused");
+                        OnPaused();
+                    };
+                    up.Pausing += () =>
+                    {
+                        OnDebugged("Pausing...");
+                        OnPausing();
+                    };
+                    up.Completed += (success) => OnCompleted(success);
                     up.Debugged += (msg) => OnDebugged(msg);
                     up.ErrorLogged += (msg) => OnErrorLogged(msg);// No need to add stacktrace again
                     up.UploadCompleted += (id) => UploadCompleted?.Invoke(id);
                     //up.MessageAppended is triggered by Debug & LogError
                 }
-                await this.RunLogger(up, UploaderPrototype.StartPrivateStaticAsync(up, startFromScratch));
+                await up.StartAsync(startFromScratch);
             }
+            public new void Pause() { up.Pause(); }
+            public new bool IsActive { get { return up.IsActive; } }
             public Uploader(File file)
             {
                 F = file;

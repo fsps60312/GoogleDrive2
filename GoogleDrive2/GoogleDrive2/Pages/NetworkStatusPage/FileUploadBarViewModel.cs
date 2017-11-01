@@ -7,7 +7,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
 {
     partial class FileUploadBarViewModel :MyControls.BarsListPanel.MyDisposable
     {
-        const double ProgressHistoryLifeTime = 2;
+        const double ProgressHistoryLifeTime = 5;
         double __Progress__ = 0;
         string __Icon__ = Constants.Icons.Initial;
         string __Nmae__ = null;
@@ -21,6 +21,39 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
         string __TimeRemaining__ = null; // Estimated Remaining Time
         string __TimePassed__ = null;
         Xamarin.Forms.ImageSource __SpeedGraph__ = null;
+        System.Windows.Input.ICommand __PauseClicked__;
+        string __PauseButtonText__ = Constants.Icons.Pause;
+        bool __PauseButtonEnabled__ = true;
+        public bool PauseButtonEnabled
+        {
+            get { return __PauseButtonEnabled__; }
+            set
+            {
+                if (value == __PauseButtonEnabled__) return;
+                __PauseButtonEnabled__ = value;
+                OnPropertyChanged("PauseButtonEnabled");
+            }
+        }
+        public string PauseButtonText
+        {
+            get { return __PauseButtonText__; }
+            set
+            {
+                if (value == __PauseButtonText__) return;
+                __PauseButtonText__ = value;
+                OnPropertyChanged("PauseButtonText");
+            }
+        }
+        public System.Windows.Input.ICommand PauseClicked
+        {
+            get { return __PauseClicked__; }
+            set
+            {
+                if (value == __PauseClicked__) return;
+                __PauseClicked__ = value;
+                OnPropertyChanged("PauseClicked");
+            }
+        }
         public Xamarin.Forms.ImageSource SpeedGraph
         {
             get { return __SpeedGraph__; }
@@ -241,56 +274,89 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
             Total = ByteCountToString(progress.Item2, 3);
         }
         public List<Tuple<double, double>> SpeedHistory = new List<Tuple<double, double>>();
-        public FileUploadBarViewModel(Local.File.Uploader up)
+        private void RegisterEvents(Local.File.Uploader up)
         {
-            Name = up.F.Name;
-            up.Completed += delegate
+            up.Completed += (success) =>
             {
-                WhenMessageAppended($"{Constants.Icons.Completed} Completed");
-                Icon = Constants.Icons.Completed;
-                if(Progress==0)
+                if (success)
                 {
-                    Progress = 1;
-                    WhenMessageAppended($"{Constants.Icons.Info} This is an Empty File");
+                    PauseButtonEnabled = false;
+                    WhenMessageAppended($"{Constants.Icons.Completed} Completed");
+                    Icon = Constants.Icons.Completed;
+                    if (Progress == 0)
+                    {
+                        Progress = 1;
+                        WhenMessageAppended($"{Constants.Icons.Info} This is an Empty File");
+                    }
                 }
+                else
+                {
+                    WhenMessageAppended($"{Constants.Icons.Warning} Stopped due to Error");
+                    Icon = Constants.Icons.Warning;
+                }
+                PauseButtonText = Constants.Icons.Play;
             };
             up.MessageAppended += (msg) => { WhenMessageAppended(msg); };
             up.Paused += delegate { Icon = Constants.Icons.Pause; };
-            up.Pausing += delegate { Icon = Constants.Icons.Pausing; };
-            up.Started += delegate { Icon = Constants.Icons.Hourglass; };
+            up.Pausing += delegate
+            {
+                PauseButtonText = Constants.Icons.Play;
+                Icon = Constants.Icons.Pausing;
+            };
+            up.Started += delegate
+            {
+                PauseButtonText = Constants.Icons.Pause;
+                Icon = Constants.Icons.Hourglass;
+            };
             up.ProgressChanged += (p) =>
-              {
-                  if (p.Item2 == 0) Progress = 0;
-                  else Progress = (double)p.Item1 / p.Item2;
-                  SetStatusText(p);
-              };
-            InfoClicked = new Xamarin.Forms.Command(async () =>
-              {
-                  InfoEnabled = false;
-                  await MyLogger.Alert(messages.Count==0?$"{Constants.Icons.Info}No messages": string.Join(Environment.NewLine, messages));
-                  InfoEnabled = true;
-              });
+            {
+                if (p.Item2 == 0) Progress = 0;
+                else Progress = (double)p.Item1 / p.Item2;
+                SetStatusText(p);
+            };
             progressHistoryMaintainer.SpeedUpdated += (v) =>
-              {
-                  if (v == 0) Speed = null;
-                  else Speed = $"{ByteCountToString((long)v, 3)}/s";
-                  SpeedHistory.Add(new Tuple<double, double>(Progress, v));
-                  //MyLogger.Debug(Progress.ToString());
-                  SpeedGraph = Xamarin.Forms.ImageSource.FromStream(new Func<System.IO.Stream>(() => ImageProcessor.GetImageStream(200, 20, SpeedHistory)));
-              };
+            {
+                if (v == 0) Speed = null;
+                else Speed = $"{ByteCountToString((long)v, 3)}/s";
+                SpeedHistory.Add(new Tuple<double, double>(Progress, v));
+                //MyLogger.Debug(Progress.ToString());
+                SpeedGraph = Xamarin.Forms.ImageSource.FromStream(new Func<System.IO.Stream>(() => ImageProcessor.GetImageStream(500, 20, SpeedHistory)));
+            };
             progressHistoryMaintainer.TimeRemainUpdated += (v) =>
+            {
+                if (v.Ticks == 0) TimeRemaining = null;
+                else
+                {
+                    var sh = v.Hours.ToString("D2");
+                    var sm = v.Minutes.ToString("D2");
+                    var ss = v.Seconds.ToString("D2");
+                    if (sh != "00") TimeRemaining = $"{sh}:{sm}:{ss}";
+                    else if (sm != "00") TimeRemaining = $"{sm}:{ss}";
+                    else TimeRemaining = $"{ss}";
+                }
+            };
+        }
+        public FileUploadBarViewModel(Local.File.Uploader up)
+        {
+            Name = up.F.Name;
+            InfoClicked = new Xamarin.Forms.Command(async () =>
+            {
+                InfoEnabled = false;
+                await MyLogger.Alert(messages.Count == 0 ? $"{Constants.Icons.Info}No messages" : string.Join(Environment.NewLine, messages.Reverse<string>()));
+                InfoEnabled = true;
+            });
+            PauseClicked = new Xamarin.Forms.Command(async () =>
               {
-                  if (v.Ticks == 0) TimeRemaining = null;
+                  if (up.IsActive)
+                  {
+                      up.Pause();
+                  }
                   else
                   {
-                      var sh = v.Hours.ToString("D2");
-                      var sm = v.Minutes.ToString("D2");
-                      var ss = v.Seconds.ToString("D2");
-                      if (sh != "00") TimeRemaining = $"{sh}:{sm}:{ss}";
-                      else if (sm != "00") TimeRemaining = $"{sm}:{ss}";
-                      else TimeRemaining = $"{ss}";
+                      await up.StartAsync(false);
                   }
-              };
+              });
+            RegisterEvents(up);
         }
     }
 }
