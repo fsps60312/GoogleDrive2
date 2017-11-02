@@ -5,18 +5,38 @@ using System.Threading.Tasks;
 
 namespace GoogleDrive2.Local
 {
-    partial class File
+    abstract class AFile
     {
-        public Uploader GetUploader() { return new Uploader(this); }
-        public bool IsImageFile
+        public abstract File.Uploader GetUploader();
+        public abstract bool IsImageFile { get; }
+        public abstract bool IsVideoFile { get; }
+        public abstract bool IsMusicFile { get; }
+        public abstract Task<ulong> GetSizeAsync();
+        public abstract Task<DateTime> GetTimeCreatedAsync();
+        public abstract Task<DateTime> GetTimeModifiedAsync();
+        public abstract string Name { get; }
+        public abstract string MimeType { get; }
+        protected abstract Task OpenReadIfNotAsync();
+        protected abstract Task OpenWriteIfNotAsync();
+        public abstract Task WriteBytesAsync(byte[] array);
+        public abstract Task SeekReadAsync(long position);
+        public abstract Task<int> ReadAsync(byte[] array, int offset, int count);
+        public abstract Task<byte[]> ReadBytesAsync(int count);
+        public abstract void CloseReadIfNot();
+        public abstract void CloseWriteIfNot();
+    }
+    partial class File:AFile
+    {
+        public override Uploader GetUploader() { return new Uploader(this); }
+        public override bool IsImageFile
         {
             get { return MimeType.StartsWith("image"); }
         }
-        public bool IsVideoFile
+        public override bool IsVideoFile
         {
             get { return MimeType.StartsWith("video"); }
         }
-        public bool IsMusicFile
+        public override bool IsMusicFile
         {
             get { return MimeType.StartsWith("audio"); }
         }
@@ -35,7 +55,7 @@ namespace GoogleDrive2.Local
             System.Threading.Interlocked.Add(ref InstanceCount, value);
             InstanceCountChanged?.Invoke(InstanceCount);
         }
-        public File()
+        private File()
         {
             AddInstanceCount(1);
         }

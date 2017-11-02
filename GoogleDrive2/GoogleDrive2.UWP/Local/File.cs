@@ -8,7 +8,7 @@ using System.IO;
 
 namespace GoogleDrive2.Local
 {
-    partial class File
+    partial class File:AFile
     {
         StorageFile O;
         public async Task<Api.Files.FullCloudFileMetadata.VideoMediaMetadataClass>GetVideoMediaMetadataAsync()
@@ -50,47 +50,47 @@ namespace GoogleDrive2.Local
             }
             return ans;
         }
-        public async Task<ulong> GetSizeAsync()
+        public override async Task<ulong> GetSizeAsync()
         {
             return (await O.GetBasicPropertiesAsync()).Size;
         }
-        public Task<DateTime> GetTimeCreatedAsync()
+        public override Task<DateTime> GetTimeCreatedAsync()
         {
             return Task.FromResult(O.DateCreated.UtcDateTime);
         }
-        public async Task<DateTime> GetTimeModifiedAsync()
+        public override async Task<DateTime> GetTimeModifiedAsync()
         {
             return (await O.GetBasicPropertiesAsync()).DateModified.UtcDateTime;
         }
-        public string Name { get { return O.Name; } }
-        public string MimeType { get { return O.ContentType; } }
+        public override string Name { get { return O.Name; } }
+        public override string MimeType { get { return O.ContentType; } }
         Stream readStream = null, writeStream = null;
-        private async Task OpenReadIfNotAsync()
+        protected override async Task OpenReadIfNotAsync()
         {
             CloseWriteIfNot();
             if (readStream == null) readStream = await O.OpenStreamForReadAsync();
         }
-        private async Task OpenWriteIfNotAsync()
+        protected override async Task OpenWriteIfNotAsync()
         {
             CloseReadIfNot();
             if (writeStream == null) writeStream = await O.OpenStreamForWriteAsync();
         }
-        public async Task WriteBytesAsync(byte[]array)
+        public override async Task WriteBytesAsync(byte[]array)
         {
             await OpenWriteIfNotAsync();
             await writeStream.WriteAsync(array, 0, array.Length);
         }
-        public async Task SeekReadAsync(long position)
+        public override async Task SeekReadAsync(long position)
         {
             await OpenReadIfNotAsync();
             readStream.Seek(position, SeekOrigin.Begin);
         }
-        public async Task<int>ReadAsync(byte[]array,int offset,int count)
+        public override async Task<int>ReadAsync(byte[]array,int offset,int count)
         {
             await OpenReadIfNotAsync();
             return await readStream.ReadAsync(array, offset, count);
         }
-        public async Task<byte[]> ReadBytesAsync(int count)
+        public override async Task<byte[]> ReadBytesAsync(int count)
         {
             await OpenReadIfNotAsync();
             var ans = new byte[count];
@@ -101,7 +101,7 @@ namespace GoogleDrive2.Local
             }
             return ans;
         }
-        public void CloseReadIfNot()
+        public override void CloseReadIfNot()
         {
             if (readStream != null)
             {
@@ -109,7 +109,7 @@ namespace GoogleDrive2.Local
                 readStream = null;
             }
         }
-        public void CloseWriteIfNot()
+        public override void CloseWriteIfNot()
         {
             if (writeStream != null)
             {
@@ -150,5 +150,6 @@ namespace GoogleDrive2.Local
             if (file != null) return new File { O = file };
             else return null;
         }
+        public File(StorageFile o):this() { O = o; }
     }
 }

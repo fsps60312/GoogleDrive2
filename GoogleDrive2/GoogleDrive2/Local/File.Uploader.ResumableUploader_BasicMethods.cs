@@ -1,0 +1,162 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace GoogleDrive2.Local
+{
+    partial class File
+    {
+        public partial class Uploader
+        {
+            public partial class ResumableUploader : UploaderPrototype
+            {
+                long ParseRangeHeader(MyHttpResponse response)
+                {
+                    if (!response.Headers.ContainsKey("range")) return 0;
+                    else
+                    {
+                        var s = response.Headers["range"];
+                        const string keyword = "bytes=0-";
+                        MyLogger.Assert(s.StartsWith(keyword));
+                        return long.Parse(s.Substring(keyword.Length)) + 1;
+                    }
+                }
+                public async Task<bool> CreateResumableUploadAsync()
+                {
+                    //await MyLogger.Alert($"file size: {totalSize}");
+                    var request = new Api.Files.ResumableCreate(FileMetadata, TotalSize, null);
+                    using (var response = await request.GetHttpResponseAsync())
+                    {
+                        if (response?.StatusCode == System.Net.HttpStatusCode.OK)
+                        {
+                            resumableUri = response.Headers["location"];
+                            return true;
+                        }
+                        else
+                        {
+                            this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                            return false;
+                        }
+                    }
+                }
+                Queue<byte> fileContentBuffer = new Queue<byte>();
+                long fileContentBufferPosition = 0;
+                async Task<byte[]> ReadBytesAsync(long position, int chunkSize)
+                {
+                    //await F.SeekReadAsync(position);
+                    //return await F.ReadBytesAsync(chunkSize);
+                    if (fileContentBufferPosition != position)
+                    {
+                        MyLogger.Debug("Resumable: File Buffer Cleared");
+                        fileContentBuffer.Clear();
+                        fileContentBufferPosition = position;
+                    }
+                    await F.SeekReadAsync(fileContentBufferPosition + fileContentBuffer.Count);
+                    while (fileContentBuffer.Count < chunkSize)
+                    {
+                        byte[] buffer = new byte[FileBufferSize];
+                        int sz = await F.ReadAsync(buffer, 0, buffer.Length);
+                        for (int i = 0; i < sz; i++) fileContentBuffer.Enqueue(buffer[i]);
+                    }
+                    byte[] answer = new byte[chunkSize];
+                    for (int i = 0; i < chunkSize; i++)
+                    {
+                        answer[i] = fileContentBuffer.Dequeue();
+                        fileContentBufferPosition++;
+                    }
+                    return answer;
+                }
+                async Task<MyHttpResponse> DoSingleResumableUploadAsync(long position, long chunkSize)
+                {
+                    var request = new Api.Files.ResumableUpload(resumableUri, TotalSize, position, position + chunkSize - 1, await ReadBytesAsync(position, (int)chunkSize));
+                    var ans = await request.GetHttpResponseAsync();
+                    request.ClearBody();
+                    return ans;
+                }
+                async Task StartResumableUploadAsync(long position)
+                {
+                    try
+                    {
+                        long chunkCount = 1;
+                        while (position < TotalSize)
+                        {
+                            var time = DateTime.Now;
+                            var realChunkSize = Math.Min(TotalSize - position, chunkCount * MinChunkSize);
+                            using (var response = await DoSingleResumableUploadAsync(position, realChunkSize))
+                            {
+                                var prePosition = position;
+                                position += realChunkSize;
+                                if ((DateTime.Now - time).TotalSeconds < DesiredProgressUpdateInterval) chunkCount += (chunkCount + 1) / 2;
+                                else chunkCount = (chunkCount + 1) / 2;
+                                switch (response?.StatusCode)
+                                {
+                                    case System.Net.HttpStatusCode.OK:
+                                    case System.Net.HttpStatusCode.Created:
+                                        BytesUploaded = TotalSize;
+                                        OnUploadCompleted(ParseCloudId(await response.GetResponseString()));
+                                        break;
+                                    default:
+                                        if ((int?)response?.StatusCode == 308)
+                                        {
+                                            var newPosition = ParseRangeHeader(response);
+                                            //MyLogger.Assert(newPosition == totalSize || newPosition % MinChunkSize == 0);
+                                            if (newPosition != position)
+                                            {
+                                                this.LogError($"Server is expected to read {position - prePosition}({position}) bytes," +
+                                                    $" {newPosition - prePosition}({newPosition}) bytes actually\r\n" +
+                                                    $"{await RestRequests.RestRequester.LogHttpWebResponse(response, true)}", false);
+                                            }
+                                            BytesUploaded = position = newPosition;
+                                            break;
+                                        }
+                                        else
+                                        {
+                                            this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                                            OnCompleted(false);
+                                            return;
+                                        }
+                                }
+                            }
+                            if (CheckPause()) return;
+                        }
+                    }
+                    finally { F.CloseReadIfNot(); }
+                }
+                public async Task StartResumableUploadAsync()
+                {
+                    var request = new Api.Files.ResumableUpload(resumableUri, TotalSize);
+                    long startPosition = -1;
+                    using (var response = await request.GetHttpResponseAsync())
+                    {
+                        switch (response?.StatusCode)
+                        {
+                            case System.Net.HttpStatusCode.OK:
+                            case System.Net.HttpStatusCode.Created:
+                                this.Debug("The upload was completed, and no further action is necessary.");
+                                this.Debug(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                                return;
+                            case System.Net.HttpStatusCode.NotFound:
+                                this.Debug("The upload session has expired and the upload needs to be restarted from the beginning");
+                                this.Debug(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                                return;
+                            default:
+                                if ((int?)response?.StatusCode == 308)
+                                {
+                                    startPosition = ParseRangeHeader(response);
+                                    break;
+                                }
+                                else
+                                {
+                                    this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                                    return;
+                                }
+                        }
+                    }
+                    MyLogger.Assert(startPosition != -1);
+                    await StartResumableUploadAsync(startPosition);
+                }
+            }
+        }
+    }
+}
