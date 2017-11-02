@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Net;
 using Newtonsoft.Json;
 using System.Threading;
+using PCLStorage;
 
 namespace GoogleDrive2.RestRequests
 {
@@ -11,6 +12,19 @@ namespace GoogleDrive2.RestRequests
     {
         public partial class DriveAuthorizer
         {
+            const string SaveFileName = "AuthorizationTokens.ini";
+            static async Task<IFile>GetSaveFileAsync()
+            {
+                return await FileSystem.Current.LocalStorage.CreateFileAsync(SaveFileName, CreationCollisionOption.OpenIfExists);
+            }
+            static async Task WriteAsync(string data)
+            {
+                await (await GetSaveFileAsync()).WriteAllTextAsync(data);
+            }
+            static async Task<string>ReadAsync()
+            {
+                return await (await GetSaveFileAsync()).ReadAllTextAsync();
+            }
             static readonly string auth_uri = "https://accounts.google.com/o/oauth2/auth";
             static readonly string token_uri = "https://accounts.google.com/o/oauth2/token";
             static readonly string client_id = "767856013993-4jsq7q0iujolnd9bomvd36ff4md16rv7.apps.googleusercontent.com";
@@ -37,7 +51,15 @@ namespace GoogleDrive2.RestRequests
                     {
                         var timeNow = DateTime.Now;
                         string str;
-                        if (accessToken == null) str = await ExchangeCodeForTokens(await GetAuthorizationCode());
+                        if (accessToken == null)
+                        {
+                            str = await ReadAsync();
+                            if (string.IsNullOrEmpty(str))
+                            {
+                                str = await ExchangeCodeForTokens(await GetAuthorizationCode());
+                                await WriteAsync(str);
+                            }
+                        }
                         else str = await RefreshTokenAsync(refreshToken);
                         var obj = JsonConvert.DeserializeObject<TemporaryClassForGetAccessTokenAsync>(str);
                         if (accessToken == null) refreshToken = obj.refresh_token;
