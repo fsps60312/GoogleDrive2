@@ -275,22 +275,30 @@ namespace GoogleDrive2.Local
             public event Libraries.Events.MyEventHandler<Tuple<long, long>> ProgressChanged;
             public event Libraries.Events.MyEventHandler<string> UploadCompleted;
             public File F { get; private set; }
-            public Api.Files.FullCloudFileMetadata FileMetadata
+            public Func<Task<Api.Files.FullCloudFileMetadata>> GetFileMetadata
             {
                 get;private set;
-            } = new Api.Files.FullCloudFileMetadata();
+            } = () => { return Task.FromResult(new Api.Files.FullCloudFileMetadata()); };
+            public void SetFileMetadata(Func<Api.Files.FullCloudFileMetadata,Task<Api.Files.FullCloudFileMetadata>>func)
+            {
+                var preFunc = GetFileMetadata;
+                GetFileMetadata = async () =>
+                  {
+                      return await func(await preFunc());
+                  };
+            }
             UploaderPrototype up = null;
             protected override Task StartPrivateAsync(bool startFromScratch)
             {
                 //should not be called
-                throw new NotImplementedException();
+                throw new NotImplementedException("Should not be called");
             }
             public new async Task StartAsync(bool startFromScratch)
             {
                 if (up == null)
                 {
-                    if (await F.GetSizeAsync() < UploaderPrototype.MinChunkSize) up = new MultipartUploader(F, this.FileMetadata);
-                    else up = new ResumableUploader(F, this.FileMetadata);
+                    if (await F.GetSizeAsync() < UploaderPrototype.MinChunkSize) up = new MultipartUploader(F, await this.GetFileMetadata());
+                    else up = new ResumableUploader(F, await this.GetFileMetadata());
                     up.Started += () => OnStarted();
                     up.ProgressChanged += (p) => ProgressChanged?.Invoke(p);
                     up.Paused += () =>
