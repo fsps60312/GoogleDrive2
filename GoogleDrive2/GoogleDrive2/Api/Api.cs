@@ -36,17 +36,19 @@ namespace GoogleDrive2
             private int pauseRequest = 0;// 0: Normal, 1: Pausing, 2: Paused
             public void Pause()
             {
+                if (IsCompleted) return;
                 pauseRequest = 1;
                 OnPausing();
-                if (IsCompleted)
-                {
-                    this.Debug("Pause: Operation has already completed");
-                    return;
-                }
+                //if (IsCompleted)
+                //{
+                //    this.Debug("Pause: Operation has already completed");
+                //    return;
+                //}
             }
-            protected abstract Task StartPrivateAsync(bool startFromScratch);
-            public async Task StartAsync(bool startFromScratch)
+            protected abstract Task StartPrivateAsync();
+            public async Task StartAsync()
             {
+                if (IsCompleted) return;
                 try
                 {
                     Started?.Invoke();
@@ -69,7 +71,7 @@ namespace GoogleDrive2
                         this.LogError("StartAsync: Operation has already completed");
                         return;
                     }
-                    await StartPrivateAsync(startFromScratch);
+                    await StartPrivateAsync();
                 }
                 catch(Exception error)
                 {

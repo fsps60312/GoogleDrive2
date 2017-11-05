@@ -1,41 +1,90 @@
 ﻿using System.Threading.Tasks;
 using System.Net;
 using Newtonsoft.Json;
+using System;
 
 namespace GoogleDrive2.Api.Files
 {
     public partial class FullCloudFileMetadata
     {
-        public class FolderCreate : SimpleApiOperator
+        public partial class FolderCreate:SimpleApiOperator
+        {
+            public Func<Task<string>> GetCloudId { get; private set; } = null;
+            public FolderCreate()
+            {
+                Libraries.MySemaphore semaphore = new Libraries.MySemaphore(0);
+                string resultId = null;
+                GetCloudId = async () =>
+                {
+                    lock (GetCloudId)
+                    {
+                        Libraries.Events.MyEventHandler<string> completedHandler = null;
+                        completedHandler = new Libraries.Events.MyEventHandler<string>((id) =>
+                        {
+                            this.FolderCreateCompleted -= completedHandler;
+                            resultId = id;
+                            semaphore.Release();
+                        });
+                        FolderCreateCompleted += completedHandler;
+                    }
+                    await semaphore.WaitAsync();
+                    MyLogger.Assert(resultId != null);
+                    return resultId;
+                };
+            }
+        }
+        public partial class FolderCreate : SimpleApiOperator
         {
             public event Libraries.Events.MyEventHandler<string> FolderCreateCompleted;
             private void OnFolderCreateCompleted(string id)
             {
+                GetCloudId = () => { return Task.FromResult(id); };
                 FolderCreateCompleted?.Invoke(id);
                 OnCompleted(true);
             }
-            object metaData;
+            protected Func<Task<FullCloudFileMetadata>> GetFolderMetadata = ()
+                => Task.FromResult(new FullCloudFileMetadata { mimeType = Constants.FolderMimeType });
+            public void SetFolderMetadata(Func<FullCloudFileMetadata,Task<FullCloudFileMetadata>>func)
+            {
+                var preFunc = GetFolderMetadata;
+                GetFolderMetadata = new Func<Task<FullCloudFileMetadata>>(async () =>
+                  {
+                      return await func(await preFunc());
+                  });
+            }
             public override async Task StartAsync()
             {
-                var request = new MultipartUpload(metaData, new byte[0]);
-                using (var response = await request.GetHttpResponseAsync())
+                try
                 {
-                    if (response?.StatusCode == HttpStatusCode.OK)
+                    var request = new MultipartUpload(await GetFolderMetadata(), new byte[0]);
+                    using (var response = await request.GetHttpResponseAsync())
                     {
-                        var f = JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(await request.GetResponseTextAsync(response));
-                        OnFolderCreateCompleted(f.id);
+                        if (response?.StatusCode == HttpStatusCode.OK)
+                        {
+                            var f = JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(await request.GetResponseTextAsync(response));
+                            OnFolderCreateCompleted(f.id);
+                        }
+                        else
+                        {
+                            this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                            OnCompleted(false);
+                        }
                     }
-                    else this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
                 }
-            }
-            public FolderCreate(object metaData)
-            {
-                this.metaData = metaData;
-                if ((metaData as FullCloudFileMetadata).mimeType != Constants.FolderMimeType)
+                catch (Exception error)
                 {
-                    MyLogger.LogError($"Folder mimeType expected: {(metaData as FullCloudFileMetadata).mimeType}");
+                    this.LogError(error.ToString());
+                    OnCompleted(false);
                 }
             }
+            //public FolderCreate()
+            //{
+            //    //this.metaData = metaData;
+            //    //if ((metaData as FullCloudFileMetadata).mimeType != Constants.FolderMimeType)
+            //    //{
+            //    //    MyLogger.LogError($"Folder mimeType expected: {(metaData as FullCloudFileMetadata).mimeType}");
+            //    //}
+            //}
         }
         public class Starrer:MetadataUpdater
         {

@@ -16,9 +16,9 @@ namespace GoogleDrive2.Local
                     UploadCompleted?.Invoke(id);
                     OnCompleted(true);
                 }
-                public static async Task StartPrivateStaticAsync(UploaderPrototype up, bool startFromScratch)
+                public static async Task StartPrivateStaticAsync(UploaderPrototype up)
                 {
-                    await up.StartPrivateAsync(startFromScratch);
+                    await up.StartPrivateAsync();
                 }
                 public const long MinChunkSize = 262144;// + 1;
                 protected File F;
@@ -57,14 +57,14 @@ namespace GoogleDrive2.Local
                 {
                     return JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(content).id;
                 }
-                protected abstract Task StartUploadAsync(bool startFromScratch);
-                protected override async Task StartPrivateAsync(bool startFromScratch)
+                protected abstract Task StartUploadAsync();
+                protected override async Task StartPrivateAsync()
                 {
                     try
                     {
                         F.CloseReadIfNot();
                         await AssignFileMetadata();
-                        await StartUploadAsync(startFromScratch);
+                        await StartUploadAsync();
                     }
                     catch (Exception error) { this.LogError(error.ToString()); }
                     finally { F.CloseReadIfNot(); }

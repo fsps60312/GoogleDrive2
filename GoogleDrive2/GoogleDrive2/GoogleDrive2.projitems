@@ -33,6 +33,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Local\File.Uploader.UploaderPrototype.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Local\Folder.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Local\Folder.Uploader.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Local\Folder.Uploader.Subtask.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>

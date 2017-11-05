@@ -111,7 +111,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                             metaData.parents = new List<string> { cloud.id };
                             return Task.FromResult(metaData);
                         });
-                        await uploader.StartAsync(true);
+                        await uploader.StartAsync();
                     }));
                     //await MyLogger.Alert("Completed");
                 }

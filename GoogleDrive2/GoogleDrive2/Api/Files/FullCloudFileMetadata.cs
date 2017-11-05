@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace GoogleDrive2.Api.Files
 {
@@ -7,12 +8,17 @@ namespace GoogleDrive2.Api.Files
     {
         public FolderCreate GetFolderCreater(string folderName)
         {
-            return new FolderCreate(new FullCloudFileMetadata
+            var answer = new FolderCreate();
+            answer.SetFolderMetadata((metaData) =>
             {
-                name = folderName,
-                parents = new System.Collections.Generic.List<string> { this.id },
-                mimeType = Constants.FolderMimeType
+                return Task.FromResult(new FullCloudFileMetadata
+                {
+                    name = folderName,
+                    parents = new System.Collections.Generic.List<string> { this.id },
+                    mimeType = Constants.FolderMimeType
+                });
             });
+            return answer;
         }
         public Trasher GetTrasher(bool trashed) { return new Trasher(this.id, trashed); }
         public Starrer GetStarrer(bool starred) { return new Starrer(this.id, starred); }

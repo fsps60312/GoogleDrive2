@@ -21,27 +21,21 @@ namespace GoogleDrive2.Local
                 {
                     await StartResumableUploadAsync();
                 }
-                protected override async Task StartUploadAsync(bool startFromScratch)
+                protected override async Task StartUploadAsync()
                 {
                     if (CheckPause()) return;
-                    if (startFromScratch)
+                    if (resumableUri == null)
                     {
+                        this.Debug("Creating upload...");
                         if (!await CreateUpload())
                         {
                             this.LogError("Failed to create resumable upload");
                             return;
                         }
+                        else this.Debug("Upload created, uploading...");
                     }
                     if (CheckPause()) return;
-                    if (resumableUri == null)
-                    {
-                        this.Debug("Seems upload not created yet, starting from scratch...");
-                        await StartUploadAsync(true);
-                    }
-                    else
-                    {
-                        await DoUpload();
-                    }
+                    await DoUpload();
                 }
                 public ResumableUploader(File file, Api.Files.FullCloudFileMetadata fileMetadata) : base(file, fileMetadata) { }
             }

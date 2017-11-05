@@ -26,12 +26,12 @@ namespace GoogleDrive2.Local
                   };
             }
             UploaderPrototype up = null;
-            protected override Task StartPrivateAsync(bool startFromScratch)
+            protected override Task StartPrivateAsync()
             {
                 //should not be called
                 throw new NotImplementedException("Should not be called");
             }
-            public new async Task StartAsync(bool startFromScratch)
+            public new async Task StartAsync()
             {
                 if (up == null)
                 {
@@ -55,7 +55,7 @@ namespace GoogleDrive2.Local
                     up.UploadCompleted += (id) => UploadCompleted?.Invoke(id);
                     //up.MessageAppended is triggered by Debug & LogError
                 }
-                await up.StartAsync(startFromScratch);
+                await up.StartAsync();
             }
             public new void Pause() { up.Pause(); }
             public new bool IsActive { get { return up.IsActive; } }

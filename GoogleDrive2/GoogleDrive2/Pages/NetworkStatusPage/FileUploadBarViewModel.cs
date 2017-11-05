@@ -353,7 +353,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
                   }
                   else
                   {
-                      await up.StartAsync(false);
+                      await up.StartAsync();
                   }
               });
             RegisterEvents(up);
