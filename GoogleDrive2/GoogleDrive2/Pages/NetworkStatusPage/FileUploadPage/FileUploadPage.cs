@@ -3,7 +3,7 @@ using GoogleDrive2.MyControls;
 using Xamarin.Forms;
 using System.Linq;
 
-namespace GoogleDrive2.Pages.NetworkStatusPage
+namespace GoogleDrive2.Pages.NetworkStatusPage.FileUploadPage
 {
     class FileUploadBarsList:MyControls.BarsListPanel.BarsListPanel<FileUploadBar,FileUploadBarViewModel>
     {
@@ -27,7 +27,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
             LBname.SetBinding(MyLabel.TextProperty, "Name");
             LBuploaded.SetBinding(MyLabel.TextProperty, "Uploaded");
             LBtotal.SetBinding(MyLabel.TextProperty, "Total");
-            LBpercentage.SetBinding(MyLabel.TextProperty, "Percentage");
+            LBpercentage.SetBinding(MyLabel.TextProperty, "ProgressText");
             LBspeed.SetBinding(MyLabel.TextProperty, "Speed");
             LBtimeRemaining.SetBinding(MyLabel.TextProperty, "TimeRemaining");
             LBtimePassed.SetBinding(MyLabel.TextProperty, "TimePassed");

@@ -10,7 +10,8 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
         public NetworkStatusPage()
         {
             this.Title = "Network Status";
-            this.Children.Add(new FileUploadPage());
+            this.Children.Add(new FolderUploadPage.FolderUploadPage());
+            this.Children.Add(new FileUploadPage.FileUploadPage());
             this.Children.Add(new OperationalPage());
         }
     }
