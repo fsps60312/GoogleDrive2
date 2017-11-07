@@ -27,6 +27,7 @@ namespace GoogleDrive2.Local
         {
             return (await O.GetBasicPropertiesAsync()).DateModified.UtcDateTime;
         }
+        public static async Task<Folder> OpenSingleFolderAsync() { return await OpenSingleFolderPrivateAsync(); }
         static volatile int InstanceCount = 0;
         public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
         static void AddInstanceCount(int value)

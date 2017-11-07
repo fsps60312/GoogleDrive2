@@ -10,6 +10,7 @@ namespace GoogleDrive2.Local
         {
             public abstract class UploaderPrototype : Api.AdvancedApiOperator
             {
+                const int MaxConcurrentCount = 10;
                 public event Libraries.Events.MyEventHandler<string> UploadCompleted;
                 protected void OnUploadCompleted(string id)
                 {
@@ -58,8 +59,10 @@ namespace GoogleDrive2.Local
                     return JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(content).id;
                 }
                 protected abstract Task StartUploadAsync();
+                static Libraries.MySemaphore semaphore = new Libraries.MySemaphore(MaxConcurrentCount);
                 protected override async Task StartPrivateAsync()
                 {
+                    await semaphore.WaitAsync();
                     try
                     {
                         F.CloseReadIfNot();
@@ -67,7 +70,11 @@ namespace GoogleDrive2.Local
                         await StartUploadAsync();
                     }
                     catch (Exception error) { this.LogError(error.ToString()); }
-                    finally { F.CloseReadIfNot(); }
+                    finally
+                    {
+                        F.CloseReadIfNot();
+                        semaphore.Release();
+                    }
                 }
                 public UploaderPrototype(File file, Api.Files.FullCloudFileMetadata fileMetadata)
                 {

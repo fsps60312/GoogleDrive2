@@ -12,7 +12,7 @@ namespace GoogleDrive2.Local
                 private Func<Task> StartTask;
                 private Action PauseTask;
                 public event Libraries.Events.EmptyEventHandler Started,Pausing,Paused,Completed;
-                public event Libraries.Events.MyEventHandler<Tuple<long, long>> FileProgressChanged,FolderProgressChanged,SizeProgressChanged;
+                public event Libraries.Events.MyEventHandler<Tuple<long, long>> FileProgressChanged,FolderProgressChanged,SizeProgressChanged,LocalSearchStatusChanged;
                 public async Task Start()
                 {
                     Started?.Invoke();
@@ -23,19 +23,30 @@ namespace GoogleDrive2.Local
                     Pausing?.Invoke();
                     PauseTask();
                 }
-                private void SetCalls(out Action pausedCall, out Action<bool> completedCall, out Action<Tuple<long, long>> fileProgressCall, out Action<Tuple<long, long>> folderProgressCall, out Action<Tuple<long, long>> sizeProgressCall)
+                private void SetCalls(
+                    out Action pausedCall, out Action<bool> completedCall,
+                    out Action<Tuple<long, long>> fileProgressCall,
+                    out Action<Tuple<long, long>> folderProgressCall,
+                    out Action<Tuple<long, long>> sizeProgressCall,
+                    out Action<Tuple<long, long>> localSearchStatusCall)
                 {
                     pausedCall = new Action(() => { Paused?.Invoke(); });
                     completedCall = new Action<bool>((success) => { if (success) Completed?.Invoke(); });
                     fileProgressCall = new Action<Tuple<long, long>>((p) => { FileProgressChanged?.Invoke(p); });
                     folderProgressCall = new Action<Tuple<long, long>>((p) => { FolderProgressChanged?.Invoke(p); });
                     sizeProgressCall = new Action<Tuple<long, long>>((p) => { SizeProgressChanged?.Invoke(p); });
+                    localSearchStatusCall = new Action<Tuple<long, long>>((p) => { LocalSearchStatusChanged?.Invoke(p); });
                 }
-                public Subtask(Func<Task> startTask, Action pauseTask, out Action pausedCall, out Action<bool> completedCall, out Action<Tuple<long, long>> fileProgressCall, out Action<Tuple<long, long>> folderProgressCall, out Action<Tuple<long, long>> sizeProgressCall)
+                public Subtask(
+                    Func<Task> startTask, Action pauseTask, out Action pausedCall, out Action<bool> completedCall,
+                    out Action<Tuple<long, long>> fileProgressCall,
+                    out Action<Tuple<long, long>> folderProgressCall,
+                    out Action<Tuple<long, long>> sizeProgressCall,
+                    out Action<Tuple<long, long>> localSearchStatusCall)
                 {
                     StartTask = startTask;
                     PauseTask = pauseTask;
-                    SetCalls(out pausedCall, out completedCall, out fileProgressCall, out folderProgressCall, out sizeProgressCall);
+                    SetCalls(out pausedCall, out completedCall, out fileProgressCall, out folderProgressCall, out sizeProgressCall,out localSearchStatusCall);
                 }
             }
         }

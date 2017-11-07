@@ -7,8 +7,8 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
     class FolderUploadBarViewModel : NetworkStatusWithSpeedBarViewModel
     {
         #region Properties
-        string __CurrentFile__ = null;
-        string __TotalFile__ = null;
+        string __CurrentFile__ = $"{Constants.Icons.File}0";
+        string __TotalFile__ = $"{Constants.Icons.File}0";
         string __CurrentFolder__ = null;
         string __TotalFolder__ = null;
         string __CurrentSize__ = null;
@@ -17,6 +17,11 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
         double __FolderProgress__ = 0;
         double __SizeProgress__ = 0;
         string __TaskStatus__ = null;
+        string __SearchFoldersStatus__ = null;
+        string __SearchFilesStatus__ = null;
+        string __FileStatus__ = null;//SearchFilesStatus+CurrentFile
+        string __FolderStatus__ = null;//SearchFoldersStatus+CurrentFolder
+        string __CurrentFileAndSize__ = null;//CurrentFileAndSize
         public string CurrentFile
         {
             get { return __CurrentFile__; }
@@ -24,6 +29,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             {
                 if (value == __CurrentFile__) return;
                 __CurrentFile__ = value;
+                CurrentFileAndSize = $"{CurrentFile} | {CurrentSize}";
                 OnPropertyChanged("CurrentFile");
             }
         }
@@ -34,6 +40,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             {
                 if (value == __TotalFile__) return;
                 __TotalFile__ = value;
+                FileStatus = TotalFile + (string.IsNullOrEmpty(SearchFilesStatus) ? "" : $" | {SearchFilesStatus}");
                 OnPropertyChanged("TotalFile");
             }
         }
@@ -54,6 +61,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             {
                 if (value == __TotalFolder__) return;
                 __TotalFolder__ = value;
+                FolderStatus = TotalFolder + (string.IsNullOrEmpty(SearchFoldersStatus) ? "" : $" | {SearchFoldersStatus}");
                 OnPropertyChanged("TotalFolder");
             }
         }
@@ -64,6 +72,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             {
                 if (value == __CurrentSize__) return;
                 __CurrentSize__ = value;
+                CurrentFileAndSize = $"{CurrentFile} | {CurrentSize}";
                 OnPropertyChanged("CurrentSize");
             }
         }
@@ -117,38 +126,110 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
                 OnPropertyChanged("TaskStatus");
             }
         }
+        public string SearchFoldersStatus
+        {
+            get { return __SearchFoldersStatus__; }
+            set
+            {
+                if (value == __SearchFoldersStatus__) return;
+                __SearchFoldersStatus__ = value;
+                FolderStatus = TotalFolder + (string.IsNullOrEmpty(SearchFoldersStatus) ? "" : $" | {SearchFoldersStatus}");
+                OnPropertyChanged("SearchFoldersStatus");
+            }
+        }
+        public string SearchFilesStatus
+        {
+            get { return __SearchFilesStatus__; }
+            set
+            {
+                if (value == __SearchFilesStatus__) return;
+                __SearchFilesStatus__ = value;
+                FileStatus = TotalFile + (string.IsNullOrEmpty(SearchFilesStatus) ? "" : $" | {SearchFilesStatus}");
+                OnPropertyChanged("SearchFilesStatus");
+            }
+        }
+        public string FileStatus
+        {
+            get { return __FileStatus__; }
+            set
+            {
+                if (value == __FileStatus__) return;
+                __FileStatus__ = value;
+                OnPropertyChanged("FileStatus");
+            }
+        }
+        public string FolderStatus
+        {
+            get { return __FolderStatus__; }
+            set
+            {
+                if (value == __FolderStatus__) return;
+                __FolderStatus__ = value;
+                OnPropertyChanged("FolderStatus");
+            }
+        }
+        public string CurrentFileAndSize
+        {
+            get { return __CurrentFileAndSize__; }
+            set
+            {
+                if (value == __CurrentFileAndSize__) return;
+                __CurrentFileAndSize__ = value;
+                OnPropertyChanged("CurrentFileAndSize");
+            }
+        }
         #endregion
-        Tuple<long, long> fileProgress, folderProgress, sizeProgress;
+        volatile Tuple<long, long>
+            fileProgress = new Tuple<long, long>(0, 0),
+            folderProgress = new Tuple<long, long>(0, 0),
+            sizeProgress = new Tuple<long, long>(0, 0),
+            searchStatus = new Tuple<long, long>(0, 0);
         void UpdateMixedProgress()
         {
             const double createFileCost = 1024, createFolderCost = 1024;
-            Progress =
+            if (searchStatus == new Tuple<long, long>(0, 0))
+            {
+                Progress =
                 (sizeProgress.Item1 + fileProgress.Item1 * createFileCost + folderProgress.Item1 * createFolderCost) /
                 (sizeProgress.Item2 + fileProgress.Item2 * createFileCost + folderProgress.Item2 * createFolderCost);
+            }
         }
-        enum ProgressType { File,Folder,Size};
+        enum ProgressType { File,Folder,Size,LocalSearch};
         void UpdateProgress(Tuple<long,long>p,ProgressType progressType)
         {
             switch(progressType)
             {
                 case ProgressType.File:
-                    fileProgress = p;
-                    FileProgress = p.Item2 == 0 ? 1 : (double)p.Item1 / p.Item2;
-                    CurrentFile = p.Item1.ToString();
-                    TotalFile = p.Item2.ToString();
+                    {
+                        fileProgress = p;
+                        FileProgress = p.Item2 == 0 ? 1 : (double)p.Item1 / p.Item2;
+                        CurrentFile = $"{Constants.Icons.File}{p.Item1}";
+                        TotalFile = $"{Constants.Icons.File}{p.Item2}";
+                    }
                     break;
                 case ProgressType.Folder:
-                    folderProgress = p;
-                    FolderProgress = p.Item2 == 0 ? 1 : (double)p.Item1 / p.Item2;
-                    CurrentFolder = p.Item1.ToString();
-                    TotalFolder = p.Item2.ToString();
+                    {
+                        folderProgress = p;
+                        FolderProgress = p.Item2 == 0 ? 1 : (double)p.Item1 / p.Item2;
+                        CurrentFolder = $"{Constants.Icons.Folder}{p.Item1}";
+                        TotalFolder = $"{Constants.Icons.Folder}{p.Item2}";
+                    }
                     break;
                 case ProgressType.Size:
-                    sizeProgress = p;
-                    SizeProgress = p.Item2 == 0 ? 1 : (double)p.Item1 / p.Item2;
-                    CurrentSize = ByteCountToString(p.Item1, 3);
-                    TotalSize = ByteCountToString(p.Item2, 3);
-                    OnSpeedDataAdded(p.Item1);
+                    {
+                        sizeProgress = p;
+                        if (searchStatus == new Tuple<long, long>(0, 0)) SizeProgress = p.Item2 == 0 ? 1 : (double)p.Item1 / p.Item2;
+                        CurrentSize = ByteCountToString(p.Item1, 3);
+                        TotalSize = $"{ByteCountToString(p.Item2, 3)}";
+                        OnSpeedDataAdded(p.Item1);
+                    }
+                    break;
+                case ProgressType.LocalSearch:
+                    {
+                        searchStatus = p;
+                        SearchFoldersStatus = p.Item1 == 0 ? "" : $"{Constants.Icons.Hourglass}{p.Item1}";
+                        SearchFilesStatus = p.Item2 == 0 ? "" : $"{Constants.Icons.Hourglass}{p.Item2}";
+                    }
                     break;
                 default:
                     MyLogger.LogError($"Unexpected progressType: {progressType}");
@@ -174,6 +255,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             up.FileProgressChanged += (p) => UpdateProgress(p, ProgressType.File);
             up.FolderProgressChanged += (p) => UpdateProgress(p, ProgressType.Folder);
             up.SizeProgressChanged += (p) => UpdateProgress(p, ProgressType.Size);
+            up.LocalSearchStatusChanged += (p) => UpdateProgress(p, ProgressType.LocalSearch);
         }
         public FolderUploadBarViewModel(Local.Folder.Uploader up):base()
         {

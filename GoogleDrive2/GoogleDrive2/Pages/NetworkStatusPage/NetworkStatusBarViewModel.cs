@@ -42,9 +42,28 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
             {
                 if (v == 0) Speed = null;
                 else Speed = $"{ByteCountToString((long)v, 3)}/s";
-                SpeedHistory.Add(new Tuple<double, double>(Progress, v));
+                lock (SpeedHistory)
+                {
+                    SpeedHistory.Add(new Tuple<double, double>(Progress, v));
+                }
                 //MyLogger.Debug(Progress.ToString());
-                SpeedGraph = Xamarin.Forms.ImageSource.FromStream(new Func<System.IO.Stream>(() => ImageProcessor.GetImageStream(500, 20, SpeedHistory)));
+                SpeedGraph = Xamarin.Forms.ImageSource.FromStream(new Func<System.IO.Stream>(() =>
+                {
+                    const int width = 500, height = 20;
+                    List<Tuple<double, double>> points = new List<Tuple<double, double>>();
+                    lock (SpeedHistory)
+                    {
+                        if (SpeedHistory.Count <= width * 2)
+                        {
+                            foreach (var p in SpeedHistory) points.Add(p);
+                        }
+                        else
+                        {
+                            for (int i = 0; i < width * 2; i++) points.Add(SpeedHistory[i * SpeedHistory.Count / (width * 5)]);
+                        }
+                    }
+                    return ImageProcessor.GetImageStream(width, height, points);
+                }));
             };
         }
     }
@@ -221,7 +240,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
                 if (__Progress__ == value) return;
                 __Progress__ = value;
                 timeRemainingMaintainer.Add(value);
-                ProgressText = $"{value.ToString("F3")}%";
+                ProgressText = $"{(value*100).ToString("F3")}%";
                 OnPropertyChanged("Progress");
             }
         }

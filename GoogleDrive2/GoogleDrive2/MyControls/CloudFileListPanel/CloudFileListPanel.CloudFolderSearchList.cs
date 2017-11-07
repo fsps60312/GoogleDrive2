@@ -18,7 +18,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
             public string Q { get; private set; }
             TheBarList BLmain;
             MyGrid GDmain;
-            SearchListControlPanel GDctrl;
+            ControlPanel GDctrl;
             MyScrollView SVctrl;
             public void Stop() { BLmain.Stop(); }
             public void Refresh()
@@ -38,7 +38,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                 {
                     SVctrl = new MyScrollView { Orientation = ScrollOrientation.Vertical };
                     {
-                        GDctrl = new SearchListControlPanel(this);
+                        GDctrl = new ControlPanel(this);
                         SVctrl.Content = GDctrl;
                     }
                     GDmain.Children.Add(SVctrl, 0, 0);

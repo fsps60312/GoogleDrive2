@@ -12,9 +12,9 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
     {
         public partial class CloudFolderSearchList
         {
-            class SearchListControlPanel : MyGrid
+            class ControlPanel : MyGrid
             {
-                MyButton BTNselectAll,BTNshowInfo,BTNuploadFile,BTNtrash,BTNstar,BTNnewFolder;
+                MyButton BTNselectAll,BTNshowInfo,BTNuploadFile,BTNuploadFolder,BTNtrash,BTNstar,BTNnewFolder;
                 public RefreshButton BTNrefresh;
                 public MyLabel LBtitle;
                 MySwitch SWmultiSelectEnabled,SWtrash;
@@ -38,6 +38,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         this.Children.Add(SWmultiSelectEnabled, 1, 1);
                         this.Children.Add(BTNshowInfo, 0, 2);
                         this.Children.Add(BTNuploadFile, 0, 3);
+                        this.Children.Add(BTNuploadFolder, 1, 3);
                         this.Children.Add(BTNtrash, 0, 4);
                         this.Children.Add(SWtrash, 1, 4);
                         this.Children.Add(BTNstar, 0, 5);
@@ -56,7 +57,8 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     BTNselectAll = new MyButton { Text = Constants.Icons.CheckBox, IsEnabled = false };
                     SWmultiSelectEnabled = new MySwitch(null, null, false);
                     BTNshowInfo = new MyButton { Text = Constants.Icons.Info };
-                    BTNuploadFile = new MyButton { Text = Constants.Icons.Upload };
+                    BTNuploadFile = new MyButton { Text = Constants.Icons.File + Constants.Icons.Upload };
+                    BTNuploadFolder = new MyButton { Text = Constants.Icons.Folder + Constants.Icons.Upload };
                     BTNtrash = new MyButton { Text = Constants.Icons.TrashCan };
                     SWtrash = new MySwitch("Trash Can", "Folder", false);
                     BTNstar = new MyButton { Text = Constants.Icons.Star };
@@ -87,19 +89,48 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     if (string.IsNullOrEmpty(s2)) s2 = $" | {Constants.Icons.Mushroom}0";
                     BTNselectAll.Text = s1 + s2;
                 }
-                async Task UploadButtonClicked()
+                async Task<Api.Files.FullCloudFileMetadata> GetClickedItem()
                 {
                     if (this.Parent.ClickedItem == null)
                     {
                         await MyLogger.Alert($"{Constants.Icons.Info} No item selected");
-                        return;
+                        return null;
                     }
                     var cloud = this.Parent.ClickedItem.File;
                     if (cloud.mimeType != Constants.FolderMimeType)
                     {
                         await MyLogger.Alert($"{Constants.Icons.Info} Item of Folder type expected");
-                        return;
+                        return null;
                     }
+                    return cloud;
+                }
+                async Task UploadFolderButtonClicked()
+                {
+                    var cloud = await GetClickedItem();
+                    if (cloud == null) return;
+                    var folder = await Local.Folder.OpenSingleFolderAsync();
+                    if (folder == null) return;
+                    //await MyLogger.Alert(file.MimeType);
+                    var uploader = folder.GetUploader();
+                    uploader.SetFolderMetadata((metaData) =>
+                    {
+                        metaData.parents = new List<string> { cloud.id };
+                        return Task.FromResult(metaData);
+                    });
+                    try
+                    {
+                        await uploader.StartAsync();
+                    }
+                    catch (Exception error)
+                    {
+                        await MyLogger.Alert($"Unexpected error:\r\n{error}");
+                    }
+                    await MyLogger.Alert("Completed");
+                }
+                async Task UploadFileButtonClicked()
+                {
+                    var cloud = await GetClickedItem();
+                    if (cloud == null) return;
                     var files = await Local.File.OpenMultipleFilesAsync();
                     if (files == null) return;
                     //await MyLogger.Alert(file.MimeType);
@@ -113,7 +144,6 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         });
                         await uploader.StartAsync();
                     }));
-                    //await MyLogger.Alert("Completed");
                 }
                 async Task TrashButtonClicked()
                 {
@@ -241,9 +271,11 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                       };
                     BTNuploadFile.Clicked += async delegate
                       {
-                          BTNuploadFile.IsEnabled = false;
-                          try { await UploadButtonClicked(); }
-                          finally { BTNuploadFile.IsEnabled = true; }
+                          await UploadFileButtonClicked();
+                      };
+                    BTNuploadFolder.Clicked += async delegate
+                      {
+                          await UploadFolderButtonClicked();
                       };
                     BTNshowInfo.Clicked += async delegate
                       {
@@ -307,7 +339,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                            };
                     }
                 }
-                public SearchListControlPanel(CloudFolderSearchList parent)
+                public ControlPanel(CloudFolderSearchList parent)
                 {
                     Parent = parent;
                     InitializaViews();

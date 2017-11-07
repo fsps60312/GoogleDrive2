@@ -9,6 +9,7 @@ namespace GoogleDrive2.Api.Files
     {
         public partial class FolderCreate:SimpleApiOperator
         {
+            const int MaxConcurrentCount = 10;
             public Func<Task<string>> GetCloudId { get; private set; } = null;
             public FolderCreate()
             {
@@ -52,8 +53,10 @@ namespace GoogleDrive2.Api.Files
                       return await func(await preFunc());
                   });
             }
+            static Libraries.MySemaphore semaphore = new Libraries.MySemaphore(MaxConcurrentCount);
             public override async Task StartAsync()
             {
+                await semaphore.WaitAsync();
                 try
                 {
                     var request = new MultipartUpload(await GetFolderMetadata(), new byte[0]);
@@ -76,6 +79,7 @@ namespace GoogleDrive2.Api.Files
                     this.LogError(error.ToString());
                     OnCompleted(false);
                 }
+                finally { semaphore.Release(); }
             }
             //public FolderCreate()
             //{

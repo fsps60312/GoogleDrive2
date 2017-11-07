@@ -27,6 +27,7 @@ namespace GoogleDrive2
                 Pausing = Hourglass + Pause,
                 Play = "▶",
                 Initial = Play + Hourglass,
+                Size="⋙",
                 Timers = "🕐🕑🕒🕓🕔🕕🕖🕗🕘🕙🕚🕛";
         }
         public const string FolderMimeType = "application/vnd.google-apps.folder";

@@ -31,6 +31,10 @@ namespace GoogleDrive2.Local
                 //should not be called
                 throw new NotImplementedException("Should not be called");
             }
+            public async Task GetFileSizeFirstAsync()
+            {
+                ProgressChanged?.Invoke(new Tuple<long, long>(0, (long)await F.GetSizeAsync()));
+            }
             public new async Task StartAsync()
             {
                 if (up == null)
