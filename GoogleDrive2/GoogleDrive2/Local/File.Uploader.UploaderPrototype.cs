@@ -15,7 +15,7 @@ namespace GoogleDrive2.Local
                 protected void OnUploadCompleted(string id)
                 {
                     UploadCompleted?.Invoke(id);
-                    OnCompleted(true);
+                    OnCompleted(id != null);
                 }
                 public static async Task StartPrivateStaticAsync(UploaderPrototype up)
                 {
@@ -56,7 +56,15 @@ namespace GoogleDrive2.Local
                 }
                 protected string ParseCloudId(string content)
                 {
-                    return JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(content).id;
+                    try
+                    {
+                        return JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(content).id;
+                    }
+                    catch(Exception error)
+                    {
+                        MyLogger.LogError($"Error when ParseCloudId:\r\n{error}");
+                        return null;
+                    }
                 }
                 protected abstract Task StartUploadAsync();
                 static Libraries.MySemaphore semaphore = new Libraries.MySemaphore(MaxConcurrentCount);

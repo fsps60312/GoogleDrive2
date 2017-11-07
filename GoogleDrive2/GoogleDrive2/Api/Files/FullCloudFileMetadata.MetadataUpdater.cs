@@ -54,11 +54,22 @@ namespace GoogleDrive2.Api.Files
                   });
             }
             static Libraries.MySemaphore semaphore = new Libraries.MySemaphore(MaxConcurrentCount);
+            bool stopRequest = false;
+            public void Stop()
+            {
+                stopRequest = true;
+            }
             public override async Task StartAsync()
             {
+                stopRequest = false;
                 await semaphore.WaitAsync();
                 try
                 {
+                    if (stopRequest)
+                    {
+                        OnCompleted(false);
+                        return;
+                    }
                     var request = new MultipartUpload(await GetFolderMetadata(), new byte[0]);
                     using (var response = await request.GetHttpResponseAsync())
                     {

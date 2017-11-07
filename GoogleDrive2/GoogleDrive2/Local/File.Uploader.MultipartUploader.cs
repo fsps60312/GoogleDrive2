@@ -10,8 +10,8 @@ namespace GoogleDrive2.Local
             {
                 protected override async Task StartUploadAsync()
                 {
-                    if (CheckPause()) return;
                     MyLogger.Assert(BytesUploaded == 0 && TotalSize <= int.MaxValue);
+                    if (CheckPause()) return;
                     var request = new Api.Files.MultipartUpload(FileMetadata, await F.ReadBytesAsync((int)TotalSize));
                     F.CloseReadIfNot();
                     using (var response = await request.GetHttpResponseAsync())
@@ -21,7 +21,11 @@ namespace GoogleDrive2.Local
                             BytesUploaded = TotalSize;
                             OnUploadCompleted(ParseCloudId(await request.GetResponseTextAsync(response)));
                         }
-                        else this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                        else
+                        {
+                            this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                            OnUploadCompleted(null);
+                        }
                     }
                 }
                 public MultipartUploader(File file, Api.Files.FullCloudFileMetadata fileMetadata) : base(file, fileMetadata) { }

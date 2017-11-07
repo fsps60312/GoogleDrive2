@@ -33,7 +33,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
     }
     class FolderUploadBar:MyControls.BarsListPanel.DataBindedGrid<FolderUploadBarViewModel>
     {
-        MyLabel LBicon, LBname, LBpercentage,LBcurrentFileAndSize,LBtotalSize,LBfileStatus,LBcurrentFolder,LBfolderStatus, LBspeed, LBtimeRemaining, LBtimePassed;
+        MyLabel LBicon, LBname, LBpercentage,LBcurrentSize,LBtotalSize,LBfileStatus,LBcurrentFolder,LBfolderStatus, LBspeed, LBtimeRemaining, LBcurrentFile,LBtaskStatus;
         MyButton BTNinfo, BTNpause;
         MyImage IMGspeedGraph;
         MyProgressBar PBsizeProgress,PBfileProgress,PBfolderProgress;
@@ -41,7 +41,8 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
         {
             LBicon.SetBinding(MyLabel.TextProperty, "Icon");
             LBname.SetBinding(MyLabel.TextProperty, "Name");
-            LBcurrentFileAndSize.SetBinding(MyLabel.TextProperty, "CurrentFileAndSize");
+            LBtaskStatus.SetBinding(MyLabel.TextProperty, "TaskStatus");
+            LBcurrentSize.SetBinding(MyLabel.TextProperty, "CurrentSize");
             LBtotalSize.SetBinding(MyLabel.TextProperty, "TotalSize");
             LBfileStatus.SetBinding(MyLabel.TextProperty, "FileStatus");
             LBcurrentFolder.SetBinding(MyLabel.TextProperty, "CurrentFolder");
@@ -49,7 +50,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             LBpercentage.SetBinding(MyLabel.TextProperty, "ProgressText");
             LBspeed.SetBinding(MyLabel.TextProperty, "Speed");
             LBtimeRemaining.SetBinding(MyLabel.TextProperty, "TimeRemaining");
-            LBtimePassed.SetBinding(MyLabel.TextProperty, "TimePassed");
+            LBcurrentFile.SetBinding(MyLabel.TextProperty, "CurrentFile");
             BTNinfo.SetBinding(MyButton.TextProperty, "Info");
             BTNinfo.SetBinding(MyButton.CommandProperty, "InfoClicked");
             BTNinfo.SetBinding(MyButton.IsEnabledProperty, "InfoEnabled");
@@ -88,12 +89,13 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
 
                 this.Children.Add(LBpercentage, 2, 0);
                 this.Children.Add(LBspeed, 2, 1);
+                this.AddChildrenAndSetSpan(LBtaskStatus, 2, 2, 2, 1);
 
-                this.AddChildrenAndSetSpan(LBtimePassed, 3, 0, 2, 1);
-                this.Children.Add(LBtimeRemaining, 5, 0);
+                this.Children.Add(LBcurrentSize, 3, 0);
+                this.Children.Add(LBtimeRemaining, 4, 0);
+                this.Children.Add(LBtotalSize, 5, 0);
 
-                this.Children.Add(LBcurrentFileAndSize, 3, 1);
-                this.Children.Add(LBtotalSize, 4, 1);
+                this.AddChildrenAndSetSpan(LBcurrentFile, 3, 1, 2, 1);
                 this.Children.Add(LBfileStatus, 5, 1);
 
                 this.AddChildrenAndSetSpan(LBcurrentFolder, 3, 2, 2, 1);
@@ -108,7 +110,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             {
                 LBicon = new MyLabel();
                 LBname = new MyLabel();
-                LBcurrentFileAndSize = new MyLabel();
+                LBcurrentSize = new MyLabel();
                 LBtotalSize = new MyLabel();
                 LBfileStatus = new MyLabel();
                 LBcurrentFolder = new MyLabel();
@@ -116,7 +118,8 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
                 LBpercentage = new MyLabel();
                 LBspeed = new MyLabel();
                 LBtimeRemaining = new MyLabel();
-                LBtimePassed = new MyLabel();
+                LBcurrentFile = new MyLabel();
+                LBtaskStatus = new MyLabel();
                 BTNinfo = new MyButton();
                 //PBprogress = new MyProgressBar();
                 PBsizeProgress = new MyProgressBar();

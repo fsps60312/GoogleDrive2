@@ -21,6 +21,7 @@ namespace GoogleDrive2.Local
             public Uploader(Folder folder)
             {
                 F = folder;
+                AddNotCompleted(1);
                 folderCreator.SetFolderMetadata(async (metadata) =>
                 {
                     metadata.name = F.Name;
@@ -30,33 +31,49 @@ namespace GoogleDrive2.Local
                 });
                 folderCreator.Completed += (success) =>
                 {
+                    AddThreadCount(-1);
                     if (success)
                     {
+                        AddNotCompleted(-1);
                         Interlocked.Increment(ref CreateFolderTaskProgress);
                         this.FolderProgressChanged?.Invoke(new Tuple<long, long>(Interlocked.Increment(ref this.ProgressCurrentFolder), this.ProgressTotalFolder));
                     }
                 };
+                this.Pausing += () => { folderCreator.Stop(); };
                 NewUploaderCreated?.Invoke(this);
             }
             Api.Files.FullCloudFileMetadata.FolderCreate folderCreator = new Api.Files.FullCloudFileMetadata.FolderCreate();
-            long ThreadCount = 0, NotCompleted = 0;
             protected override async Task StartPrivateAsync()
             {
                 if (CheckPause()) return;
                 this.SizeProgressChanged?.Invoke(new Tuple<long, long>(this.ProgressCurrentSize, this.ProgressTotalSize));
                 this.FileProgressChanged?.Invoke(new Tuple<long, long>(this.ProgressCurrentFile, this.ProgressTotalFile));
                 this.FolderProgressChanged?.Invoke(new Tuple<long, long>(this.ProgressCurrentFolder, this.ProgressTotalFolder));
-                var tasks = new Task[]{
+                Interlocked.Add(ref AddedThreadCount, 3);
+                AddThreadCount(3);
+                await Task.WhenAll(new Task[]{
                     CreateFolderTask(),
                     UploadSubfoldersTask(),
                     UploadSubfilesTask()
-                };
-                Interlocked.Add(ref ThreadCount, tasks.Length);
-                await Task.WhenAll(tasks.Select(async(t)=>
+                }.Select(async (t) =>
                 {
                     try { await t; }
-                    finally { if (Interlocked.Decrement(ref ThreadCount) == 0) CheckPause(); }
+                    finally
+                    {
+                        Interlocked.Add(ref AddedThreadCount, -1);
+                        AddThreadCount(-1);
+                    }
                 }));
+                //await Task.WhenAll(tasks.Select(async(t)=>
+                //{
+                //    try { await t; }
+                //    finally
+                //    {
+                //        var threadCount = Interlocked.Decrement(ref ThreadCount);
+                //        RunningTaskCountChanged?.Invoke(new Tuple<long, long>(threadCount, NotCompleted));
+                //        if (threadCount == 0) CheckPause();
+                //    }
+                //}));
             }
         }
     }

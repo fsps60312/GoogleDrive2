@@ -40,7 +40,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             {
                 if (value == __TotalFile__) return;
                 __TotalFile__ = value;
-                FileStatus = TotalFile + (string.IsNullOrEmpty(SearchFilesStatus) ? "" : $" | {SearchFilesStatus}");
+                FileStatus = TotalFile + (string.IsNullOrEmpty(SearchFilesStatus) ? "" : $"{SearchFilesStatus}");
                 OnPropertyChanged("TotalFile");
             }
         }
@@ -61,7 +61,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             {
                 if (value == __TotalFolder__) return;
                 __TotalFolder__ = value;
-                FolderStatus = TotalFolder + (string.IsNullOrEmpty(SearchFoldersStatus) ? "" : $" | {SearchFoldersStatus}");
+                FolderStatus = TotalFolder + (string.IsNullOrEmpty(SearchFoldersStatus) ? "" : $"{SearchFoldersStatus}");
                 OnPropertyChanged("TotalFolder");
             }
         }
@@ -133,7 +133,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             {
                 if (value == __SearchFoldersStatus__) return;
                 __SearchFoldersStatus__ = value;
-                FolderStatus = TotalFolder + (string.IsNullOrEmpty(SearchFoldersStatus) ? "" : $" | {SearchFoldersStatus}");
+                FolderStatus = TotalFolder + (string.IsNullOrEmpty(SearchFoldersStatus) ? "" : $"{SearchFoldersStatus}");
                 OnPropertyChanged("SearchFoldersStatus");
             }
         }
@@ -144,7 +144,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             {
                 if (value == __SearchFilesStatus__) return;
                 __SearchFilesStatus__ = value;
-                FileStatus = TotalFile + (string.IsNullOrEmpty(SearchFilesStatus) ? "" : $" | {SearchFilesStatus}");
+                FileStatus = TotalFile + (string.IsNullOrEmpty(SearchFilesStatus) ? "" : $"{SearchFilesStatus}");
                 OnPropertyChanged("SearchFilesStatus");
             }
         }
@@ -187,7 +187,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
         void UpdateMixedProgress()
         {
             const double createFileCost = 1024, createFolderCost = 1024;
-            if (searchStatus == new Tuple<long, long>(0, 0))
+            if (searchStatus.Item1 == 0 && searchStatus.Item2 == 0)
             {
                 Progress =
                 (sizeProgress.Item1 + fileProgress.Item1 * createFileCost + folderProgress.Item1 * createFolderCost) /
@@ -218,7 +218,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
                 case ProgressType.Size:
                     {
                         sizeProgress = p;
-                        if (searchStatus == new Tuple<long, long>(0, 0)) SizeProgress = p.Item2 == 0 ? 1 : (double)p.Item1 / p.Item2;
+                        SizeProgress = p.Item2 == 0 ? 1 : (double)p.Item1 / p.Item2;
                         CurrentSize = ByteCountToString(p.Item1, 3);
                         TotalSize = $"{ByteCountToString(p.Item2, 3)}";
                         OnSpeedDataAdded(p.Item1);
@@ -246,10 +246,10 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             up.Started += () => OnStarted();
             up.RunningTaskCountChanged += (ts) =>
               {
-                  if (ts == new Tuple<long, long>(0,0)) TaskStatus = null;
+                  if (ts == new Tuple<long, long>(0, 0)) TaskStatus = null;
                   else
                   {
-                      TaskStatus = $"{(ts.Item1 == 0 ? "Running" : "Stopped")}: {ts.Item1} / {ts.Item2}";
+                      TaskStatus = $"{(ts.Item1 == 0 ? Constants.Icons.Pause : Constants.Icons.Hourglass)}: {ts.Item1} / {ts.Item2}";
                   }
               };
             up.FileProgressChanged += (p) => UpdateProgress(p, ProgressType.File);

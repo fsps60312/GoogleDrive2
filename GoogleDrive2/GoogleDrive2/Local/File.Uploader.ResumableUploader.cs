@@ -30,6 +30,7 @@ namespace GoogleDrive2.Local
                         if (!await CreateUpload())
                         {
                             this.LogError("Failed to create resumable upload");
+                            OnUploadCompleted(null);
                             return;
                         }
                         else this.Debug("Upload created, uploading...");

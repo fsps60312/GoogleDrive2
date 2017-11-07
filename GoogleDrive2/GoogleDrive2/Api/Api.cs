@@ -33,6 +33,7 @@ namespace GoogleDrive2
             protected void OnDebugged(string msg) { Debug(msg, false); }
             protected void OnErrorLogged(string msg) { LogError(msg, false); }
             public bool IsActive { get { return pauseRequest == 0; } }
+            protected bool IsPausing { get { return pauseRequest == 1; } }
             private int pauseRequest = 0;// 0: Normal, 1: Pausing, 2: Paused
             public void Pause()
             {

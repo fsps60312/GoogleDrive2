@@ -35,8 +35,10 @@ namespace GoogleDrive2.Local
             {
                 ProgressChanged?.Invoke(new Tuple<long, long>(0, (long)await F.GetSizeAsync()));
             }
+            int pauseRequest = 0;
             public new async Task StartAsync()
             {
+                System.Threading.Interlocked.Exchange(ref pauseRequest, 0);
                 if (up == null)
                 {
                     if (await F.GetSizeAsync() < UploaderPrototype.MinChunkSize) up = new MultipartUploader(F, await this.GetFileMetadata());
@@ -59,10 +61,19 @@ namespace GoogleDrive2.Local
                     up.UploadCompleted += (id) => UploadCompleted?.Invoke(id);
                     //up.MessageAppended is triggered by Debug & LogError
                 }
-                await up.StartAsync();
+                if (pauseRequest == 0) await up.StartAsync();
             }
-            public new void Pause() { up.Pause(); }
-            public new bool IsActive { get { return up.IsActive; } }
+            public new void Pause()
+            {
+                System.Threading.Interlocked.Exchange(ref pauseRequest, 1);
+                if (up == null)
+                {
+                    OnPausing();
+                    OnPaused();
+                }
+                else up.Pause();
+            }
+            public new bool IsActive { get { return up == null ? false : up.IsActive; } }
             public Uploader(File file)
             {
                 F = file;

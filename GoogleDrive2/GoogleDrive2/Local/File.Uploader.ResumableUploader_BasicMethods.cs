@@ -79,7 +79,7 @@ namespace GoogleDrive2.Local
                     try
                     {
                         long chunkCount = 1;
-                        while (position < TotalSize)
+                        while (true)
                         {
                             var time = DateTime.Now;
                             var realChunkSize = Math.Min(TotalSize - position, chunkCount * MinChunkSize);
@@ -94,8 +94,9 @@ namespace GoogleDrive2.Local
                                     case System.Net.HttpStatusCode.OK:
                                     case System.Net.HttpStatusCode.Created:
                                         BytesUploaded = TotalSize;
+                                        MyLogger.Assert(position == TotalSize);
                                         OnUploadCompleted(ParseCloudId(await response.GetResponseString()));
-                                        break;
+                                        return;
                                     default:
                                         if ((int?)response?.StatusCode == 308)
                                         {
@@ -113,13 +114,18 @@ namespace GoogleDrive2.Local
                                         else
                                         {
                                             this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
-                                            OnCompleted(false);
+                                            OnUploadCompleted(null);
                                             return;
                                         }
                                 }
                             }
                             if (CheckPause()) return;
                         }
+                    }
+                    catch(Exception error)
+                    {
+                        this.LogError($"Error in StartResumableUploadAsync():\r\n{error}");
+                        OnUploadCompleted(null);
                     }
                     finally { F.CloseReadIfNot(); }
                 }
@@ -135,11 +141,13 @@ namespace GoogleDrive2.Local
                             case System.Net.HttpStatusCode.Created:
                                 this.Debug("The upload was completed, and no further action is necessary.");
                                 this.Debug(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                                OnUploadCompleted(null);//TODO
                                 return;
                             case System.Net.HttpStatusCode.NotFound:
                                 this.Debug("The upload session has expired and the upload needs to be restarted from the beginning");
                                 this.Debug(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
-                                return;
+                                startPosition = 0;
+                                break;
                             default:
                                 if ((int?)response?.StatusCode == 308)
                                 {
@@ -149,6 +157,7 @@ namespace GoogleDrive2.Local
                                 else
                                 {
                                     this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                                    OnUploadCompleted(null);
                                     return;
                                 }
                         }
