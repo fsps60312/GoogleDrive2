@@ -42,6 +42,11 @@ namespace GoogleDrive2.Local
                             Completed?.Invoke();
                             IsCompleted = true;
                         }
+                        else
+                        {
+                            Pausing?.Invoke();
+                            Paused?.Invoke();
+                        }
                     });
                     fileProgressCall = new Action<Tuple<long, long>>((p) => { FileProgressChanged?.Invoke(p); });
                     folderProgressCall = new Action<Tuple<long, long>>((p) => { FolderProgressChanged?.Invoke(p); });

@@ -18,7 +18,7 @@ namespace GoogleDrive2.Local
             long ThreadCount = 0, NotCompleted = 0, AddedThreadCount = 0;
             void OnRunningTaskCountChanged(Tuple<long,long>rawData)
             {
-                RunningTaskCountChanged?.Invoke(new Tuple<long, long>(rawData.Item1, rawData.Item2));
+                RunningTaskCountChanged?.Invoke(new Tuple<long, long>(rawData.Item1 - Interlocked.Read(ref AddedThreadCount), rawData.Item2));
             }
             void AddThreadCount(long v)
             {
@@ -161,9 +161,11 @@ namespace GoogleDrive2.Local
             }
             int CreateFolderTaskProgress = 0;
             int IsCreateFolderTaskInProgress = 0;
+            Libraries.MySemaphore semaphoreCreateFolder = new Libraries.MySemaphore(1);
             private async Task CreateFolderTask()
             {
                 if (Interlocked.CompareExchange(ref IsCreateFolderTaskInProgress, 1, 0) == 1) return;
+                await semaphoreCreateFolder.WaitAsync();
                 try
                 {
                     if (0 == CreateFolderTaskProgress)
@@ -174,7 +176,11 @@ namespace GoogleDrive2.Local
                         return;//folderCreator.Completed will maintain CreateFolderTaskProgress
                     }
                 }
-                finally { MyLogger.Assert(Interlocked.CompareExchange(ref IsCreateFolderTaskInProgress, 0, 1) == 1); }
+                finally
+                {
+                    semaphoreCreateFolder.Release();
+                    MyLogger.Assert(Interlocked.CompareExchange(ref IsCreateFolderTaskInProgress, 0, 1) == 1);
+                }
             }
             int UploadSubfoldersTaskProgress = 0;
             int IsUploadSubfoldersTaskInProgress = 0;

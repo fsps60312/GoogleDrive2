@@ -41,7 +41,7 @@ namespace GoogleDrive2.Api.Files
             {
                 GetCloudId = () => { return Task.FromResult(id); };
                 FolderCreateCompleted?.Invoke(id);
-                OnCompleted(true);
+                OnCompleted(id != null);
             }
             protected Func<Task<FullCloudFileMetadata>> GetFolderMetadata = ()
                 => Task.FromResult(new FullCloudFileMetadata { mimeType = Constants.FolderMimeType });
