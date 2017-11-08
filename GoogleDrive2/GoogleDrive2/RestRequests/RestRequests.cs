@@ -75,7 +75,7 @@ namespace GoogleDrive2.RestRequests
     }
     class RestRequestsLimiter: RestRequestsRetrier
     {
-        private Libraries.MySemaphore semaphore = new Libraries.MySemaphore(50);
+        private Libraries.MySemaphore semaphore = new Libraries.MySemaphore(10);
         public override async Task<MyHttpResponse> GetHttpResponseAsync(MyHttpRequest request)
         {
             await semaphore.WaitAsync();

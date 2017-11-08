@@ -8,10 +8,10 @@ namespace GoogleDrive2.Local
 {
     partial class Folder
     {
-        public partial class Uploader:Api.AdvancedApiOperator
+        public partial class Uploader : Api.AdvancedApiOperator
         {
             public static event Libraries.Events.MyEventHandler<Uploader> NewUploaderCreated;
-            public event Libraries.Events.MyEventHandler<Tuple<long, long>> FileProgressChanged, FolderProgressChanged, SizeProgressChanged,LocalSearchStatusChanged;
+            public event Libraries.Events.MyEventHandler<Tuple<long, long>> FileProgressChanged, FolderProgressChanged, SizeProgressChanged, LocalSearchStatusChanged;
             public event Libraries.Events.MyEventHandler<Tuple<long, long>> RunningTaskCountChanged;
             public Folder F { get; private set; }
             private Func<Api.Files.FullCloudFileMetadata, Task<Api.Files.FullCloudFileMetadata>> metadataFunc = null;
@@ -24,7 +24,7 @@ namespace GoogleDrive2.Local
                 NewUploaderCreated?.Invoke(this);
             }
             Api.Files.FullCloudFileMetadata.FolderCreate folderCreator = null;
-            bool ShouldReturn(bool?v,out bool result)
+            bool ShouldReturn(bool? v, out bool result)
             {
                 if (v.HasValue)
                 {
@@ -33,7 +33,7 @@ namespace GoogleDrive2.Local
                 }
                 else return result = false;//just to initialize "result"
             }
-            bool? MergeResults(bool?[]status)
+            bool? MergeResults(bool?[] status)
             {
                 var s = status.SelectMany((v) => { return v.HasValue ? new bool?[] { v } : new bool?[] { }; }).ToArray();
                 MyLogger.Assert(s.Length <= 1);//Should not return twice
@@ -72,7 +72,7 @@ namespace GoogleDrive2.Local
                     this.LogError(msg);
                     //await MyLogger.Alert(msg);
                 }
-                return result.HasValue ? result.Value : true;
+                return result.HasValue ? result.Value : false;
             }
         }
     }
