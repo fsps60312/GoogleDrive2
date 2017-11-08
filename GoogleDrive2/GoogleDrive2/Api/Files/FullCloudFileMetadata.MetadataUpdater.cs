@@ -9,7 +9,6 @@ namespace GoogleDrive2.Api.Files
     {
         public partial class FolderCreate:SimpleApiOperator
         {
-            const int MaxConcurrentCount = 10;
             public Func<Task<string>> GetCloudId { get; private set; } = null;
             public FolderCreate()
             {
@@ -37,11 +36,16 @@ namespace GoogleDrive2.Api.Files
         public partial class FolderCreate : SimpleApiOperator
         {
             public event Libraries.Events.MyEventHandler<string> FolderCreateCompleted;
-            private void OnFolderCreateCompleted(string id)
+            private bool OnFolderCreateCompleted(string id)
             {
+                if(id==null)
+                {
+                    this.LogError("id is null");
+                    return false;
+                }
                 GetCloudId = () => { return Task.FromResult(id); };
                 FolderCreateCompleted?.Invoke(id);
-                OnCompleted(id != null);
+                return true;
             }
             protected Func<Task<FullCloudFileMetadata>> GetFolderMetadata = ()
                 => Task.FromResult(new FullCloudFileMetadata { mimeType = Constants.FolderMimeType });
@@ -53,53 +57,41 @@ namespace GoogleDrive2.Api.Files
                       return await func(await preFunc());
                   });
             }
-            static Libraries.MySemaphore semaphore = new Libraries.MySemaphore(MaxConcurrentCount);
+            Libraries.MySemaphore semaphore = new Libraries.MySemaphore(1);
             bool stopRequest = false;
             public void Stop()
             {
                 stopRequest = true;
             }
-            public override async Task StartAsync()
+            protected override async Task<bool> StartPrivateAsync()
             {
                 stopRequest = false;
                 await semaphore.WaitAsync();
+                if (stopRequest) return false;
                 try
                 {
-                    if (stopRequest)
-                    {
-                        OnCompleted(false);
-                        return;
-                    }
                     var request = new MultipartUpload(await GetFolderMetadata(), new byte[0]);
                     using (var response = await request.GetHttpResponseAsync())
                     {
                         if (response?.StatusCode == HttpStatusCode.OK)
                         {
                             var f = JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(await request.GetResponseTextAsync(response));
-                            OnFolderCreateCompleted(f.id);
+                            return OnFolderCreateCompleted(f.id);
                         }
                         else
                         {
                             this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
-                            OnCompleted(false);
+                            return false;
                         }
                     }
                 }
                 catch (Exception error)
                 {
                     this.LogError(error.ToString());
-                    OnCompleted(false);
+                    return false;
                 }
                 finally { semaphore.Release(); }
             }
-            //public FolderCreate()
-            //{
-            //    //this.metaData = metaData;
-            //    //if ((metaData as FullCloudFileMetadata).mimeType != Constants.FolderMimeType)
-            //    //{
-            //    //    MyLogger.LogError($"Folder mimeType expected: {(metaData as FullCloudFileMetadata).mimeType}");
-            //    //}
-            //}
         }
         public class Starrer:MetadataUpdater
         {
@@ -113,18 +105,22 @@ namespace GoogleDrive2.Api.Files
         {
             string fileId;
             FullCloudFileMetadata metadata;
-            public override async Task StartAsync()
+            protected override async Task<bool> StartPrivateAsync()
             {
                 var request = new UpdateMetadata(fileId, metadata);
                 using (var response = await request.GetHttpResponseAsync())
                 {
-                    if(response?.StatusCode==HttpStatusCode.OK)
+                    if (response?.StatusCode == HttpStatusCode.OK)
                     {
                         var f = JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(await request.GetResponseTextAsync(response));
                         MyLogger.Assert(f.id == fileId);
-                        OnCompleted(true);
+                        return true;
                     }
-                    else this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                    else
+                    {
+                        this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                        return false;
+                    }
                 }
             }
             public MetadataUpdater(string fileId,FullCloudFileMetadata metadata)

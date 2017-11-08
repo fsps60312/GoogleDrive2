@@ -15,7 +15,6 @@ namespace GoogleDrive2.Local
                 protected void OnUploadCompleted(string id)
                 {
                     UploadCompleted?.Invoke(id);
-                    OnCompleted(id != null);
                 }
                 public static async Task StartPrivateStaticAsync(UploaderPrototype up)
                 {
@@ -66,18 +65,22 @@ namespace GoogleDrive2.Local
                         return null;
                     }
                 }
-                protected abstract Task StartUploadAsync();
+                protected abstract Task<bool> StartUploadAsync();
                 static Libraries.MySemaphore semaphore = new Libraries.MySemaphore(MaxConcurrentCount);
-                protected override async Task StartPrivateAsync()
+                protected override async Task<bool> StartPrivateAsync()
                 {
                     await semaphore.WaitAsync();
                     try
                     {
                         F.CloseReadIfNot();
                         await AssignFileMetadata();
-                        await StartUploadAsync();
+                        return await StartUploadAsync();
                     }
-                    catch (Exception error) { this.LogError(error.ToString()); }
+                    catch (Exception error)
+                    {
+                        this.LogError(error.ToString());
+                        return false;
+                    }
                     finally
                     {
                         F.CloseReadIfNot();

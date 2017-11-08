@@ -14,66 +14,65 @@ namespace GoogleDrive2.Local
             public event Libraries.Events.MyEventHandler<Tuple<long, long>> FileProgressChanged, FolderProgressChanged, SizeProgressChanged,LocalSearchStatusChanged;
             public event Libraries.Events.MyEventHandler<Tuple<long, long>> RunningTaskCountChanged;
             public Folder F { get; private set; }
-            public void SetFolderMetadata(Func<Api.Files.FullCloudFileMetadata, Task<Api.Files.FullCloudFileMetadata>> func)
-            {
-                folderCreator.SetFolderMetadata(func);
-            }
+            private Func<Api.Files.FullCloudFileMetadata, Task<Api.Files.FullCloudFileMetadata>> metadataFunc = null;
+            public void SetFolderMetadata(Func<Api.Files.FullCloudFileMetadata, Task<Api.Files.FullCloudFileMetadata>> func) { metadataFunc = func; }
             public Uploader(Folder folder)
             {
                 F = folder;
                 AddNotCompleted(1);
-                folderCreator.SetFolderMetadata(async (metadata) =>
-                {
-                    metadata.name = F.Name;
-                    metadata.createdTime = await F.GetTimeCreatedAsync();
-                    metadata.modifiedTime = await F.GetTimeModifiedAsync();
-                    return metadata;
-                });
-                folderCreator.Completed += (success) =>
-                {
-                    AddThreadCount(-1);
-                    if (success)
-                    {
-                        AddNotCompleted(-1);
-                        Interlocked.Increment(ref CreateFolderTaskProgress);
-                        this.FolderProgressChanged?.Invoke(new Tuple<long, long>(Interlocked.Increment(ref this.ProgressCurrentFolder), this.ProgressTotalFolder));
-                    }
-                };
-                this.Pausing += () => { folderCreator.Stop(); };
+                folderCreator = new Api.Files.FullCloudFileMetadata.FolderCreate();
                 NewUploaderCreated?.Invoke(this);
             }
-            Api.Files.FullCloudFileMetadata.FolderCreate folderCreator = new Api.Files.FullCloudFileMetadata.FolderCreate();
-            protected override async Task StartPrivateAsync()
+            Api.Files.FullCloudFileMetadata.FolderCreate folderCreator = null;
+            bool ShouldReturn(bool?v,out bool result)
             {
-                if (CheckPause()) return;
+                if (v.HasValue)
+                {
+                    result = v.Value;
+                    return true;
+                }
+                else return result = false;//just to initialize "result"
+            }
+            bool? MergeResults(bool?[]status)
+            {
+                var s = status.SelectMany((v) => { return v.HasValue ? new bool?[] { v } : new bool?[] { }; }).ToArray();
+                MyLogger.Assert(s.Length <= 1);//Should not return twice
+                return s.Length == 0 ? null : s[0];
+            }
+            int recordedSubfileCount = -1, recordedSubfolderCount = -1;
+            protected override async Task<bool> StartPrivateAsync()
+            {
+                if (CheckPause()) return false;
                 this.SizeProgressChanged?.Invoke(new Tuple<long, long>(this.ProgressCurrentSize, this.ProgressTotalSize));
                 this.FileProgressChanged?.Invoke(new Tuple<long, long>(this.ProgressCurrentFile, this.ProgressTotalFile));
                 this.FolderProgressChanged?.Invoke(new Tuple<long, long>(this.ProgressCurrentFolder, this.ProgressTotalFolder));
                 Interlocked.Add(ref AddedThreadCount, 3);
                 AddThreadCount(3);
-                await Task.WhenAll(new Task[]{
-                    CreateFolderTask(),
-                    UploadSubfoldersTask(),
-                    UploadSubfilesTask()
-                }.Select(async (t) =>
+                var result = MergeResults(await Task.WhenAll(new Task[]{
+                            CreateFolderTask(),
+                            UploadSubfoldersTask(),
+                            UploadSubfilesTask()
+                        }.Select(new Func<Task, Task<bool?>>(async (t) =>
+                        {
+                            bool? ans;
+                            try { await t; }
+                            finally
+                            {
+                                Interlocked.Add(ref AddedThreadCount, -1);
+                                ans = AddThreadCount(-1);
+                            }
+                            return ans;
+                        }))));
+                if (!result.HasValue)
                 {
-                    try { await t; }
-                    finally
-                    {
-                        Interlocked.Add(ref AddedThreadCount, -1);
-                        AddThreadCount(-1);
-                    }
-                }));
-                //await Task.WhenAll(tasks.Select(async(t)=>
-                //{
-                //    try { await t; }
-                //    finally
-                //    {
-                //        var threadCount = Interlocked.Decrement(ref ThreadCount);
-                //        RunningTaskCountChanged?.Invoke(new Tuple<long, long>(threadCount, NotCompleted));
-                //        if (threadCount == 0) CheckPause();
-                //    }
-                //}));
+                    var msg = $"!result.HasValue.\r\n" +
+                        $"ThreadCount={ThreadCount}, NotCompleted={NotCompleted}, AddedThreadCount={AddedThreadCount}\r\n" +
+                        $"Progress=({CreateFolderTaskProgress},{UploadSubfoldersTaskProgress},{UploadSubfilesTaskProgress})\r\n" +
+                        $"FileCount={recordedSubfileCount}, FolderCount={recordedSubfolderCount}";
+                    this.LogError(msg);
+                    //await MyLogger.Alert(msg);
+                }
+                return result.HasValue ? result.Value : true;
             }
         }
     }

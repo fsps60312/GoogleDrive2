@@ -11,23 +11,36 @@ namespace GoogleDrive2
     {
         public abstract class SimpleApiOperator:ApiOperator
         {
-            public abstract Task StartAsync();
+            protected abstract Task<bool> StartPrivateAsync();
+            Libraries.MySemaphore semaphore = new Libraries.MySemaphore(1);
+            public async Task<bool> StartAsync()
+            {
+                await semaphore.WaitAsync();
+                try
+                {
+                    if (IsCompleted)
+                    {
+                        __OnCompleted(false);
+                        return false;
+                    }
+                    var completed = await StartPrivateAsync();
+                    __OnCompleted(completed);
+                    return completed;
+                }
+                finally { semaphore.Release(); }
+            }
+            protected SimpleApiOperator() { }
         }
         public abstract class AdvancedApiOperator:ApiOperator
         {
-            public event Libraries.Events.EmptyEventHandler Started,Pausing,Paused;
+            public event Libraries.Events.EmptyEventHandler Started,Pausing;//Paused now replaced by Completed(false)
             public event Libraries.Events.MyEventHandler<string> MessageAppended;
             protected void OnStarted() { Started?.Invoke(); }
             protected void OnPausing() { Pausing?.Invoke(); }
-            protected void OnPaused() { Paused?.Invoke(); }
             protected bool CheckPause()
             {
                 //this.Debug($"pauseRequest = {pauseRequest}");
-                if (System.Threading.Interlocked.CompareExchange(ref pauseRequest, 2, 1) == 1)
-                {
-                    OnPaused();
-                    return true;
-                }
+                if (System.Threading.Interlocked.CompareExchange(ref pauseRequest, 2, 1) == 1) return true;
                 else return false;
             }
             protected void OnDebugged(string msg) { Debug(msg, false); }
@@ -40,26 +53,28 @@ namespace GoogleDrive2
                 if (IsCompleted) return;
                 pauseRequest = 1;
                 OnPausing();
-                //if (IsCompleted)
-                //{
-                //    this.Debug("Pause: Operation has already completed");
-                //    return;
-                //}
             }
-            protected abstract Task StartPrivateAsync();
-            public async Task StartAsync()
+            protected abstract Task<bool> StartPrivateAsync();
+            Libraries.MySemaphore semaphore = new Libraries.MySemaphore(1);
+            public async Task<bool> StartAsync()
             {
-                if (IsCompleted) return;
+                await semaphore.WaitAsync();
                 try
                 {
                     Started?.Invoke();
+                    if (IsCompleted)
+                    {
+                        __OnCompleted(false);
+                        return false;
+                    }
                     int prePauseRequest = System.Threading.Interlocked.Exchange(ref pauseRequest, 0);
                     if (prePauseRequest == 1)
                     {
                         this.Debug("Pause Request Canceled");
-                        return;// Cancel pauseRequest
+                        __OnCompleted(false);
+                        return false;// Cancel pauseRequest
                     }
-                    else if(prePauseRequest==2)
+                    else if (prePauseRequest == 2)
                     {
                         this.Debug("Resumed");
                     }
@@ -70,28 +85,38 @@ namespace GoogleDrive2
                     if (IsCompleted)
                     {
                         this.LogError("StartAsync: Operation has already completed");
-                        return;
+                        __OnCompleted(false);
+                        return false;
                     }
-                    await StartPrivateAsync();
+                    var completed = await StartPrivateAsync();
+                    __OnCompleted(completed);
+                    return completed;
                 }
-                catch(Exception error)
+                catch (Exception error)
                 {
                     this.LogError(error.ToString());
+                    __OnCompleted(false);
+                    return false;
                 }
+                finally { semaphore.Release(); }
             }
-            public AdvancedApiOperator()
+            protected AdvancedApiOperator()
             {
                 this.ErrorLogged += (error) => MessageAppended?.Invoke(Constants.Icons.Warning + error);
                 this.Debugged += (msg) => MessageAppended?.Invoke(Constants.Icons.Info + msg);
                 this.Completed += (success)=> { pauseRequest = success ? 0 : 2; };
             }
         }
-        public class ApiOperator:MyLoggerClass
+        public abstract class ApiOperator:MyLoggerClass
         {
             public bool IsCompleted = false;
             public event Libraries.Events.MyEventHandler<bool> Completed;
-            protected void OnCompleted(bool success) { Completed?.Invoke(success); }
-            protected ApiOperator() { Completed += (success) => { if (success) IsCompleted = true; }; }
+            protected void __OnCompleted(bool success)
+            {
+                if (success) IsCompleted = true;
+                Completed?.Invoke(success);
+            }
+            protected ApiOperator() { }
         }
         public class ParametersClass
         {

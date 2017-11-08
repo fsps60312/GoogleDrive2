@@ -20,23 +20,22 @@ namespace GoogleDrive2.Local
             {
                 RunningTaskCountChanged?.Invoke(new Tuple<long, long>(rawData.Item1 - Interlocked.Read(ref AddedThreadCount), rawData.Item2));
             }
-            void AddThreadCount(long v)
+            bool? AddThreadCount(long v)
             {
                 var threadCount = Interlocked.Add(ref ThreadCount, v);
                 OnRunningTaskCountChanged(new Tuple<long, long>(threadCount, NotCompleted));
-                if (threadCount == 0)
+                if (threadCount == 0)//If threadCount==0, NotCompleted will not changed
                 {
                     MyLogger.Assert(NotCompleted >= 0);
-                    if (NotCompleted == 0) OnCompleted(true);
-                    else CheckPause();
+                    return NotCompleted == 0;
                 }
+                return null;
             }
             void AddNotCompleted(long v)
             {
                 var notCompleted = Interlocked.Add(ref NotCompleted, v);
                 OnRunningTaskCountChanged(new Tuple<long, long>(ThreadCount, notCompleted));
             }
-            List<Subtask> Subtasks = new List<Subtask>();
             Tuple<long, long> MaintainProgress(Tuple<long, long> p, ref long current, ref long total, ref long parentCurrent, ref long parentTotal)
             {
                 var cdif = p.Item1 - Interlocked.Exchange(ref current, p.Item1);
@@ -91,50 +90,34 @@ namespace GoogleDrive2.Local
             }
             void AddSubtask(Subtask subtask)
             {
-                int isPausing = 0;
-                subtask.Started += () =>
-                {
-                    if (Interlocked.CompareExchange(ref isPausing, 0, 1) == 0)
-                    {
-                        AddThreadCount(1);
-                    }
-                };
-                subtask.Pausing += () => { Interlocked.CompareExchange(ref isPausing, 1, 0); };
-                subtask.Paused += () =>
-                {
-                    if (Interlocked.CompareExchange(ref isPausing, 0, 1) != 1) this.LogError("isPausing==0, but Paused triggered");
-                    AddThreadCount(-1);
-                };
-                subtask.Completed += () =>
-                {
-                    Interlocked.CompareExchange(ref isPausing, 0, 1);
-                    AddThreadCount(-1);
-                    AddNotCompleted(-1);
-                };
                 RegisterProgressChange(subtask, ProgressType.File);
                 RegisterProgressChange(subtask, ProgressType.Folder);
                 RegisterProgressChange(subtask, ProgressType.Size);
                 RegisterProgressChange(subtask, ProgressType.LocalSearch);
                 RegisterProgressChange(subtask, ProgressType.RunningTaskCount);
-                this.Started += async () => { await subtask.Start(); };
                 this.Pausing += () => { subtask.Pause(); };
-                Subtasks.Add(subtask);
             }
             Subtask AddAndGetSubtask(File.Uploader uploader)
             {
-                Action pausedCall;
-                Action<bool> completedCall;
-                Action<Tuple<long, long>> fileProgressCall, folderProgressCall, sizeProgressCall,localSearchStatusCall,runningTaskCountCall;
+                Action<Tuple<long, long>> fileProgressCall = null, folderProgressCall, sizeProgressCall, localSearchStatusCall, runningTaskCountCall;
                 var subtask = new Subtask(
-                    new Func<Task>(async () => { await uploader.StartAsync(); }),
+                    new Func<Task<bool>>(async () =>
+                    {
+                        AddThreadCount(1);
+                        try
+                        {
+                            if (await uploader.StartAsync())
+                            {
+                                fileProgressCall(new Tuple<long, long>(1, 1));
+                                AddNotCompleted(-1);
+                                return true;
+                            }
+                            else return false;
+                        }
+                        finally { AddThreadCount(-1); }
+                    }),
                     new Action(() => { uploader.Pause(); }),
-                    out pausedCall, out completedCall, out fileProgressCall, out folderProgressCall, out sizeProgressCall, out localSearchStatusCall, out runningTaskCountCall);
-                uploader.Paused += () => { pausedCall(); };
-                uploader.Completed += (success) =>
-                {
-                    completedCall(success);
-                    fileProgressCall(new Tuple<long, long>(1, 1));
-                };
+                    out fileProgressCall, out folderProgressCall, out sizeProgressCall, out localSearchStatusCall, out runningTaskCountCall);
                 uploader.ProgressChanged += (p) => { sizeProgressCall(p); };
                 AddSubtask(subtask);
                 fileProgressCall(new Tuple<long, long>(0, 1));
@@ -142,15 +125,24 @@ namespace GoogleDrive2.Local
             }
             Subtask AddAndGetSubtask(Folder.Uploader uploader)
             {
-                Action pausedCall;
-                Action<bool> completedCall;
-                Action<Tuple<long, long>> fileProgressCall, folderProgressCall, sizeProgressCall, localSearchStatusCall,runningTaskCountCall;
+                Action<Tuple<long, long>> fileProgressCall, folderProgressCall, sizeProgressCall, localSearchStatusCall, runningTaskCountCall;
                 var subtask = new Subtask(
-                    new Func<Task>(async () => { await uploader.StartAsync(); }),
+                    new Func<Task<bool>>(async () =>
+                    {
+                        AddThreadCount(1);
+                        try
+                        {
+                            if (await uploader.StartAsync())
+                            {
+                                AddNotCompleted(-1);
+                                return true;
+                            }
+                            else return false;
+                        }
+                        finally { AddThreadCount(-1); }
+                    }),
                     new Action(() => { uploader.Pause(); }),
-                    out pausedCall, out completedCall, out fileProgressCall, out folderProgressCall, out sizeProgressCall, out localSearchStatusCall, out runningTaskCountCall);
-                uploader.Paused += () => { pausedCall(); };
-                uploader.Completed += (success) => { completedCall(success); };
+                    out fileProgressCall, out folderProgressCall, out sizeProgressCall, out localSearchStatusCall, out runningTaskCountCall);
                 uploader.FileProgressChanged += (p) => { fileProgressCall(p); };
                 uploader.FolderProgressChanged += (p) => { folderProgressCall(p); };
                 uploader.SizeProgressChanged += (p) => { sizeProgressCall(p); };
@@ -161,75 +153,100 @@ namespace GoogleDrive2.Local
             }
             int CreateFolderTaskProgress = 0;
             int IsCreateFolderTaskInProgress = 0;
-            Libraries.MySemaphore semaphoreCreateFolder = new Libraries.MySemaphore(1);
             private async Task CreateFolderTask()
             {
                 if (Interlocked.CompareExchange(ref IsCreateFolderTaskInProgress, 1, 0) == 1) return;
-                await semaphoreCreateFolder.WaitAsync();
                 try
                 {
+                    if (IsPausing) return;
                     if (0 == CreateFolderTaskProgress)
                     {
-                        if (IsPausing) return;
+                        folderCreator.SetFolderMetadata(async (metadata) =>
+                        {
+                            metadata.name = F.Name;
+                            metadata.createdTime = await F.GetTimeCreatedAsync();
+                            metadata.modifiedTime = await F.GetTimeModifiedAsync();
+                            return this.metadataFunc == null ? metadata : await this.metadataFunc(metadata);
+                        });
+                        //this.Pausing += () => { folderCreator.Stop(); };
+                        Interlocked.Increment(ref CreateFolderTaskProgress);
+                    }
+                    if (IsPausing) return;
+                    if (1 == CreateFolderTaskProgress)
+                    {
                         AddThreadCount(1);
-                        await folderCreator.StartAsync();//folderCreator.Completed will do: AddThreadCount(-1), AddNotCompleted(-1) if necessary
-                        return;//folderCreator.Completed will maintain CreateFolderTaskProgress
+                        try
+                        {
+                            if (await folderCreator.StartAsync())
+                            {
+                                AddNotCompleted(-1);
+                                this.FolderProgressChanged?.Invoke(new Tuple<long, long>(Interlocked.Increment(ref this.ProgressCurrentFolder), this.ProgressTotalFolder));
+                                Interlocked.Increment(ref CreateFolderTaskProgress);
+                            }
+                        }
+                        finally { AddThreadCount(-1); }
                     }
                 }
-                finally
-                {
-                    semaphoreCreateFolder.Release();
-                    MyLogger.Assert(Interlocked.CompareExchange(ref IsCreateFolderTaskInProgress, 0, 1) == 1);
-                }
+                finally { MyLogger.Assert(Interlocked.CompareExchange(ref IsCreateFolderTaskInProgress, 0, 1) == 1); }
             }
             int UploadSubfoldersTaskProgress = 0;
             int IsUploadSubfoldersTaskInProgress = 0;
+            List<Subtask> UploadSubfoldersSubtasks = null;
             private async Task UploadSubfoldersTask()
             {
                 if (Interlocked.CompareExchange(ref IsUploadSubfoldersTaskInProgress, 1, 0) == 1) return;
                 try
                 {
+                    if (IsPausing) return;
                     if (0 == UploadSubfoldersTaskProgress)
                     {
-                        if (IsPausing) return;
                         this.Debug("Searching subfolders...");
                         LocalSearchStatusChanged?.Invoke(new Tuple<long, long>(Interlocked.Increment(ref SearchLocalFoldersActions), this.SearchLocalFilesActions));
                         var subfolders = await F.GetFoldersAsync();
                         LocalSearchStatusChanged?.Invoke(new Tuple<long, long>(Interlocked.Decrement(ref SearchLocalFoldersActions), this.SearchLocalFilesActions));
-                        this.Debug($"Found {subfolders.Count} subfolders");
+                        this.Debug($"Found {recordedSubfolderCount=subfolders.Count} subfolders");
                         AddNotCompleted(subfolders.Count);
-                        await Task.WhenAll(subfolders.Select(async (f) =>
+                        UploadSubfoldersSubtasks = subfolders.Select((f) =>
+                         {
+                             var uploader = new Folder.Uploader(f);
+                             uploader.folderCreator.SetFolderMetadata(async (metadata) =>
+                             {
+                                 metadata.parents = new List<string> { await folderCreator.GetCloudId() };
+                                 return metadata;
+                             });
+                             return AddAndGetSubtask(uploader);
+                         }).ToList();
+                        Interlocked.Increment(ref UploadSubfoldersTaskProgress);
+                    }
+                    if (IsPausing) return;
+                    if (1 == UploadSubfoldersTaskProgress)
+                    {
+                        await Task.WhenAll(UploadSubfoldersSubtasks.Select(async (subtask) =>
                         {
-                            var uploader = new Folder.Uploader(f);
-                            uploader.folderCreator.SetFolderMetadata(async (metadata) =>
-                            {
-                                metadata.parents = new List<string> { await folderCreator.GetCloudId() };
-                                return metadata;
-                            });
-                            var subtask = AddAndGetSubtask(uploader);
                             if (this.IsActive) await subtask.Start();
                         }));
-                        UploadSubfoldersTaskProgress++;
                     }
                 }
                 finally { MyLogger.Assert(Interlocked.CompareExchange(ref IsUploadSubfoldersTaskInProgress, 0, 1) == 1); }
             }
             int UploadSubfilesTaskProgress = 0;
             int IsUploadSubfilesTaskInProgress = 0;
+            List<Subtask> UploadSubfilesSubtasks = null;
             private async Task UploadSubfilesTask()
             {
                 if (Interlocked.CompareExchange(ref IsUploadSubfilesTaskInProgress, 1, 0) == 1) return;
                 try
                 {
+                    if (IsPausing) return;
                     if (0 == UploadSubfilesTaskProgress)
                     {
                         this.Debug("Searching subfiles...");
                         LocalSearchStatusChanged?.Invoke(new Tuple<long, long>(SearchLocalFoldersActions, Interlocked.Increment(ref this.SearchLocalFilesActions)));
                         var subfiles = await F.GetFilesAsync();
                         LocalSearchStatusChanged?.Invoke(new Tuple<long, long>(SearchLocalFoldersActions, Interlocked.Add(ref this.SearchLocalFilesActions, -1 + subfiles.Count)));
-                        this.Debug($"Found {subfiles.Count} subfiles");
+                        this.Debug($"Found {recordedSubfileCount = subfiles.Count} subfiles");
                         AddNotCompleted(subfiles.Count);
-                        await Task.WhenAll(subfiles.Select(async (f) =>
+                        var uploaders = subfiles.Select((f) =>
                         {
                             var uploader = new File.Uploader(f);
                             uploader.SetFileMetadata(async (metadata) =>
@@ -237,12 +254,24 @@ namespace GoogleDrive2.Local
                                 metadata.parents = new List<string> { await folderCreator.GetCloudId() };
                                 return metadata;
                             });
+                            return uploader;
+                        });
+                        UploadSubfilesSubtasks = (await Task.WhenAll(uploaders.Select(async (uploader) =>
+                        {
                             var subtask = AddAndGetSubtask(uploader);
                             await uploader.GetFileSizeFirstAsync();
                             LocalSearchStatusChanged?.Invoke(new Tuple<long, long>(SearchLocalFoldersActions, Interlocked.Decrement(ref this.SearchLocalFilesActions)));
+                            return subtask;
+                        }))).ToList();
+                        Interlocked.Increment(ref UploadSubfilesTaskProgress);
+                    }
+                    if (IsPausing) return;
+                    if (1 == UploadSubfilesTaskProgress)
+                    {
+                        await Task.WhenAll(UploadSubfilesSubtasks.Select(async (subtask) =>
+                        {
                             if (this.IsActive) await subtask.Start();
                         }));
-                        UploadSubfilesTaskProgress++;
                     }
                 }
                 finally { MyLogger.Assert(Interlocked.CompareExchange(ref IsUploadSubfilesTaskInProgress, 0, 1) == 1); }

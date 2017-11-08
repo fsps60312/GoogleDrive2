@@ -241,7 +241,6 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
         {
             up.Completed += (success) => OnCompleted(success);
             up.MessageAppended += (msg) => OnMessageAppended(msg);
-            up.Paused += () => OnPaused();
             up.Pausing += () => OnPausing();
             up.Started += () => OnStarted();
             up.RunningTaskCountChanged += (ts) =>

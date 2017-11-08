@@ -111,16 +111,11 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
                 PauseButtonEnabled = false;
                 OnMessageAppended($"{Constants.Icons.Completed} Completed");
                 Icon = Constants.Icons.Completed;
-                //if (Progress == 0)
-                //{
-                //    Progress = 1;
-                //    OnMessageAppended($"{Constants.Icons.Info} This is an Empty File");
-                //}
             }
             else
             {
-                OnMessageAppended($"{Constants.Icons.Warning} Stopped due to Error");
-                Icon = Constants.Icons.Warning;
+                OnMessageAppended($"{Constants.Icons.Info} Paused");
+                Icon = Constants.Icons.Play;
             }
             PauseButtonText = Constants.Icons.Play;
         }

@@ -74,7 +74,7 @@ namespace GoogleDrive2.Local
                     request.ClearBody();
                     return ans;
                 }
-                async Task StartResumableUploadAsync(long position)
+                async Task<bool> StartResumableUploadAsync(long position)
                 {
                     try
                     {
@@ -96,7 +96,7 @@ namespace GoogleDrive2.Local
                                         BytesUploaded = TotalSize;
                                         MyLogger.Assert(position == TotalSize);
                                         OnUploadCompleted(ParseCloudId(await response.GetResponseString()));
-                                        return;
+                                        return true;
                                     default:
                                         if ((int?)response?.StatusCode == 308)
                                         {
@@ -114,22 +114,21 @@ namespace GoogleDrive2.Local
                                         else
                                         {
                                             this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
-                                            OnUploadCompleted(null);
-                                            return;
+                                            return false;
                                         }
                                 }
                             }
-                            if (CheckPause()) return;
+                            if (CheckPause()) return false;
                         }
                     }
                     catch(Exception error)
                     {
-                        this.LogError($"Error in StartResumableUploadAsync():\r\n{error}");
-                        OnUploadCompleted(null);
+                        this.LogError($"Error in async Task<bool> StartResumableUploadAsync(long position):\r\n{error}");
+                        return false;
                     }
                     finally { F.CloseReadIfNot(); }
                 }
-                public async Task StartResumableUploadAsync()
+                private async Task<bool> StartResumableUploadAsync()
                 {
                     var request = new Api.Files.ResumableUpload(resumableUri, TotalSize);
                     long startPosition = -1;
@@ -141,8 +140,7 @@ namespace GoogleDrive2.Local
                             case System.Net.HttpStatusCode.Created:
                                 this.Debug("The upload was completed, and no further action is necessary.");
                                 this.Debug(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
-                                OnUploadCompleted(null);//TODO
-                                return;
+                                return false;
                             case System.Net.HttpStatusCode.NotFound:
                                 this.Debug("The upload session has expired and the upload needs to be restarted from the beginning");
                                 this.Debug(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
@@ -157,13 +155,12 @@ namespace GoogleDrive2.Local
                                 else
                                 {
                                     this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
-                                    OnUploadCompleted(null);
-                                    return;
+                                    return false;
                                 }
                         }
                     }
                     MyLogger.Assert(startPosition != -1);
-                    await StartResumableUploadAsync(startPosition);
+                    return await StartResumableUploadAsync(startPosition);
                 }
             }
         }

@@ -26,17 +26,12 @@ namespace GoogleDrive2.Local
                   };
             }
             UploaderPrototype up = null;
-            protected override Task StartPrivateAsync()
-            {
-                //should not be called
-                throw new NotImplementedException("Should not be called");
-            }
             public async Task GetFileSizeFirstAsync()
             {
                 ProgressChanged?.Invoke(new Tuple<long, long>(0, (long)await F.GetSizeAsync()));
             }
             int pauseRequest = 0;
-            public new async Task StartAsync()
+            protected override async Task<bool>StartPrivateAsync()
             {
                 System.Threading.Interlocked.Exchange(ref pauseRequest, 0);
                 if (up == null)
@@ -45,35 +40,20 @@ namespace GoogleDrive2.Local
                     else up = new ResumableUploader(F, await this.GetFileMetadata());
                     up.Started += () => OnStarted();
                     up.ProgressChanged += (p) => ProgressChanged?.Invoke(p);
-                    up.Paused += () =>
-                    {
-                        OnDebugged("Paused");
-                        OnPaused();
-                    };
-                    up.Pausing += () =>
+                    this.Pausing += () =>
                     {
                         OnDebugged("Pausing...");
-                        OnPausing();
+                        up.Pause();
                     };
-                    up.Completed += (success) => OnCompleted(success);
+                    up.Completed += (success) => __OnCompleted(success);
                     up.Debugged += (msg) => OnDebugged(msg);
                     up.ErrorLogged += (msg) => OnErrorLogged(msg);// No need to add stacktrace again
                     up.UploadCompleted += (id) => UploadCompleted?.Invoke(id);
                     //up.MessageAppended is triggered by Debug & LogError
                 }
-                if (pauseRequest == 0) await up.StartAsync();
+                if (IsPausing) return false;
+                return await up.StartAsync();
             }
-            public new void Pause()
-            {
-                System.Threading.Interlocked.Exchange(ref pauseRequest, 1);
-                if (up == null)
-                {
-                    OnPausing();
-                    OnPaused();
-                }
-                else up.Pause();
-            }
-            public new bool IsActive { get { return up == null ? false : up.IsActive; } }
             public Uploader(File file)
             {
                 F = file;
