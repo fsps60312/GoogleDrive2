@@ -73,20 +73,40 @@ namespace GoogleDrive2.RestRequests
             return response;
         }
     }
-    class RestRequestsLimiter: RestRequestsRetrier
+    class RestRequestsLimiter : RestRequestsRetrier
     {
-        private Libraries.MySemaphore semaphore = new Libraries.MySemaphore(10);
+        const int MaxConcurrentRequestPerSecond = 10;
+        const int MaxConcurrentCount = 10;
+        static DateTime front = DateTime.Now.AddSeconds(-1);
+        static Queue<DateTime> history = new Queue<DateTime>();
+        static Libraries.MySemaphore semaphore = new Libraries.MySemaphore(MaxConcurrentCount);
         public override async Task<MyHttpResponse> GetHttpResponseAsync(MyHttpRequest request)
         {
             await semaphore.WaitAsync();
             try
             {
+                int timeToWait;
+                lock (history)
+                {
+                    while (history.Count + 1 >= MaxConcurrentRequestPerSecond) front = history.Dequeue();
+                    var timeToStart = front.AddSeconds(1);
+                    var timeNow = DateTime.Now;
+                    if (timeNow >= timeToStart)
+                    {
+                        timeToWait = 0;
+                        history.Enqueue(timeNow);
+                    }
+                    else
+                    {
+                        timeToWait = (int)((timeToStart - timeNow).TotalMilliseconds + 1);
+                        //MyLogger.Debug($"(timeNow,timeToWait)=({timeNow},{timeToWait})");
+                        history.Enqueue(timeToStart);
+                    }
+                }
+                if (timeToWait > 0) await Task.Delay(timeToWait);
                 return await base.GetHttpResponseAsync(request);
             }
-            finally
-            {
-                semaphore.Release();
-            }
+            finally { semaphore.Release(); }
         }
     }
 

@@ -13,21 +13,26 @@ namespace GoogleDrive2.Local
                 private Action PauseTask;
                 public event Libraries.Events.MyEventHandler<Tuple<long, long>> FileProgressChanged,FolderProgressChanged,SizeProgressChanged,
                     LocalSearchStatusChanged,RunningTaskCountChanged;
-                bool IsCompleted = false;
+                bool IsCompleted = false,IsRunning=false;
                 Libraries.MySemaphore semaphore = new Libraries.MySemaphore(1);
                 public async Task Start()
                 {
                     await semaphore.WaitAsync();
+                    IsRunning = true;
                     try
                     {
                         if (IsCompleted) return;
                         if (await StartTask()) IsCompleted = true;
                     }
-                    finally { semaphore.Release(); }
+                    finally
+                    {
+                        IsRunning = false;
+                        semaphore.Release();
+                    }
                 }
                 public void Pause()
                 {
-                    PauseTask();
+                    if (IsRunning) PauseTask();
                 }
                 private void SetCalls(
                     out Action<Tuple<long, long>> fileProgressCall,
