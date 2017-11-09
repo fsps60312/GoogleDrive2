@@ -268,7 +268,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
             InfoClicked = new Xamarin.Forms.Command(async () =>
             {
                 InfoEnabled = false;
-                await MyLogger.Alert(messages.Count == 0 ? $"{Constants.Icons.Info}No messages" : string.Join(Environment.NewLine, messages.Reverse<string>()));
+                await MyLogger.Alert(messages.Count == 0 ? $"{Constants.Icons.Info} No messages" : string.Join(Environment.NewLine, messages.Reverse<string>()));
                 InfoEnabled = true;
             });
             timeRemainingMaintainer.TimeRemainingUpdated += (v) =>

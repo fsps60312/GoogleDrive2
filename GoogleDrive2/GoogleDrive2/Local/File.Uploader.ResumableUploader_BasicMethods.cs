@@ -9,7 +9,7 @@ namespace GoogleDrive2.Local
     {
         public partial class Uploader
         {
-            public partial class ResumableUploader : UploaderPrototype
+            public partial class ResumableUploader : Uploader
             {
                 long ParseRangeHeader(MyHttpResponse response)
                 {
@@ -25,7 +25,7 @@ namespace GoogleDrive2.Local
                 public async Task<bool> CreateResumableUploadAsync()
                 {
                     //await MyLogger.Alert($"file size: {totalSize}");
-                    var request = new Api.Files.ResumableCreate(FileMetadata, TotalSize, null);
+                    var request = new Api.Files.ResumableCreate(await GetFileMetadata(), TotalSize, null);
                     using (var response = await request.GetHttpResponseAsync())
                     {
                         if (response?.StatusCode == System.Net.HttpStatusCode.OK)

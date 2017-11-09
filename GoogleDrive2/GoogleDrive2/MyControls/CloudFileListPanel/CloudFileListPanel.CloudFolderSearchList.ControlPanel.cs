@@ -136,7 +136,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     //await MyLogger.Alert(file.MimeType);
                     await Task.WhenAll(files.Select(async (f) =>
                     {
-                        var uploader = f.GetUploader();
+                        var uploader =await f.GetUploader();
                         uploader.SetFileMetadata((metaData) =>
                         {
                             metaData.parents = new List<string> { cloud.id };

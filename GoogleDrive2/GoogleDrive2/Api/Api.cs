@@ -24,12 +24,40 @@ namespace GoogleDrive2
                         return false;
                     }
                     var completed = await StartPrivateAsync();
-                    __OnCompleted(completed);
+                     __OnCompleted(completed);
                     return completed;
                 }
                 finally { semaphore.Release(); }
             }
-            protected SimpleApiOperator() { }
+            protected SimpleApiOperator(){ }
+        }
+        public abstract class OverridedAdvancedApiOperator:AdvancedApiOperator
+        {
+            AdvancedApiOperator ChildApiOperator = null;
+            public new void Pause(){ChildApiOperator?.Pause();}
+            public new async Task<bool> StartAsync()
+            {
+                if (ChildApiOperator == null) ChildApiOperator = await GetChildApiOperator();
+                return await ChildApiOperator.StartAsync();
+            }
+            protected override Task<bool> StartPrivateAsync()
+            {
+                //Should not be called
+                MyLogger.LogError("StartPrivateAsync() in OverridedAdvancedApiOperator should not be called");
+                throw new NotImplementedException();
+            }
+            protected abstract Task<AdvancedApiOperator> GetChildApiOperatorPrivate();
+            private async Task<AdvancedApiOperator> GetChildApiOperator()
+            {
+                var ao = await GetChildApiOperatorPrivate();
+                ao.Started += () => this.OnStarted();
+                ao.Pausing += () => this.OnPausing();
+                ao.MessageAppended += (msg) => this.OnMessageAppended(msg);
+                ao.Debugged += (msg) => this.OnDebugged(msg);
+                ao.ErrorLogged += (msg) => this.OnErrorLogged(msg);
+                return ao;
+            }
+            protected OverridedAdvancedApiOperator() { }
         }
         public abstract class AdvancedApiOperator:ApiOperator
         {
@@ -37,22 +65,21 @@ namespace GoogleDrive2
             public event Libraries.Events.MyEventHandler<string> MessageAppended;
             protected void OnStarted() { Started?.Invoke(); }
             protected void OnPausing() { Pausing?.Invoke(); }
+            protected void OnMessageAppended(string msg) { MessageAppended?.Invoke(msg); }
             protected bool CheckPause()
             {
                 //this.Debug($"pauseRequest = {pauseRequest}");
                 if (System.Threading.Interlocked.CompareExchange(ref pauseRequest, 2, 1) == 1) return true;
                 else return false;
             }
-            protected void OnDebugged(string msg) { Debug(msg, false); }
-            protected void OnErrorLogged(string msg) { LogError(msg, false); }
             public bool IsActive { get { return pauseRequest == 0; } }
             protected bool IsPausing { get { return pauseRequest == 1; } }
-            private int pauseRequest = 0;// 0: Normal, 1: Pausing, 2: Paused
+            private volatile int pauseRequest = 0;// 0: Normal, 1: Pausing, 2: Paused
             public void Pause()
             {
                 if (IsCompleted) return;
-                pauseRequest = 1;
-                OnPausing();
+                System.Threading.Interlocked.Exchange(ref pauseRequest, 1);
+                Pausing?.Invoke();
             }
             protected abstract Task<bool> StartPrivateAsync();
             Libraries.MySemaphore semaphore = new Libraries.MySemaphore(1);
@@ -62,16 +89,10 @@ namespace GoogleDrive2
                 try
                 {
                     Started?.Invoke();
-                    if (IsCompleted)
-                    {
-                        __OnCompleted(false);
-                        return false;
-                    }
                     int prePauseRequest = System.Threading.Interlocked.Exchange(ref pauseRequest, 0);
                     if (prePauseRequest == 1)
                     {
                         this.Debug("Pause Request Canceled");
-                        __OnCompleted(false);
                         return false;// Cancel pauseRequest
                     }
                     else if (prePauseRequest == 2)
@@ -88,9 +109,6 @@ namespace GoogleDrive2
                         __OnCompleted(false);
                         return false;
                     }
-                    var completed = await StartPrivateAsync();
-                    __OnCompleted(completed);
-                    return completed;
                 }
                 catch (Exception error)
                 {
@@ -99,15 +117,16 @@ namespace GoogleDrive2
                     return false;
                 }
                 finally { semaphore.Release(); }
+                var completed = await StartPrivateAsync();
+                __OnCompleted(completed);
+                return completed;
             }
             protected AdvancedApiOperator()
             {
-                this.ErrorLogged += (error) => MessageAppended?.Invoke(Constants.Icons.Warning + error);
-                this.Debugged += (msg) => MessageAppended?.Invoke(Constants.Icons.Info + msg);
-                this.Completed += (success)=> { pauseRequest = success ? 0 : 2; };
+                this.Completed += (success) => { pauseRequest = success ? 0 : 2; };
             }
         }
-        public abstract class ApiOperator:MyLoggerClass
+        public abstract class ApiOperator : MyLoggerClass
         {
             public bool IsCompleted = false;
             public event Libraries.Events.MyEventHandler<bool> Completed;

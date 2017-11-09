@@ -50,6 +50,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FileUploadPage
             Name = up.F.Name;
             PauseClicked = new Xamarin.Forms.Command(async () =>
               {
+                  //this.OnMessageAppended($"Click {up.IsActive}");
                   if (up.IsActive) up.Pause();
                   else await up.StartAsync();
               });

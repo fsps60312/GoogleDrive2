@@ -8,7 +8,7 @@ namespace GoogleDrive2.Local
     {
         public partial class Uploader
         {
-            public partial class ResumableUploader : UploaderPrototype
+            public partial class ResumableUploader : Uploader
             {
                 public const long FileBufferSize = 1 << 20;
                 public const double DesiredProgressUpdateInterval = 0.5;
@@ -37,7 +37,7 @@ namespace GoogleDrive2.Local
                     if (CheckPause()) return false;
                     return await DoUpload();
                 }
-                public ResumableUploader(File file, Api.Files.FullCloudFileMetadata fileMetadata) : base(file, fileMetadata) { }
+                public ResumableUploader(File file) : base(file) { }
             }
         }
     }

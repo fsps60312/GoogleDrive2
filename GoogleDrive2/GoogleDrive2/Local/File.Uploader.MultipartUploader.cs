@@ -6,13 +6,13 @@ namespace GoogleDrive2.Local
     {
         public partial class Uploader
         {
-            public class MultipartUploader : UploaderPrototype
+            public class MultipartUploader : Uploader
             {
                 protected override async Task<bool> StartUploadAsync()
                 {
                     MyLogger.Assert(BytesUploaded == 0 && TotalSize <= int.MaxValue);
                     if (CheckPause()) return false;
-                    var request = new Api.Files.MultipartUpload(FileMetadata, await F.ReadBytesAsync((int)TotalSize));
+                    var request = new Api.Files.MultipartUpload(await GetFileMetadata(), await F.ReadBytesAsync((int)TotalSize));
                     F.CloseReadIfNot();
                     using (var response = await request.GetHttpResponseAsync())
                     {
@@ -29,7 +29,7 @@ namespace GoogleDrive2.Local
                         }
                     }
                 }
-                public MultipartUploader(File file, Api.Files.FullCloudFileMetadata fileMetadata) : base(file, fileMetadata) { }
+                public MultipartUploader(File file) : base(file) { }
             }
         }
     }

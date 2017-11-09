@@ -7,7 +7,7 @@ namespace GoogleDrive2.Local
 {
     abstract class AFile
     {
-        public abstract File.Uploader GetUploader();
+        public abstract Task<File.Uploader> GetUploader();
         public abstract bool IsImageFile { get; }
         public abstract bool IsVideoFile { get; }
         public abstract bool IsMusicFile { get; }
@@ -27,7 +27,7 @@ namespace GoogleDrive2.Local
     }
     partial class File:AFile
     {
-        public override Uploader GetUploader() { return new Uploader(this); }
+        public override async Task<Uploader>GetUploader() { return await Uploader.GetUploader(this); }
         public override bool IsImageFile
         {
             get { return MimeType.StartsWith("image"); }

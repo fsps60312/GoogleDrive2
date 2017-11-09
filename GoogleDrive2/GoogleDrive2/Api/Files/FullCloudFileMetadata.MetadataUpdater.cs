@@ -7,10 +7,10 @@ namespace GoogleDrive2.Api.Files
 {
     public partial class FullCloudFileMetadata
     {
-        public partial class FolderCreate:SimpleApiOperator
+        public partial class FolderCreate : SimpleApiOperator
         {
             public Func<Task<string>> GetCloudId { get; private set; } = null;
-            public FolderCreate()
+            public FolderCreate() 
             {
                 Libraries.MySemaphore semaphore = new Libraries.MySemaphore(0);
                 string resultId = null;
@@ -38,7 +38,7 @@ namespace GoogleDrive2.Api.Files
             public event Libraries.Events.MyEventHandler<string> FolderCreateCompleted;
             private bool OnFolderCreateCompleted(string id)
             {
-                if(id==null)
+                if (id == null)
                 {
                     this.LogError("id is null");
                     return false;
@@ -49,7 +49,7 @@ namespace GoogleDrive2.Api.Files
             }
             protected Func<Task<FullCloudFileMetadata>> GetFolderMetadata = ()
                 => Task.FromResult(new FullCloudFileMetadata { mimeType = Constants.FolderMimeType });
-            public void SetFolderMetadata(Func<FullCloudFileMetadata,Task<FullCloudFileMetadata>>func)
+            public void SetFolderMetadata(Func<FullCloudFileMetadata, Task<FullCloudFileMetadata>> func)
             {
                 var preFunc = GetFolderMetadata;
                 GetFolderMetadata = new Func<Task<FullCloudFileMetadata>>(async () =>
@@ -93,15 +93,15 @@ namespace GoogleDrive2.Api.Files
                 finally { semaphore.Release(); }
             }
         }
-        public class Starrer:MetadataUpdater
+        public class Starrer : MetadataUpdater
         {
             public Starrer(string fileId, bool starred) : base(fileId, new FullCloudFileMetadata { starred = starred }) { }
         }
         public class Trasher : MetadataUpdater
         {
-            public Trasher(string fileId,bool trashed) : base(fileId, new FullCloudFileMetadata { trashed = trashed }) { }
+            public Trasher(string fileId, bool trashed) : base(fileId, new FullCloudFileMetadata { trashed = trashed }) { }
         }
-        public class MetadataUpdater:Api.SimpleApiOperator
+        public class MetadataUpdater : Api.SimpleApiOperator
         {
             string fileId;
             FullCloudFileMetadata metadata;
@@ -123,7 +123,7 @@ namespace GoogleDrive2.Api.Files
                     }
                 }
             }
-            public MetadataUpdater(string fileId,FullCloudFileMetadata metadata)
+            public MetadataUpdater(string fileId, FullCloudFileMetadata metadata)
             {
                 this.fileId = fileId;
                 this.metadata = metadata;

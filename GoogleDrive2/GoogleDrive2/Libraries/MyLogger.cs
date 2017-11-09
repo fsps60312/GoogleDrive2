@@ -9,6 +9,8 @@ namespace GoogleDrive2
     public class MyLoggerClass
     {
         public event Libraries.Events.MyEventHandler<string> ErrorLogged,Debugged;
+        protected void OnErrorLogged(string msg) { ErrorLogged?.Invoke(msg); }
+        protected void OnDebugged(string msg) { Debugged?.Invoke(msg); }
         public void RunLogger(MyLoggerClass logger,Action action,string name=null)
         {
             var errorLoggedEventHandler = new Libraries.Events.MyEventHandler<string>((log) => { this.ErrorLogged?.Invoke($"{(name == null ? "" : $"[{name}]")}{log}"); });
@@ -41,12 +43,12 @@ namespace GoogleDrive2
                 logger.Debugged -= debuggedEventHandler;
             }
         }
-        public void LogError(string log, bool printStackTrace = true)
+        protected void LogError(string log, bool printStackTrace = true)
         {
             MyLogger.LogError(log, printStackTrace);
             ErrorLogged?.Invoke(MyLogger.CreateLog(log, printStackTrace));
         }
-        public void Debug(string log,bool printStackTrace=false)
+        protected void Debug(string log,bool printStackTrace=false)
         {
             MyLogger.Debug(log, printStackTrace);
             Debugged?.Invoke(MyLogger.CreateLog(log, printStackTrace));
