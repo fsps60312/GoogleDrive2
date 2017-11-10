@@ -7,7 +7,7 @@ namespace GoogleDrive2.Api.Files
 {
     public partial class FullCloudFileMetadata
     {
-        public partial class FolderCreate : SimpleApiOperator
+        public partial class FolderCreate : SimpleApiOperator//be sure to call FolderCreateCompleted(id) or Completed(false) exactly once so that GetCloudId would work
         {
             public Func<Task<string>> GetCloudId { get; private set; } = null;
             public FolderCreate() 
@@ -18,17 +18,28 @@ namespace GoogleDrive2.Api.Files
                 {
                     lock (GetCloudId)
                     {
-                        Libraries.Events.MyEventHandler<string> completedHandler = null;
-                        completedHandler = new Libraries.Events.MyEventHandler<string>((id) =>
+                        Libraries.Events.MyEventHandler<string> folderCreateCompletedEventHandler = null;
+                        folderCreateCompletedEventHandler = new Libraries.Events.MyEventHandler<string>((id) =>
                         {
-                            this.FolderCreateCompleted -= completedHandler;
+                            this.FolderCreateCompleted -= folderCreateCompletedEventHandler;
                             resultId = id;
                             semaphore.Release();
                         });
-                        FolderCreateCompleted += completedHandler;
+                        FolderCreateCompleted += folderCreateCompletedEventHandler;
+
+                        Libraries.Events.MyEventHandler<bool> completedEventHandler = null;
+                        completedEventHandler = new Libraries.Events.MyEventHandler<bool>((success) =>
+                        {
+                            if (!success)
+                            {
+                                this.Completed -= completedEventHandler;
+                                resultId = null;
+                                semaphore.Release();
+                            }
+                        });
+                        Completed += completedEventHandler;
                     }
                     await semaphore.WaitAsync();
-                    MyLogger.Assert(resultId != null);
                     return resultId;
                 };
             }
@@ -36,16 +47,12 @@ namespace GoogleDrive2.Api.Files
         public partial class FolderCreate : SimpleApiOperator
         {
             public event Libraries.Events.MyEventHandler<string> FolderCreateCompleted;
-            private bool OnFolderCreateCompleted(string id)
+            private void OnFolderCreateCompleted(string id)
             {
-                if (id == null)
-                {
-                    this.LogError("id is null");
-                    return false;
-                }
+                if (id == null) this.LogError("id is null");
+                MyLogger.Assert(id != null);
                 GetCloudId = () => { return Task.FromResult(id); };
                 FolderCreateCompleted?.Invoke(id);
-                return true;
             }
             protected Func<Task<FullCloudFileMetadata>> GetFolderMetadata = ()
                 => Task.FromResult(new FullCloudFileMetadata { mimeType = Constants.FolderMimeType });
@@ -53,9 +60,10 @@ namespace GoogleDrive2.Api.Files
             {
                 var preFunc = GetFolderMetadata;
                 GetFolderMetadata = new Func<Task<FullCloudFileMetadata>>(async () =>
-                  {
-                      return await func(await preFunc());
-                  });
+                {
+                    var metadata = await preFunc();
+                    return metadata == null ? null : await func(metadata);
+                });
             }
             Libraries.MySemaphore semaphore = new Libraries.MySemaphore(1);
             bool stopRequest = false;
@@ -70,13 +78,16 @@ namespace GoogleDrive2.Api.Files
                 if (stopRequest) return false;
                 try
                 {
-                    var request = new MultipartUpload(await GetFolderMetadata(), new byte[0]);
+                    var metadata = await GetFolderMetadata();
+                    if (stopRequest || metadata == null) return false;
+                    var request = new MultipartUpload(metadata, new byte[0]);
                     using (var response = await request.GetHttpResponseAsync())
                     {
                         if (response?.StatusCode == HttpStatusCode.OK)
                         {
                             var f = JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(await request.GetResponseTextAsync(response));
-                            return OnFolderCreateCompleted(f.id);
+                            OnFolderCreateCompleted(f.id);
+                            return true;
                         }
                         else
                         {

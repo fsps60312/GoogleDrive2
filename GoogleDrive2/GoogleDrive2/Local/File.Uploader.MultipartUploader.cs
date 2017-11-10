@@ -12,7 +12,9 @@ namespace GoogleDrive2.Local
                 {
                     MyLogger.Assert(BytesUploaded == 0 && TotalSize <= int.MaxValue);
                     if (CheckPause()) return false;
-                    var request = new Api.Files.MultipartUpload(await GetFileMetadata(), await F.ReadBytesAsync((int)TotalSize));
+                    var metadata = await GetFileMetadata();
+                    if (CheckPause() || metadata == null) return false;
+                    var request = new Api.Files.MultipartUpload(metadata, await F.ReadBytesAsync((int)TotalSize));
                     F.CloseReadIfNot();
                     using (var response = await request.GetHttpResponseAsync())
                     {

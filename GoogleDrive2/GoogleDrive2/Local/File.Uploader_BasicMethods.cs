@@ -38,15 +38,13 @@ namespace GoogleDrive2.Local
                 var name = F.Name;
                 var createdTime = await F.GetTimeCreatedAsync();
                 var modifiedTime = await F.GetTimeModifiedAsync();
-                var preFunc = GetFileMetadata;
-                GetFileMetadata = async () =>
+                SetFileMetadata(new Func<Api.Files.FullCloudFileMetadata, Task<Api.Files.FullCloudFileMetadata>>((metadata) =>
                 {
-                    var metadata = await preFunc();
                     metadata.name = name;
                     metadata.createdTime = createdTime;
                     metadata.modifiedTime = modifiedTime;
-                    return metadata;
-                };
+                    return Task.FromResult(metadata);
+                }));
             }
             protected string ParseCloudId(string content)
             {

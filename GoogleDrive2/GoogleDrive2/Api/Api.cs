@@ -31,34 +31,6 @@ namespace GoogleDrive2
             }
             protected SimpleApiOperator(){ }
         }
-        public abstract class OverridedAdvancedApiOperator:AdvancedApiOperator
-        {
-            AdvancedApiOperator ChildApiOperator = null;
-            public new void Pause(){ChildApiOperator?.Pause();}
-            public new async Task<bool> StartAsync()
-            {
-                if (ChildApiOperator == null) ChildApiOperator = await GetChildApiOperator();
-                return await ChildApiOperator.StartAsync();
-            }
-            protected override Task<bool> StartPrivateAsync()
-            {
-                //Should not be called
-                MyLogger.LogError("StartPrivateAsync() in OverridedAdvancedApiOperator should not be called");
-                throw new NotImplementedException();
-            }
-            protected abstract Task<AdvancedApiOperator> GetChildApiOperatorPrivate();
-            private async Task<AdvancedApiOperator> GetChildApiOperator()
-            {
-                var ao = await GetChildApiOperatorPrivate();
-                ao.Started += () => this.OnStarted();
-                ao.Pausing += () => this.OnPausing();
-                ao.MessageAppended += (msg) => this.OnMessageAppended(msg);
-                ao.Debugged += (msg) => this.OnDebugged(msg);
-                ao.ErrorLogged += (msg) => this.OnErrorLogged(msg);
-                return ao;
-            }
-            protected OverridedAdvancedApiOperator() { }
-        }
         public abstract class AdvancedApiOperator:ApiOperator
         {
             public event Libraries.Events.EmptyEventHandler Started,Pausing;//Paused now replaced by Completed(false)
@@ -92,16 +64,16 @@ namespace GoogleDrive2
                     int prePauseRequest = System.Threading.Interlocked.Exchange(ref pauseRequest, 0);
                     if (prePauseRequest == 1)
                     {
-                        this.Debug("Pause Request Canceled");
+                        this.Debug($"{Constants.Icons.Info} Pause Request Canceled");
                         return false;// Cancel pauseRequest
                     }
                     else if (prePauseRequest == 2)
                     {
-                        this.Debug("Resumed");
+                        this.Debug($"{Constants.Icons.Play} Resumed");
                     }
                     else
                     {
-                        this.Debug("Started");
+                        this.Debug($"{Constants.Icons.Play} Started");
                     }
                     if (IsCompleted)
                     {
@@ -124,6 +96,9 @@ namespace GoogleDrive2
             protected AdvancedApiOperator()
             {
                 this.Completed += (success) => { pauseRequest = success ? 0 : 2; };
+                this.Pausing += () => { Debug($"{Constants.Icons.Pausing} Pausing..."); };
+                this.ErrorLogged += (error) => OnMessageAppended($"{Constants.Icons.Warning} {error}");
+                this.Debugged += (msg) => OnMessageAppended($"{msg}");
             }
         }
         public abstract class ApiOperator : MyLoggerClass

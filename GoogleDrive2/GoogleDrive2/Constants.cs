@@ -23,11 +23,13 @@ namespace GoogleDrive2
                 Star = "🌟",
                 Clear = "⎚",
                 Completed = "✔",
+                SubtaskCompleted = Completed + Hourglass,
                 Pause = "⏸",
                 Pausing = Hourglass + Pause,
                 Play = "▶",
                 Initial = Play + Hourglass,
-                Size="⋙",
+                Size = "⋙",
+                Magnifier = "🔍",
                 Timers = "🕐🕑🕒🕓🕔🕕🕖🕗🕘🕙🕚🕛";
         }
         public const string FolderMimeType = "application/vnd.google-apps.folder";

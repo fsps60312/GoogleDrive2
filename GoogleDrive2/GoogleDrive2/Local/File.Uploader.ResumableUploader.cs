@@ -26,13 +26,13 @@ namespace GoogleDrive2.Local
                     if (CheckPause()) return false;
                     if (resumableUri == null)
                     {
-                        this.Debug("Creating upload...");
+                        this.Debug($"{Constants.Icons.Hourglass} Creating upload...");
                         if (!await CreateUpload())
                         {
-                            this.LogError("Failed to create resumable upload");
+                            this.LogError($"{Constants.Icons.Info} Resumable upload create paused or failed");
                             return false;
                         }
-                        else this.Debug("Upload created, uploading...");
+                        else this.Debug($"{Constants.Icons.Hourglass} Upload created, uploading...");
                     }
                     if (CheckPause()) return false;
                     return await DoUpload();

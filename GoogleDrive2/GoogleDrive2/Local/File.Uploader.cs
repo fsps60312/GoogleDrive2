@@ -23,7 +23,8 @@ namespace GoogleDrive2.Local
                 var preFunc = GetFileMetadata;
                 GetFileMetadata = async () =>
                 {
-                    return await func(await preFunc());
+                    var metadata = await preFunc();
+                    return metadata == null ? null : await func(metadata);
                 };
             }
             protected async Task<long> GetFileSizeAsync()
@@ -60,10 +61,7 @@ namespace GoogleDrive2.Local
             protected Uploader(File file)
             {
                 F = file;
-                this.ErrorLogged += (error) => OnMessageAppended($"{Constants.Icons.Warning} {error}");
-                this.Debugged += (msg) => OnMessageAppended($"{Constants.Icons.Info} {msg}");
-                this.Pausing += () => { Debug("Pausing..."); };
-                this.UploadCompleted += (id) => { Debug($"Upload Completed: fileId = \"{id}\""); };
+                this.UploadCompleted += (id) => { Debug($"{Constants.Icons.Completed} Upload Completed: fileId = \"{id}\""); };
                 NewUploaderCreated?.Invoke(this);
             }
             public static async Task<Uploader> GetUploader(File file)

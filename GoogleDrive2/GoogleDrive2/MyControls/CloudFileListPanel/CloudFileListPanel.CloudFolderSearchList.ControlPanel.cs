@@ -123,9 +123,10 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     }
                     catch (Exception error)
                     {
-                        await MyLogger.Alert($"Unexpected error:\r\n{error}");
+                        var msg = $"Unexpected error:\r\n{error}";
+                        MyLogger.LogError(msg);
+                        await MyLogger.Alert(msg);
                     }
-                    await MyLogger.Alert("Completed");
                 }
                 async Task UploadFileButtonClicked()
                 {
@@ -134,16 +135,25 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     var files = await Local.File.OpenMultipleFilesAsync();
                     if (files == null) return;
                     //await MyLogger.Alert(file.MimeType);
-                    await Task.WhenAll(files.Select(async (f) =>
+                    try
                     {
-                        var uploader =await f.GetUploader();
-                        uploader.SetFileMetadata((metaData) =>
+                        await Task.WhenAll(files.Select(async (f) =>
                         {
-                            metaData.parents = new List<string> { cloud.id };
-                            return Task.FromResult(metaData);
-                        });
-                        await uploader.StartAsync();
-                    }));
+                            var uploader = await f.GetUploader();
+                            uploader.SetFileMetadata((metaData) =>
+                            {
+                                metaData.parents = new List<string> { cloud.id };
+                                return Task.FromResult(metaData);
+                            });
+                            await uploader.StartAsync();
+                        }));
+                    }
+                    catch(Exception error)
+                    {
+                        var msg = $"Unexpected error:\r\n{error}";
+                        MyLogger.LogError(msg);
+                        await MyLogger.Alert(msg);
+                    }
                 }
                 async Task TrashButtonClicked()
                 {

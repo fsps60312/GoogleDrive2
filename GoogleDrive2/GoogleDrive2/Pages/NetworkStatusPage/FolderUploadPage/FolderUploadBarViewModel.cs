@@ -227,8 +227,8 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
                 case ProgressType.LocalSearch:
                     {
                         searchStatus = p;
-                        SearchFoldersStatus = p.Item1 == 0 ? "" : $"{Constants.Icons.Hourglass}{p.Item1}";
-                        SearchFilesStatus = p.Item2 == 0 ? "" : $"{Constants.Icons.Hourglass}{p.Item2}";
+                        SearchFoldersStatus = p.Item1 == 0 ? "" : $"{Constants.Icons.Magnifier}{p.Item1}";
+                        SearchFilesStatus = p.Item2 == 0 ? "" : $"{Constants.Icons.Magnifier}{p.Item2}";
                     }
                     break;
                 default:
@@ -248,7 +248,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
                   if (ts == new Tuple<long, long>(0, 0)) TaskStatus = null;
                   else
                   {
-                      TaskStatus = $"{(ts.Item1 == 0 ? Constants.Icons.Pause : Constants.Icons.Hourglass)}: {ts.Item1} / {ts.Item2}";
+                      TaskStatus = $"{(ts.Item1 == 0 ? (ts.Item2==0? Constants.Icons.Completed:Constants.Icons.Pause) : Constants.Icons.Hourglass)}: {ts.Item1} / {ts.Item2}";
                   }
               };
             up.FileProgressChanged += (p) => UpdateProgress(p, ProgressType.File);

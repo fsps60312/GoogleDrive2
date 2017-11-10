@@ -25,7 +25,9 @@ namespace GoogleDrive2.Local
                 public async Task<bool> CreateResumableUploadAsync()
                 {
                     //await MyLogger.Alert($"file size: {totalSize}");
-                    var request = new Api.Files.ResumableCreate(await GetFileMetadata(), TotalSize, null);
+                    var metadata = await GetFileMetadata();
+                    if (CheckPause() || metadata == null) return false;
+                    var request = new Api.Files.ResumableCreate(metadata, TotalSize, null);
                     using (var response = await request.GetHttpResponseAsync())
                     {
                         if (response?.StatusCode == System.Net.HttpStatusCode.OK)
@@ -138,12 +140,12 @@ namespace GoogleDrive2.Local
                         {
                             case System.Net.HttpStatusCode.OK:
                             case System.Net.HttpStatusCode.Created:
-                                this.Debug("The upload was completed, and no further action is necessary.");
                                 this.Debug(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                                this.Debug($"{Constants.Icons.Info} The upload was completed, and no further action is necessary.");
                                 return false;
                             case System.Net.HttpStatusCode.NotFound:
-                                this.Debug("The upload session has expired and the upload needs to be restarted from the beginning");
                                 this.Debug(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
+                                this.Debug($"{Constants.Icons.Warning} The upload session has expired and the upload needs to be restarted from the beginning");
                                 startPosition = 0;
                                 break;
                             default:

@@ -114,8 +114,8 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
             }
             else
             {
-                OnMessageAppended($"{Constants.Icons.Info} Paused");
-                Icon = Constants.Icons.Play;
+                OnMessageAppended($"{Constants.Icons.Pause} Paused");
+                Icon = Constants.Icons.Pause;
             }
             PauseButtonText = Constants.Icons.Play;
         }

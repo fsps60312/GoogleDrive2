@@ -157,7 +157,7 @@ namespace GoogleDrive2.Local
             {
                 if (Interlocked.CompareExchange(ref IsCreateFolderTaskInProgress, 1, 0) == 1)
                 {
-                    this.Debug("CreateFolderTask still busy, please wait...");
+                    this.Debug($"{Constants.Icons.Warning} CreateFolderTask still busy, please wait...");
                     return;
                 }
                 try
@@ -172,8 +172,9 @@ namespace GoogleDrive2.Local
                             metadata.modifiedTime = await F.GetTimeModifiedAsync();
                             return this.metadataFunc == null ? metadata : await this.metadataFunc(metadata);
                         });
-                        //this.Pausing += () => { folderCreator.Stop(); };
+                        this.Pausing += () => { folderCreator.Stop(); };
                         Interlocked.Increment(ref CreateFolderTaskProgress);
+                        this.Debug($"{Constants.Icons.SubtaskCompleted} Folder \"{F.Name}\" is ready to be created");
                     }
                     if (IsPausing) return;
                     if (1 == CreateFolderTaskProgress)
@@ -181,12 +182,15 @@ namespace GoogleDrive2.Local
                         AddThreadCount(1);
                         try
                         {
+                            this.Debug($"{Constants.Icons.Hourglass} Creating folder...");
                             if (await folderCreator.StartAsync())
                             {
                                 AddNotCompleted(-1);
                                 this.FolderProgressChanged?.Invoke(new Tuple<long, long>(Interlocked.Increment(ref this.ProgressCurrentFolder), this.ProgressTotalFolder));
                                 Interlocked.Increment(ref CreateFolderTaskProgress);
+                                this.Debug($"{Constants.Icons.SubtaskCompleted} Folder created");
                             }
+                            else this.Debug($"{Constants.Icons.Info} Folder create paused or failed");
                         }
                         finally { AddThreadCount(-1); }
                     }
@@ -200,7 +204,7 @@ namespace GoogleDrive2.Local
             {
                 if (Interlocked.CompareExchange(ref IsUploadSubfoldersTaskInProgress, 1, 0) == 1)
                 {
-                    this.Debug("UploadSubfoldersTask still busy, please wait...");
+                    this.Debug($"{Constants.Icons.Warning} UploadSubfoldersTask still busy, please wait...");
                     return;
                 }
                 try
@@ -208,18 +212,20 @@ namespace GoogleDrive2.Local
                     if (IsPausing) return;
                     if (0 == UploadSubfoldersTaskProgress)
                     {
-                        this.Debug("Searching subfolders...");
+                        this.Debug($"{Constants.Icons.Magnifier} Searching subfolders...");
                         LocalSearchStatusChanged?.Invoke(new Tuple<long, long>(Interlocked.Increment(ref SearchLocalFoldersActions), this.SearchLocalFilesActions));
                         var subfolders = await F.GetFoldersAsync();
                         LocalSearchStatusChanged?.Invoke(new Tuple<long, long>(Interlocked.Decrement(ref SearchLocalFoldersActions), this.SearchLocalFilesActions));
-                        this.Debug($"Found {recordedSubfolderCount = subfolders.Count} subfolders");
+                        this.Debug($"{Constants.Icons.Magnifier} Found {recordedSubfolderCount = subfolders.Count} subfolders");
                         AddNotCompleted(subfolders.Count);
                         UploadSubfoldersSubtasks = subfolders.Select((f) =>
                          {
                              var uploader = new Folder.Uploader(f);
                              uploader.folderCreator.SetFolderMetadata(async (metadata) =>
                              {
-                                 metadata.parents = new List<string> { await folderCreator.GetCloudId() };
+                                 var cloudId = await folderCreator.GetCloudId();
+                                 if (cloudId == null) return null;
+                                 metadata.parents = new List<string> { cloudId };
                                  return metadata;
                              });
                              return AddAndGetSubtask(uploader);
@@ -231,10 +237,12 @@ namespace GoogleDrive2.Local
                 if (IsPausing) return;
                 if (1 == UploadSubfoldersTaskProgress)
                 {
+                    this.Debug($"{Constants.Icons.Upload} Uploading subfolders...");
                     await Task.WhenAll(UploadSubfoldersSubtasks.Select(async (subtask) =>
                     {
                         if (this.IsActive) await subtask.Start();
                     }));
+                    this.Debug($"{Constants.Icons.SubtaskCompleted} Subfolders upload completed or paused");
                 }
             }
             int UploadSubfilesTaskProgress = 0;
@@ -244,7 +252,7 @@ namespace GoogleDrive2.Local
             {
                 if (Interlocked.CompareExchange(ref IsUploadSubfilesTaskInProgress, 1, 0) == 1)
                 {
-                    this.Debug("UploadSubfilesTask still busy, please wait...");
+                    this.Debug($"{Constants.Icons.Warning} UploadSubfilesTask still busy, please wait...");
                     return;
                 }
                 try
@@ -252,18 +260,20 @@ namespace GoogleDrive2.Local
                     if (IsPausing) return;
                     if (0 == UploadSubfilesTaskProgress)
                     {
-                        this.Debug("Searching subfiles...");
+                        this.Debug($"{Constants.Icons.Magnifier} Searching subfiles...");
                         LocalSearchStatusChanged?.Invoke(new Tuple<long, long>(SearchLocalFoldersActions, Interlocked.Increment(ref this.SearchLocalFilesActions)));
                         var subfiles = await F.GetFilesAsync();
                         LocalSearchStatusChanged?.Invoke(new Tuple<long, long>(SearchLocalFoldersActions, Interlocked.Add(ref this.SearchLocalFilesActions, -1 + subfiles.Count)));
-                        this.Debug($"Found {recordedSubfileCount = subfiles.Count} subfiles");
+                        this.Debug($"{Constants.Icons.Magnifier} Found {recordedSubfileCount = subfiles.Count} subfiles");
                         AddNotCompleted(subfiles.Count);
                         var uploaders = await Task.WhenAll(subfiles.Select(async (f) =>
                         {
                             var uploader = await f.GetUploader();
                             uploader.SetFileMetadata(async (metadata) =>
                             {
-                                metadata.parents = new List<string> { await folderCreator.GetCloudId() };
+                                var cloudId = await folderCreator.GetCloudId();
+                                if (cloudId == null) return null;
+                                metadata.parents = new List<string> { cloudId};
                                 return metadata;
                             });
                             return uploader;
@@ -282,10 +292,12 @@ namespace GoogleDrive2.Local
                 if (IsPausing) return;
                 if (1 == UploadSubfilesTaskProgress)
                 {
+                    this.Debug($"{Constants.Icons.Upload} Uploading subfiles...");
                     await Task.WhenAll(UploadSubfilesSubtasks.Select(async (subtask) =>
                     {
                         if (this.IsActive) await subtask.Start();
                     }));
+                    this.Debug($"{Constants.Icons.SubtaskCompleted} Subfiles upload completed or paused");
                 }
             }
         }
