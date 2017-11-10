@@ -59,7 +59,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
                         }
                         else
                         {
-                            for (int i = 0; i < width * 2; i++) points.Add(SpeedHistory[i * SpeedHistory.Count / (width * 5)]);
+                            for (int i = 0; i < width * 3; i++) points.Add(SpeedHistory[i * SpeedHistory.Count / (width * 3)]);
                         }
                     }
                     return ImageProcessor.GetImageStream(width, height, points);

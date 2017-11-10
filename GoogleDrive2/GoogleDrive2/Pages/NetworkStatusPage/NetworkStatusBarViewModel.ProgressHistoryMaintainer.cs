@@ -33,7 +33,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
                 //MyLogger.Debug($"{a.Item2} {b.Item2}");
                 SpeedUpdated?.Invoke(sec == 0 ? 0 : (b.Item2 - a.Item2) / sec);
             }
-            public SpeedMaintainer() : base(2) { }
+            public SpeedMaintainer() : base(3) { }
         }
         protected abstract class ProgressHistoryMaintainer
         {
