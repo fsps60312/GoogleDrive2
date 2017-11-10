@@ -9,7 +9,79 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
     {
         protected class TimeRemainingMaintainer : ProgressHistoryMaintainer
         {
+            const double RemainingTimeTolerance = 0.2;
             public event Libraries.Events.MyEventHandler<TimeSpan> TimeRemainingUpdated;
+            //int currentUpdateId = 0;
+            //private TimeSpan previousCountDownData = TimeSpan.MaxValue;
+            //private async void StartCountDown(TimeSpan countDownData)
+            //{
+            //    int id = System.Threading.Interlocked.Increment(ref currentUpdateId);
+            //    if (countDownData == TimeSpan.Zero)
+            //    {
+            //        await Task.Delay(100);
+            //        TimeRemainingUpdated?.Invoke(countDownData);
+            //        return;
+            //    }
+            //    var preCountDownData = previousCountDownData == TimeSpan.MaxValue ? countDownData : previousCountDownData;
+            //    previousCountDownData = countDownData;
+            //    DateTime
+            //        timeNow = DateTime.Now,
+            //        timeMid = timeNow.Add(new TimeSpan(Math.Min(countDownData.Ticks, 10 * (long)1e7))),
+            //        timeEnd = timeNow.Add(countDownData),
+            //        timeBegin = timeEnd.Add(preCountDownData.Negate());
+
+            //    var ratio = (double)(timeMid - timeBegin).Ticks / (timeMid - timeNow).Ticks;
+            //    //if (ratio < 0.5) ratio = 0.5;
+            //    //if (ratio > 2) ratio = 2;
+            //    var getRemainingTime = new Func<Tuple<double, TimeSpan>>(() =>
+            //       {
+            //           var t = DateTime.Now;
+            //           if (t >= timeMid) return new Tuple<double, TimeSpan>(1, (timeEnd - t));
+            //           else
+            //           {
+            //               var ticks = (long)((timeMid - t).Ticks * ratio);
+            //               return new Tuple<double, TimeSpan>(ratio, new TimeSpan(ticks) + (timeEnd - timeMid));
+            //           }
+            //       });
+            //    while (currentUpdateId == id)
+            //    {
+            //        var timeRemaing = getRemainingTime();
+            //        previousCountDownData = timeRemaing.Item2;
+            //        TimeRemainingUpdated?.Invoke(timeRemaing.Item2);
+            //        var timeToWait = (int)(timeRemaing.Item2.Milliseconds / timeRemaing.Item1) + 1;
+            //        await Task.Delay(100);
+            //        //await Task.Delay(Math.Max(100, timeToWait));
+            //    }
+            //}
+            DateTime nextCountDownData;
+            int runningCountDown = 0;
+            private TimeSpan AdjustToFitIntoTolerance(TimeSpan a,TimeSpan b)
+            {
+                if (a.Ticks * (1 - RemainingTimeTolerance) > b.Ticks) a = new TimeSpan((long)Math.Floor(b.Ticks / (1 - RemainingTimeTolerance)));
+                if (b.Ticks * (1 - RemainingTimeTolerance) > a.Ticks) a = new TimeSpan((long)Math.Ceiling(b.Ticks * (1 - RemainingTimeTolerance)));
+                return a;
+            }
+            private async void CountDown(TimeSpan timeRemaining)
+            {
+                var endTime = nextCountDownData = DateTime.Now.Add(timeRemaining);
+                if (System.Threading.Interlocked.CompareExchange(ref runningCountDown, 1, 0) != 0) return;
+                try
+                {
+                    while (true)
+                    {
+                        var timeNow = DateTime.Now;
+                        endTime = timeNow.Add(AdjustToFitIntoTolerance(endTime - timeNow, nextCountDownData - timeNow));
+                        if (timeNow >= endTime)
+                        {
+                            TimeRemainingUpdated?.Invoke(TimeSpan.Zero);
+                            break;
+                        }
+                        TimeRemainingUpdated?.Invoke(endTime - timeNow);
+                        await Task.Delay((endTime - timeNow).Milliseconds);
+                    }
+                }
+                finally { MyLogger.Assert(System.Threading.Interlocked.Exchange(ref runningCountDown, 0) == 1); }
+            }
             protected override void Update()
             {
                 var ep = GetEndpoints();
@@ -17,7 +89,9 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
                 var b = ep.Item2;
                 var sec = (b.Item1 - a.Item1).TotalSeconds;
                 //MyLogger.Debug($"{a.Item2} {b.Item2}");
-                TimeRemainingUpdated?.Invoke(sec == 0 ? new TimeSpan() : new TimeSpan((long)((1 - b.Item2) / (b.Item2 - a.Item2) * sec * 1000 * 1000 * 10)));
+                var timeRemaining = sec == 0 ? new TimeSpan() : new TimeSpan((long)((1 - b.Item2) / (b.Item2 - a.Item2) * sec * 1000 * 1000 * 10));
+                //TimeRemainingUpdated?.Invoke(timeRemaining);
+                CountDown(timeRemaining);
             }
             public TimeRemainingMaintainer() : base(10) { }
         }

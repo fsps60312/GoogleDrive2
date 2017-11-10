@@ -30,6 +30,10 @@ namespace GoogleDrive2.MyControls.BarsListPanel
                 FilterCondition = condition;
             }
         }
+        public void DoAtomic(Action action)
+        {
+            lock (root) action.Invoke();
+        }
         public void Sort(Comparison<DataType> comparer)
         {
             lock (root)
