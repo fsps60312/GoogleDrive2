@@ -30,6 +30,8 @@ namespace GoogleDrive2
                 Initial = Play + Hourglass,
                 Size = "⋙",
                 Magnifier = "🔍",
+                Folded = "▸",
+                Unfolded="▾",
                 Timers = "🕐🕑🕒🕓🕔🕕🕖🕗🕘🕙🕚🕛";
         }
         public const string FolderMimeType = "application/vnd.google-apps.folder";

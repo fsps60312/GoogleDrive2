@@ -39,18 +39,19 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
         MyProgressBar PBsizeProgress,PBfileProgress,PBfolderProgress;
         private void SetBindings()
         {
+            this.SetBinding(FolderUploadBar.MarginProperty, "Margin");
             LBicon.SetBinding(MyLabel.TextProperty, "Icon");
             LBname.SetBinding(MyLabel.TextProperty, "Name");
             LBtaskStatus.SetBinding(MyLabel.TextProperty, "TaskStatus");
-            LBcurrentSize.SetBinding(MyLabel.TextProperty, "CurrentSize");
-            LBtotalSize.SetBinding(MyLabel.TextProperty, "TotalSize");
+            LBcurrentFile.SetBinding(MyLabel.TextProperty, "CurrentFile", BindingMode.Default, new FolderUploadBarViewModel.FileTextValueConverter());
+            LBcurrentFolder.SetBinding(MyLabel.TextProperty, "CurrentFolder", BindingMode.Default, new FolderUploadBarViewModel.FolderTextValueConverter());
+            LBcurrentSize.SetBinding(MyLabel.TextProperty, "CurrentSize", BindingMode.Default, new FolderUploadBarViewModel.SizeTextValueConverter());
+            LBtotalSize.SetBinding(MyLabel.TextProperty, "TotalSize", BindingMode.Default, new FolderUploadBarViewModel.SizeTextValueConverter());
             LBfileStatus.SetBinding(MyLabel.TextProperty, "FileStatus");
-            LBcurrentFolder.SetBinding(MyLabel.TextProperty, "CurrentFolder");
             LBfolderStatus.SetBinding(MyLabel.TextProperty, "FolderStatus");
-            LBpercentage.SetBinding(MyLabel.TextProperty, "ProgressText");
+            LBpercentage.SetBinding(MyLabel.TextProperty, "Progress",BindingMode.Default,new FolderUploadBarViewModel.ProgressTextValueConverter());
             LBspeed.SetBinding(MyLabel.TextProperty, "Speed");
             LBtimeRemaining.SetBinding(MyLabel.TextProperty, "TimeRemaining");
-            LBcurrentFile.SetBinding(MyLabel.TextProperty, "CurrentFile");
             BTNinfo.SetBinding(MyButton.TextProperty, "Info");
             BTNinfo.SetBinding(MyButton.CommandProperty, "InfoClicked");
             BTNinfo.SetBinding(MyButton.IsEnabledProperty, "InfoEnabled");

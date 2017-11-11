@@ -18,7 +18,7 @@ namespace GoogleDrive2.Local
 
     partial class Folder:AFolder
     {
-        public override Uploader GetUploader() { return new Uploader(this); }
+        public override Uploader GetUploader() { return new Uploader(null, this); }
         public override Task<DateTime> GetTimeCreatedAsync()
         {
             return Task.FromResult(O.DateCreated.UtcDateTime);

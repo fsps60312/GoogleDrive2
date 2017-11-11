@@ -220,7 +220,7 @@ namespace GoogleDrive2.Local
                         AddNotCompleted(subfolders.Count);
                         UploadSubfoldersSubtasks = subfolders.Select((f) =>
                          {
-                             var uploader = new Folder.Uploader(f);
+                             var uploader = new Folder.Uploader(this,f);
                              uploader.folderCreator.SetFolderMetadata(async (metadata) =>
                              {
                                  var cloudId = await folderCreator.GetCloudId();

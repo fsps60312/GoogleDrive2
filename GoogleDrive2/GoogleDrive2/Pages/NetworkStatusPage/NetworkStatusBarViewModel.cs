@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace GoogleDrive2.Pages.NetworkStatusPage
@@ -137,9 +138,9 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
     }
     partial class NetworkStatusBarViewModel : MyControls.BarsListPanel.MyDisposable
     {
+        protected int IndentSize = 20;
         #region Properties
         double __Progress__ = 0;
-        string __ProgressText__ = null;
         string __Icon__ = Constants.Icons.Initial;
         string __Nmae__ = null;
         string __Info__ = null;
@@ -147,6 +148,29 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
         bool __InfoEnabled__ = true;
         string __TimeRemaining__ = null; // Estimated Remaining Time
         string __TimePassed__ = null;
+        int __Indent__= 0;
+        Xamarin.Forms.Thickness __Margin__ = new Xamarin.Forms.Thickness();
+        public Xamarin.Forms.Thickness Margin
+        {
+            get { return __Margin__; }
+            set
+            {
+                if (value == __Margin__) return;
+                __Margin__ = value;
+                OnPropertyChanged("Margin");
+            }
+        }
+        public int Indent
+        {
+            get { return __Indent__; }
+            set
+            {
+                if (value == __Indent__) return;
+                __Indent__ = value;
+                Margin = new Xamarin.Forms.Thickness(Indent * IndentSize, 0, 0, 0);
+                OnPropertyChanged("Indent");
+            }
+        }
         public string TimePassed
         {
             get { return __TimePassed__; }
@@ -217,29 +241,28 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
                 OnPropertyChanged("Icon");
             }
         }
-        public string ProgressText
-        {
-            get { return __ProgressText__; }
-            set
-            {
-                if (value == __ProgressText__) return;
-                __ProgressText__ = value;
-                OnPropertyChanged("ProgressText");
-            }
-        }
-        public double Progress
+        public virtual double Progress
         {
             get { return __Progress__; }
             set
             {
                 if (__Progress__ == value) return;
                 __Progress__ = value;
-                timeRemainingMaintainer.Add(value);
-                ProgressText = $"{(value*100).ToString("F3")}%";
                 OnPropertyChanged("Progress");
             }
         }
         #endregion
+        public class ProgressTextValueConverter : Xamarin.Forms.IValueConverter
+        {
+            public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+            {
+                return $"{((double)value * 100).ToString("F3")}%";
+            }
+            public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            {
+                throw new NotImplementedException();
+            }
+        }
         TimeRemainingMaintainer timeRemainingMaintainer = new TimeRemainingMaintainer();
         List<string> messages = new List<string>();
         protected void OnMessageAppended(string msg)
@@ -247,7 +270,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
             messages.Add(msg);
             Info = messages.Count == 1 ? msg : $"({messages.Count}) {msg}";
         }
-        protected string ByteCountToString(long byteCount, int precision)
+        protected static string ByteCountToString(long byteCount, int precision)
         {
             const double bound = 999;
             double v = byteCount;
@@ -284,6 +307,10 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
                     else TimeRemaining = $"{ss}";
                 }
             };
+            PropertyChanged += (o, v) =>
+              {
+                  if (v.PropertyName == "Progress") timeRemainingMaintainer.Add(Progress);
+              };
         }
     }
 }

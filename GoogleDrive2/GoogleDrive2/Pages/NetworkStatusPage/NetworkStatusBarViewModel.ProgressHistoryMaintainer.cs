@@ -63,7 +63,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
             }
             private async void CountDown(TimeSpan timeRemaining)
             {
-                var endTime = nextCountDownData = DateTime.Now.Add(timeRemaining);
+                DateTime endTime = nextCountDownData = DateTime.Now.Add(timeRemaining);
                 if (System.Threading.Interlocked.CompareExchange(ref runningCountDown, 1, 0) != 0) return;
                 try
                 {
@@ -91,7 +91,10 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
                 //MyLogger.Debug($"{a.Item2} {b.Item2}");
                 var timeRemaining = sec == 0 ? new TimeSpan() : new TimeSpan((long)((1 - b.Item2) / (b.Item2 - a.Item2) * sec * 1000 * 1000 * 10));
                 //TimeRemainingUpdated?.Invoke(timeRemaining);
-                CountDown(timeRemaining);
+                if (new TimeSpan(-30, 0, 0, 0) <= timeRemaining && timeRemaining <= new TimeSpan(30, 0, 0, 0))
+                {
+                    CountDown(timeRemaining);
+                }
             }
             public TimeRemainingMaintainer() : base(10) { }
         }

@@ -79,7 +79,7 @@ namespace GoogleDrive2.RestRequests
         const int MaxConcurrentCount = 10;
         static DateTime front = DateTime.Now.AddSeconds(-1);
         static Queue<DateTime> history = new Queue<DateTime>();
-        static Libraries.MySemaphore semaphore = new Libraries.MySemaphore(MaxConcurrentCount);
+        public static Libraries.MySemaphore semaphore { get; private set; } = new Libraries.MySemaphore(MaxConcurrentCount);
         public override async Task<MyHttpResponse> GetHttpResponseAsync(MyHttpRequest request)
         {
             await semaphore.WaitAsync();

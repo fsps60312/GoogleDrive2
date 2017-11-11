@@ -14,10 +14,13 @@ namespace GoogleDrive2.Local
             public event Libraries.Events.MyEventHandler<Tuple<long, long>> FileProgressChanged, FolderProgressChanged, SizeProgressChanged, LocalSearchStatusChanged;
             public event Libraries.Events.MyEventHandler<Tuple<long, long>> RunningTaskCountChanged;
             public Folder F { get; private set; }
+            public Uploader Parent { get; private set; }
+            public int GetIndent() { return Parent == null ? 0 : Parent.GetIndent() + 1; }
             private Func<Api.Files.FullCloudFileMetadata, Task<Api.Files.FullCloudFileMetadata>> metadataFunc = null;
             public void SetFolderMetadata(Func<Api.Files.FullCloudFileMetadata, Task<Api.Files.FullCloudFileMetadata>> func) { metadataFunc = func; }
-            public Uploader(Folder folder)
+            public Uploader(Uploader parent, Folder folder)
             {
+                Parent = parent;
                 F = folder;
                 AddNotCompleted(1);
                 folderCreator = new Api.Files.FullCloudFileMetadata.FolderCreate();

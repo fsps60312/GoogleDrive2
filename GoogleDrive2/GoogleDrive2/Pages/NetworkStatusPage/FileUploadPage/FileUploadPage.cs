@@ -27,7 +27,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FileUploadPage
             LBname.SetBinding(MyLabel.TextProperty, "Name");
             LBuploaded.SetBinding(MyLabel.TextProperty, "Uploaded");
             LBtotal.SetBinding(MyLabel.TextProperty, "Total");
-            LBpercentage.SetBinding(MyLabel.TextProperty, "ProgressText");
+            LBpercentage.SetBinding(MyLabel.TextProperty, "Progress", BindingMode.Default, new FileUploadBarViewModel.ProgressTextValueConverter());
             LBspeed.SetBinding(MyLabel.TextProperty, "Speed");
             LBtimeRemaining.SetBinding(MyLabel.TextProperty, "TimeRemaining");
             LBtimePassed.SetBinding(MyLabel.TextProperty, "TimePassed");
