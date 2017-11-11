@@ -41,11 +41,11 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
               {
                   var vm = new FolderUploadBarViewModel(uploader, Unfold, Fold);
                   if (!VM.ContainsKey(uploader)) VM[uploader] = vm;
+                  if (!Children.ContainsKey(vm)) Children.Add(vm, new List<FolderUploadBarViewModel>());
                   if (uploader.Parent != null)
                   {
-                      var pavm = VM[uploader.Parent];
-                      if (!Children.ContainsKey(pavm)) Children.Add(pavm, new List<FolderUploadBarViewModel>());
-                      Children[pavm].Add(vm);
+                      Children[VM[uploader.Parent]].Add(vm);
+                      VM[uploader.Parent].IsFoldEnabled = true;
                   }
                   else
                   {
@@ -79,6 +79,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             this.SetBinding(FolderUploadBar.MarginProperty, "Margin");
             BTNicon.SetBinding(MyButton.TextProperty, "FoldAndIcon");
             BTNicon.SetBinding(MyButton.CommandProperty, "FoldClicked");
+            BTNicon.SetBinding(MyButton.IsEnabledProperty, "IsFoldEnabled");
             LBname.SetBinding(MyLabel.TextProperty, "Name");
             LBtaskStatus.SetBinding(MyLabel.TextProperty, "TaskStatus");
             LBcurrentFile.SetBinding(MyLabel.TextProperty, "CurrentFile", BindingMode.Default, new FolderUploadBarViewModel.FileTextValueConverter());

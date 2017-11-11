@@ -20,6 +20,17 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
         string __TaskStatus__ = null;
         System.Windows.Input.ICommand __FoldClicked__;
         bool __IsFolded__ = true;
+        bool __IsFoldEnabled__ = false;
+        public bool IsFoldEnabled
+        {
+            get { return __IsFoldEnabled__; }
+            set
+            {
+                if (value == __IsFoldEnabled__) return;
+                __IsFoldEnabled__ = value;
+                OnPropertyChanged("IsFoldEnabled");
+            }
+        }
         public bool IsFolded
         {
             get { return __IsFolded__; }
