@@ -41,7 +41,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         {
                             if (f.UnderVerification)
                             {
-                                await f.OnDisposed(IsBarVisible(idx));
+                                await f.OnDisposedAsync(IsBarVisible(idx));
                             }
                         }));
                         OperationEnded?.Invoke();

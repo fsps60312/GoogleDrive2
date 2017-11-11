@@ -36,7 +36,7 @@ namespace GoogleDrive2.MyControls.ApiPage
                     {
                         if (this.BindingContext != null)// && await MyLogger.Ask($"Remove this item?\r\nKey: {ETkey.Text}\r\nValue: {ETvalue.Text}"))
                         {
-                            await (this.BindingContext as MyControls.BarsListPanel.MyDisposable).OnDisposed();
+                            await (this.BindingContext as MyControls.BarsListPanel.MyDisposable).OnDisposedAsync();
                         }
                     };
                     this.Children.Add(BTNcancel, 2, 0);

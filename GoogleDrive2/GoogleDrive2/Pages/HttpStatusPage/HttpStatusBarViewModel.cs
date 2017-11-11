@@ -107,7 +107,7 @@ namespace GoogleDrive2.Pages.HttpStatusPage
                 await Task.Delay((int)(timeSpan / 12));
             }
             if (disposeTime != time) return;
-            await this.OnDisposed();
+            await this.OnDisposedAsync();
         }
         bool inDialog = false;
         public HttpStatusBarViewModel(MyHttpRequest request)

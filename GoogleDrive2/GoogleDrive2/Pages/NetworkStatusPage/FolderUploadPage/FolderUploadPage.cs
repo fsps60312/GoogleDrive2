@@ -8,12 +8,49 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
 {
     class FolderUploadBarsList:MyControls.BarsListPanel.BarsListPanel<FolderUploadBar,FolderUploadBarViewModel>
     {
+        void Fold(FolderUploadBarViewModel fubv)
+        {
+            if (fubv.IsFolded) return;
+            this.DoAtomic(() =>
+            {
+                foreach (var child in Children[fubv]) Fold(child);
+                foreach (var child in Children[fubv]) child.OnDisposed();
+                fubv.IsFolded = true;
+            });
+        }
+        void Unfold(FolderUploadBarViewModel fubv)
+        {
+            if (!fubv.IsFolded) return;
+            this.DoAtomic(() =>
+            {
+                var position = TreapNode[fubv].GetPosition();
+                foreach(var child in Children[fubv])
+                {
+                    TreapNode[child] = this.Insert(child, ++position);
+                }
+                fubv.IsFolded = false;
+            });
+        }
+        Dictionary<FolderUploadBarViewModel, List<FolderUploadBarViewModel>> Children = new Dictionary<FolderUploadBarViewModel, List<FolderUploadBarViewModel>>();
+        Dictionary<Local.Folder.Uploader, FolderUploadBarViewModel> VM = new Dictionary<Local.Folder.Uploader, FolderUploadBarViewModel>();
+        Dictionary<FolderUploadBarViewModel, MyControls.BarsListPanel.Treap<FolderUploadBarViewModel>.TreapNode> TreapNode = new Dictionary<FolderUploadBarViewModel, MyControls.BarsListPanel.Treap<FolderUploadBarViewModel>.TreapNode>();
         public FolderUploadBarsList()
         {
             this.ItemHeight = 65;
             Local.Folder.Uploader.NewUploaderCreated += (uploader) =>
               {
-                  this.PushBack(new FolderUploadBarViewModel(uploader));
+                  var vm = new FolderUploadBarViewModel(uploader, Unfold, Fold);
+                  if (!VM.ContainsKey(uploader)) VM[uploader] = vm;
+                  if (uploader.Parent != null)
+                  {
+                      var pavm = VM[uploader.Parent];
+                      if (!Children.ContainsKey(pavm)) Children.Add(pavm, new List<FolderUploadBarViewModel>());
+                      Children[pavm].Add(vm);
+                  }
+                  else
+                  {
+                      TreapNode[vm] = this.PushBack(vm);
+                  }
               };
         }
     }
@@ -33,14 +70,15 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
     }
     class FolderUploadBar:MyControls.BarsListPanel.DataBindedGrid<FolderUploadBarViewModel>
     {
-        MyLabel LBicon, LBname, LBpercentage,LBcurrentSize,LBtotalSize,LBfileStatus,LBcurrentFolder,LBfolderStatus, LBspeed, LBtimeRemaining, LBcurrentFile,LBtaskStatus;
-        MyButton BTNinfo, BTNpause;
+        MyLabel LBname, LBpercentage,LBcurrentSize,LBtotalSize,LBfileStatus,LBcurrentFolder,LBfolderStatus, LBspeed, LBtimeRemaining, LBcurrentFile,LBtaskStatus;
+        MyButton BTNicon, BTNinfo, BTNpause;
         MyImage IMGspeedGraph;
         MyProgressBar PBsizeProgress,PBfileProgress,PBfolderProgress;
         private void SetBindings()
         {
             this.SetBinding(FolderUploadBar.MarginProperty, "Margin");
-            LBicon.SetBinding(MyLabel.TextProperty, "Icon");
+            BTNicon.SetBinding(MyButton.TextProperty, "FoldAndIcon");
+            BTNicon.SetBinding(MyButton.CommandProperty, "FoldClicked");
             LBname.SetBinding(MyLabel.TextProperty, "Name");
             LBtaskStatus.SetBinding(MyLabel.TextProperty, "TaskStatus");
             LBcurrentFile.SetBinding(MyLabel.TextProperty, "CurrentFile", BindingMode.Default, new FolderUploadBarViewModel.FileTextValueConverter());
@@ -67,7 +105,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
         private void ArrangeViews()
         {
             this.RowSpacing = 0.5;
-            this.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(50, GridUnitType.Absolute) });//icon
+            this.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(75, GridUnitType.Absolute) });//icon
             this.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });//name
             this.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100, GridUnitType.Absolute) });//percentage, speed
             this.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });//uploaded, time passed
@@ -85,7 +123,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
                 this.AddChildrenAndSetSpan(PBfileProgress, 3, 1, 3, 1);
                 this.AddChildrenAndSetSpan(PBfolderProgress, 3, 2, 3, 1);
 
-                this.AddChildrenAndFillHeight(LBicon, 0);
+                this.AddChildrenAndFillHeight(BTNicon, 0);
                 this.AddChildrenAndFillHeight(LBname, 1);
 
                 this.Children.Add(LBpercentage, 2, 0);
@@ -109,7 +147,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
         private void InitializeViews()
         {
             {
-                LBicon = new MyLabel();
+                BTNicon = new MyButton();
                 LBname = new MyLabel();
                 LBcurrentSize = new MyLabel();
                 LBtotalSize = new MyLabel();

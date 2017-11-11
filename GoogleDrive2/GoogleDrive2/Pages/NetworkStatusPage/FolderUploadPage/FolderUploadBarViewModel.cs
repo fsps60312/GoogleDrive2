@@ -19,7 +19,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
         long? __SearchFilesStatus__ = null;
         string __TaskStatus__ = null;
         System.Windows.Input.ICommand __FoldClicked__;
-        bool __IsFolded__ = false;
+        bool __IsFolded__ = true;
         public bool IsFolded
         {
             get { return __IsFolded__; }
@@ -133,6 +133,14 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
         #endregion
 
         #region Extended Properties
+        public string FoldAndIcon
+        {
+            get
+            {
+                RegisterBinding(new List<string> { "IsFolded", "Icon" }, "FoldAndIcon");
+                return (IsFolded ? Constants.Icons.Folded : Constants.Icons.Unfolded) + Icon;
+            }
+        }
         public override double Progress
         {
             get
@@ -230,25 +238,16 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
                 throw new NotImplementedException();
             }
         }
-
-        public FolderUploadBarViewModel(Local.Folder.Uploader up) : base()
+        public FolderUploadBarViewModel(Local.Folder.Uploader up, Action<FolderUploadBarViewModel> unfoldAction, Action<FolderUploadBarViewModel> foldAction) : base()
         {
-            this.PropertyChanged += (o, p) =>
-              {
-                  if (!PropertyChangedEventChain.ContainsKey(p.PropertyName)) return;
-                  foreach (var np in PropertyChangedEventChain[p.PropertyName]) OnPropertyChanged(np);
-              };
             Name = up.F.Name;
             this.Indent = up.GetIndent();
-            PauseClicked = new Xamarin.Forms.Command(async () =>
-              {
-                  if (up.IsActive) up.Pause();
-                  else await up.StartAsync();
-              });
-            FoldClicked = new Xamarin.Forms.Command(async () =>
-              {
-                  throw new NotImplementedException();//TODO
-              });
+            FoldClicked = new Xamarin.Forms.Command(() =>
+            {
+                //MyLogger.Debug($"IsFolded={IsFolded}");
+                if (!IsFolded) foldAction(this);
+                else unfoldAction(this);
+            });
             RegisterEvents(up);
         }
     }
@@ -320,6 +319,16 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             up.FolderProgressChanged += (p) => UpdateProgress(p, ProgressType.Folder);
             up.SizeProgressChanged += (p) => UpdateProgress(p, ProgressType.Size);
             up.LocalSearchStatusChanged += (p) => UpdateProgress(p, ProgressType.LocalSearch);
+            this.PropertyChanged += (o, p) =>
+            {
+                if (!PropertyChangedEventChain.ContainsKey(p.PropertyName)) return;
+                foreach (var np in PropertyChangedEventChain[p.PropertyName]) OnPropertyChanged(np);
+            };
+            PauseClicked = new Xamarin.Forms.Command(async () =>
+            {
+                if (up.IsActive) up.Pause();
+                else await up.StartAsync();
+            });
         }
     }
 }

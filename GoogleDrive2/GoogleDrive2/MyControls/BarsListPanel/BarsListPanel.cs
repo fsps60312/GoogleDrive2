@@ -80,14 +80,14 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         public double AnimationDuration { get { return Treap<DataType>.animationDuration; } }
         public double ItemHeight
         {
-            get { return treap.itemHeight; }
-            set { treap.itemHeight = value; }
+            get { return Treap.itemHeight; }
+            set { Treap.itemHeight = value; }
         }
         public List<DataType>ToList()
         {
-            return treap.ToList();
+            return Treap.ToList();
         }
-        Treap<DataType> treap = new Treap<DataType>();
+        protected Treap<DataType> Treap { get; private set; } = new Treap<DataType>();
         MyAbsoluteLayout ALmain;
         MyScrollView SVmain;
         MyLabel LBend;
@@ -96,23 +96,23 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         private void OnTreapLayoutChanged() { TreapLayoutChanged?.Invoke(); }
         protected void ChangeHeight(Treap<DataType>.TreapNode node, double difference)
         {
-            treap.ChangeHeight(node, difference);
+            Treap.ChangeHeight(node, difference);
         }
         public void Sort(Comparison<DataType>comparer)
         {
-            treap.Sort(comparer);
+            Treap.Sort(comparer);
             OnTreapLayoutChanged();
         }
         public async Task ClearAsync()
         {
-            if (treap.Count > 0)
+            if (Treap.Count > 0)
             {
                 int l = UponIndex(), r = DownIndex();
-                var count = treap.Count;
+                var count = Treap.Count;
                 List<DataType> visible = new List<DataType>(), invisible = new List<DataType>();
                 for (int i = count - 1; i >= 0; i--)
                 {
-                    treap.Query(i, new Action<Treap<DataType>.TreapNode>((o) =>
+                    Treap.Query(i, new Action<Treap<DataType>.TreapNode>((o) =>
                     {
                         if (l <= i && i <= r) visible.Add(o.data);
                         else invisible.Add(o.data);
@@ -122,12 +122,12 @@ namespace GoogleDrive2.MyControls.BarsListPanel
                 Libraries.MySemaphore semaphore = new Libraries.MySemaphore(-count + 1);
                 foreach (var o in invisible)
                 {
-                    await (o as MyDisposable).OnDisposed(false);
+                    await (o as MyDisposable).OnDisposedAsync(false);
                     semaphore.Release();
                 }
                 var t= Task.WhenAll(visible.Select(async (o) =>
                 {
-                    await (o as MyDisposable).OnDisposed(false);
+                    await (o as MyDisposable).OnDisposedAsync(false);
                     semaphore.Release();
                 }));
                 
@@ -148,13 +148,13 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             {
                 data.Disposed -= disposedEventHandler;
                 data.HeightChanged -= heightChangedEventHandler;
-                treap.Delete(o);
+                Treap.Delete(o);
                 OnTreapLayoutChanged();
                 OnDataRemoved(data);
             });
             heightChangedEventHandler = new Libraries.Events.MyEventHandler<double>((difference) =>
               {
-                  treap.ChangeHeight(o, difference);
+                  Treap.ChangeHeight(o, difference);
                   OnTreapLayoutChanged();
               });
             data.Disposed += disposedEventHandler;
@@ -163,18 +163,25 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         }
         public void MoveItem(int from,int to)
         {
-            treap.MoveItem(from, to);
+            Treap.MoveItem(from, to);
             OnTreapLayoutChanged();
         }
-        public Tuple<Treap<DataType>.TreapNode,double> Remove(int idx)
+        protected void DoAtomic(Action action) { Treap.DoAtomic(action); }
+        public DataType Query(int idx)
         {
-            var o = treap.Cut(idx);
-            OnTreapLayoutChanged();
-            return o;
+            DataType answer = default(DataType);
+            Treap.Query(idx, (o) => answer = o.data);
+            return answer;
         }
+        //public Tuple<Treap<DataType>.TreapNode, double> Remove(int idx)
+        //{
+        //    var o = Treap.Cut(idx);
+        //    OnTreapLayoutChanged();
+        //    return o;
+        //}
         public Treap<DataType>.TreapNode Insert(DataType data, int idx)
         {
-            var o = treap.Insert(data, idx);
+            var o = Treap.Insert(data, idx);
             RegisterData(o, data);
             OnTreapLayoutChanged();
             return o;
@@ -185,7 +192,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         }
         public Treap<DataType>.TreapNode PushBack(DataType data)
         {
-            return Insert(data, treap.Count);
+            return Insert(data, Treap.Count);
         }
         public async Task ScrollToEnd()
         {
@@ -210,7 +217,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         }
         private int UponIndex()
         {
-            return Math.Max(0, Math.Min(treap.Count - 1, treap.QueryLowerBound(SVmain.ScrollY) - 1));
+            return Math.Max(0, Math.Min(Treap.Count - 1, Treap.QueryLowerBound(SVmain.ScrollY) - 1));
             //int l = 0, r = treap.Count - 1;
             //while (l < r)
             //{
@@ -223,7 +230,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         }
         private int DownIndex()
         {
-            return Math.Max(0, Math.Min(treap.Count - 1, treap.QueryLowerBound(SVmain.ScrollY + SVmain.Height) - 1));
+            return Math.Max(0, Math.Min(Treap.Count - 1, Treap.QueryLowerBound(SVmain.ScrollY + SVmain.Height) - 1));
             //int l = 0, r = treap.Count - 1;
             //while (l < r)
             //{
@@ -244,12 +251,12 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             int controlsAdded = 0;
             const int maxControlsToAdd = 2;
             SVmain.BatchBegin();
-            treap.Query(treap.Count, new Action<Treap<DataType>.TreapNode>((o) =>
+            Treap.Query(Treap.Count, new Action<Treap<DataType>.TreapNode>((o) =>
             {
                 MyAbsoluteLayout.SetLayoutBounds(LBend, BarsLayoutMethod(o.QueryYOffset()).Item1);
-                ALmain.HeightRequest = o.QueryYOffset() + treap.itemHeight;
+                ALmain.HeightRequest = o.QueryYOffset() + Treap.itemHeight;
             }));
-            if (treap.Count > 0)
+            if (Treap.Count > 0)
             {
                 double difference = 0;
                 int l = UponIndex(), r = DownIndex();
@@ -266,7 +273,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
                 }
                 foreach(int i in order)
                 {
-                    treap.Query(i, new Action<Treap<DataType>.TreapNode>((o) =>
+                    Treap.Query(i, new Action<Treap<DataType>.TreapNode>((o) =>
                     {
                         var targetBound = BarsLayoutMethod(o.QueryYOffset());
                         GenericView view = null;
@@ -380,8 +387,8 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         }
         private void RegisterEvents()
         {
-            treap.TreapNodeAdded += (o) => { TreapNodeAdded?.Invoke(o); };
-            treap.TreapNodeRemoved += (o) => { TreapNodeRemoved?.Invoke(o); };
+            Treap.TreapNodeAdded += (o) => { TreapNodeAdded?.Invoke(o); };
+            Treap.TreapNodeRemoved += (o) => { TreapNodeRemoved?.Invoke(o); };
             this.TreapLayoutChanged += () => { AnimateLayout(); };
             SVmain.Scrolled += (sender,args) => { AnimateLayout(); };
             SVmain.SizeChanged += (sender, args) => { AnimateLayout(); };
@@ -395,7 +402,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
                     {
                         //HorizontalOptions = Xamarin.Forms.LayoutOptions.FillAndExpand,
                         //VerticalOptions =Xamarin.Forms.LayoutOptions.Start,
-                        HeightRequest = treap.itemHeight,
+                        HeightRequest = Treap.itemHeight,
                         BackgroundColor = Xamarin.Forms.Color.LightYellow
                     };
                     {
@@ -414,7 +421,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         }
         public BarsListPanel(double itemHeight=50)
         {
-            treap.itemHeight = itemHeight;
+            Treap.itemHeight = itemHeight;
             BarsLayoutMethod = new Func<double, Tuple<Rectangle, AbsoluteLayoutFlags>>((y) =>
            {
                return new Tuple<Rectangle, AbsoluteLayoutFlags>(new Rectangle(0, y, /*ALmain.Width*/1, -1), AbsoluteLayoutFlags.WidthProportional);

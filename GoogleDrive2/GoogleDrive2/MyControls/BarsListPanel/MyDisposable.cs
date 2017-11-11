@@ -18,11 +18,15 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         {
             HeightChanged?.Invoke(difference);
         }
-        public async System.Threading.Tasks.Task OnDisposed(bool animated=true)
+        public void OnDisposed()
         {
-            if (animated && Disposing != null) await Disposing();
             Disposed?.Invoke(this);
             Disposing = null; Disposed = null;
+        }
+        public async System.Threading.Tasks.Task OnDisposedAsync(bool animated=true)
+        {
+            if (animated && Disposing != null) await Disposing();
+            OnDisposed();
         }
     }
 }
