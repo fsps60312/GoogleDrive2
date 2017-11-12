@@ -9,26 +9,27 @@ namespace GoogleDrive2.Local
         {
             class Subtask
             {
-                private Func<Task<bool>> StartTask;
+                private Func<Task> StartTask;
                 private Action PauseTask;
-                public event Libraries.Events.MyEventHandler<Tuple<long, long>> FileProgressChanged,FolderProgressChanged,SizeProgressChanged,
-                    LocalSearchStatusChanged,RunningTaskCountChanged;
-                bool IsCompleted = false,IsRunning=false;
+                public event Libraries.Events.MyEventHandler<Tuple<long, long>> FileProgressChanged, FolderProgressChanged, SizeProgressChanged,
+                    LocalSearchStatusChanged, RunningTaskCountChanged;
+                bool IsCompleted = false, IsRunning = false;
                 Libraries.MySemaphore semaphore = new Libraries.MySemaphore(1);
+                public void OnStarted() { IsRunning = true; }
+                public void OnCompleted(bool success)
+                {
+                    IsRunning = false;
+                    IsCompleted = success;
+                }
                 public async Task Start()
                 {
                     await semaphore.WaitAsync();
-                    IsRunning = true;
                     try
                     {
                         if (IsCompleted) return;
-                        if (await StartTask()) IsCompleted = true;
+                        await StartTask();
                     }
-                    finally
-                    {
-                        IsRunning = false;
-                        semaphore.Release();
-                    }
+                    finally { semaphore.Release(); }
                 }
                 public void Pause()
                 {
@@ -48,7 +49,7 @@ namespace GoogleDrive2.Local
                     runningTaskCountCall = new Action<Tuple<long, long>>((p) => { RunningTaskCountChanged?.Invoke(p); });
                 }
                 public Subtask(
-                    Func<Task<bool>> startTask, Action pauseTask,
+                    Func<Task> startTask, Action pauseTask,
                     out Action<Tuple<long, long>> fileProgressCall,
                     out Action<Tuple<long, long>> folderProgressCall,
                     out Action<Tuple<long, long>> sizeProgressCall,

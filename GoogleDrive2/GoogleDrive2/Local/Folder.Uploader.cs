@@ -22,7 +22,6 @@ namespace GoogleDrive2.Local
             {
                 Parent = parent;
                 F = folder;
-                AddNotCompleted(1);
                 folderCreator = new Api.Files.FullCloudFileMetadata.FolderCreate();
                 NewUploaderCreated?.Invoke(this);
             }
@@ -43,39 +42,37 @@ namespace GoogleDrive2.Local
                 return s.Length == 0 ? null : s[0];
             }
             int recordedSubfileCount = -1, recordedSubfolderCount = -1;
+            int StartPrivateAsyncProgress = 0;
             protected override async Task<bool> StartPrivateAsync()
             {
                 if (CheckPause()) return false;
-                this.SizeProgressChanged?.Invoke(new Tuple<long, long>(this.ProgressCurrentSize, this.ProgressTotalSize));
-                this.FileProgressChanged?.Invoke(new Tuple<long, long>(this.ProgressCurrentFile, this.ProgressTotalFile));
-                this.FolderProgressChanged?.Invoke(new Tuple<long, long>(this.ProgressCurrentFolder, this.ProgressTotalFolder));
-                Interlocked.Add(ref AddedThreadCount, 3);
-                AddThreadCount(3);
-                var result = MergeResults(await Task.WhenAll(new Task[]{
+                if (0 == StartPrivateAsyncProgress)
+                {
+                    //Interlocked.Add(ref AddedThreadCount, 3);
+                    AddNotCompleted(3);
+                    Interlocked.Increment(ref StartPrivateAsyncProgress);
+                }
+                if (CheckPause()) return false;
+                if (1 == StartPrivateAsyncProgress)
+                {
+                    AddThreadCount(3);
+                    await Task.WhenAll(new Task[]{
                             CreateFolderTask(),
                             UploadSubfoldersTask(),
                             UploadSubfilesTask()
-                        }.Select(new Func<Task, Task<bool?>>(async (t) =>
-                        {
-                            bool? ans;
-                            try { await t; }
-                            finally
-                            {
-                                Interlocked.Add(ref AddedThreadCount, -1);
-                                ans = AddThreadCount(-1);
-                            }
-                            return ans;
-                        }))));
-                if (!result.HasValue)
-                {
-                    var msg = $"!result.HasValue.\r\n" +
-                        $"ThreadCount={ThreadCount}, NotCompleted={NotCompleted}, AddedThreadCount={AddedThreadCount}\r\n" +
-                        $"Progress=({CreateFolderTaskProgress},{UploadSubfoldersTaskProgress},{UploadSubfilesTaskProgress})\r\n" +
-                        $"FileCount={recordedSubfileCount}, FolderCount={recordedSubfolderCount}";
-                    this.LogError(msg);
-                    //await MyLogger.Alert(msg);
+                        });
                 }
-                return result.HasValue ? result.Value : false;
+                //if (!result.HasValue)
+                //{
+                //    var msg = $"!result.HasValue.\r\n" +
+                //        $"ThreadCount={ThreadCount}, NotCompleted={NotCompleted}, AddedThreadCount={AddedThreadCount}\r\n" +
+                //        $"Progress=({CreateFolderTaskProgress},{UploadSubfoldersTaskProgress},{UploadSubfilesTaskProgress})\r\n" +
+                //        $"FileCount={recordedSubfileCount}, FolderCount={recordedSubfolderCount}";
+                //    this.LogError(msg);
+                //    //await MyLogger.Alert(msg);
+                //}
+                MyLogger.Assert(ThreadCount == 0);
+                return NotCompleted == 0;
             }
         }
     }

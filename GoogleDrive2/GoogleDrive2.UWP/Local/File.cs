@@ -50,9 +50,15 @@ namespace GoogleDrive2.Local
             }
             return ans;
         }
+        static Libraries.MySemaphore semaphore = new Libraries.MySemaphore(1);
         public override async Task<ulong> GetSizeAsync()
         {
-            return (await O.GetBasicPropertiesAsync()).Size;
+            await semaphore.WaitAsync();
+            try
+            {
+                return (await O.GetBasicPropertiesAsync()).Size;
+            }
+            finally { semaphore.Release(); }
         }
         public override Task<DateTime> GetTimeCreatedAsync()
         {
