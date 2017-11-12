@@ -119,6 +119,7 @@ namespace GoogleDrive2.Local
                         AddNotCompleted(-1);
                     }
                 };
+                uploader.ErrorLogged += (msg) => OnErrorLogged(msg);
                 AddNotCompleted(1);
                 uploader.ProgressChanged += (p) => { sizeProgressCall(p); };
                 AddSubtask(subtask);
@@ -143,6 +144,7 @@ namespace GoogleDrive2.Local
                     AddThreadCount(-1);
                     if (success) AddNotCompleted(-1);
                 };
+                uploader.ErrorLogged += (msg) => OnErrorLogged(msg);
                 AddNotCompleted(1);
                 uploader.FileProgressChanged += (p) => { fileProgressCall(p); };
                 uploader.FolderProgressChanged += (p) => { folderProgressCall(p); };
