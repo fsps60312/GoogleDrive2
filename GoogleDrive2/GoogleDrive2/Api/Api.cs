@@ -110,7 +110,11 @@ namespace GoogleDrive2
                 if (success) IsCompleted = true;
                 Completed?.Invoke(success);
             }
-            protected ApiOperator() { }
+            static volatile int InstanceCount = 0;
+            public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
+            static void AddInstanceCount(int value) { System.Threading.Interlocked.Add(ref InstanceCount, value); InstanceCountChanged?.Invoke(InstanceCount); }
+            ~ApiOperator() { AddInstanceCount(-1); }
+            protected ApiOperator() { AddInstanceCount(1); }
         }
         public class ParametersClass
         {

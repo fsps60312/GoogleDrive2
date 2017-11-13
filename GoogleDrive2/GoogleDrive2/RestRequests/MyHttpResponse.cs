@@ -109,7 +109,7 @@ namespace GoogleDrive2
         }
         static volatile int InstanceCount = 0;
         public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
-        static void AddInstanceCount(int value) { InstanceCountChanged?.Invoke(System.Threading.Interlocked.Add(ref InstanceCount, value)); }
+        static void AddInstanceCount(int value) { System.Threading.Interlocked.Add(ref InstanceCount, value); InstanceCountChanged?.Invoke(InstanceCount); }
         ~MyHttpResponse() { AddInstanceCount(-1); }
         public MyHttpResponse(HttpWebResponse o)
         {

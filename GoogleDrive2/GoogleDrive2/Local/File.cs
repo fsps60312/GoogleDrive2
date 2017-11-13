@@ -50,11 +50,7 @@ namespace GoogleDrive2.Local
         }
         static volatile int InstanceCount = 0;
         public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
-        static void AddInstanceCount(int value)
-        {
-            System.Threading.Interlocked.Add(ref InstanceCount, value);
-            InstanceCountChanged?.Invoke(InstanceCount);
-        }
+        static void AddInstanceCount(int value) { System.Threading.Interlocked.Add(ref InstanceCount, value); InstanceCountChanged?.Invoke(InstanceCount); }
         private File()
         {
             AddInstanceCount(1);

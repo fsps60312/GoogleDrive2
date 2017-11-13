@@ -59,8 +59,8 @@ namespace GoogleDrive2.Local
                 return NotCompleted == 0;
             }
             static volatile int InstanceCount = 0;
-            public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
-            static void AddInstanceCount(int value) { InstanceCountChanged?.Invoke(Interlocked.Add(ref InstanceCount, value)); }
+            public new static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
+            static void AddInstanceCount(int value) { System.Threading.Interlocked.Add(ref InstanceCount, value); InstanceCountChanged?.Invoke(InstanceCount); }
             ~Uploader() { AddInstanceCount(-1); }
             public Uploader(Uploader parent, Folder folder)
             {

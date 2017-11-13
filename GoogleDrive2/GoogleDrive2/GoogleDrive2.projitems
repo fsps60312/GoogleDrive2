@@ -77,7 +77,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Pages\HttpStatusPage\HttpStatusBar.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\HttpStatusPage\HttpStatusBarViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\HttpStatusPage\HttpStatusPage.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Pages\HttpStatusPage\HttpStatusPage.HttpStatistics.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\FileUploadPage\FileUploadBarViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\FileUploadPage\FileUploadPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\FolderUploadPage\FolderUploadBarViewModel.cs" />
@@ -85,6 +84,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\NetworkStatusBarViewModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\NetworkStatusBarViewModel.ProgressHistoryMaintainer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\NetworkStatusWithSpeedBarViewModel.ImageProcessor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\StatisticsPage\StatisticsPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\ButtonsPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\ColorTestPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\FilesListRequestPage.cs" />

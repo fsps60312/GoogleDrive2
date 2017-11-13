@@ -3,11 +3,19 @@ using System.Collections.Generic;
 
 namespace GoogleDrive2.MyControls.BarsListPanel
 {
+    class TreapNodeStatistics
+    {
+        static volatile int InstanceCount = 0;
+        public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
+        public static void AddInstanceCount(int value) { System.Threading.Interlocked.Add(ref InstanceCount, value); InstanceCountChanged?.Invoke(InstanceCount); }
+    }
     public partial class Treap<DataType>
     {
         public class TreapNodePrototype
         {
             public DataType data;
+            ~TreapNodePrototype() { TreapNodeStatistics.AddInstanceCount(-1); }
+            public TreapNodePrototype() { TreapNodeStatistics.AddInstanceCount(1); }
         }
         private class TreapNode:TreapNodePrototype
         {
