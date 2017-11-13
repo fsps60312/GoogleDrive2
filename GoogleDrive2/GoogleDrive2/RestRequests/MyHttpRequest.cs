@@ -130,26 +130,15 @@ namespace GoogleDrive2
         }
         static volatile int InstanceCount = 0;
         public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
-        static void AddInstanceCount(int value)
-        {
-            System.Threading.Interlocked.Add(ref InstanceCount, value);
-            InstanceCountChanged?.Invoke(InstanceCount);
-        }
+        static void AddInstanceCount(int value) { InstanceCountChanged?.Invoke(Interlocked.Add(ref InstanceCount, value)); }
+        ~MyHttpRequest() { AddInstanceCount(-1); }
         public MyHttpRequest(string method, string uri)
         {
             AddInstanceCount(1);
             Method = method;
             Uri = uri;
             start = DateTime.Now;
-            //this.Started += delegate { MyLogger.Debug($"Started {(DateTime.Now - start).TotalSeconds}"); };
-            //this.Writing += delegate { MyLogger.Debug($"Writing {(DateTime.Now - start).TotalSeconds}"); };
-            //this.Requesting += delegate { MyLogger.Debug($"Requesting {(DateTime.Now - start).TotalSeconds}"); };
-            //this.Responded += delegate { MyLogger.Debug($"Responded {(DateTime.Now - start).TotalSeconds}"); };
-            //this.Receiving += delegate { MyLogger.Debug($"Receiving {(DateTime.Now - start).TotalSeconds}"); };
-            //this.Received += delegate { MyLogger.Debug($"Received {(DateTime.Now - start).TotalSeconds}"); };
-            //this.Finished += delegate { MyLogger.Debug($"Finished {(DateTime.Now - start).TotalSeconds}"); };
             NewRequestCreated?.Invoke(this);
         }
-        ~MyHttpRequest() { AddInstanceCount(-1); }
     }
 }

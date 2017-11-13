@@ -58,8 +58,13 @@ namespace GoogleDrive2.Local
                     semaphore.Release();
                 }
             }
+            static volatile int InstanceCount = 0;
+            public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
+            static void AddInstanceCount(int value) { InstanceCountChanged?.Invoke(System.Threading.Interlocked.Add(ref InstanceCount, value)); }
+            ~Uploader() { AddInstanceCount(-1); }
             protected Uploader(File file)
             {
+                AddInstanceCount(1);
                 F = file;
                 this.UploadCompleted += (id) => { Debug($"{Constants.Icons.Completed} Upload Completed: fileId = \"{id}\""); };
                 NewUploaderCreated?.Invoke(this);

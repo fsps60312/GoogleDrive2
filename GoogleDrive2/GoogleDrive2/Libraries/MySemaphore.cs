@@ -8,16 +8,14 @@ namespace GoogleDrive2.Libraries
 {
     class MySemaphore
     {
-        SemaphoreSlim mainSemaphore, setSemaphore;
+        SemaphoreSlim mainSemaphore;
         MySemaphore parentSemaphore;
-        private int threadCountLimit,threadCountLimitRequest;
+        private int threadCountLimitRequest;
         public int ThreadCountLimitRequest { get { return threadCountLimitRequest; } }
         public MySemaphore(int initialCount, MySemaphore _parentSemaphore = null)
         {
             mainSemaphore = new SemaphoreSlim(0);
             parentSemaphore = _parentSemaphore;
-            setSemaphore = new SemaphoreSlim(1);
-            threadCountLimit = threadCountLimitRequest = 0;
             SetThreadLimit(initialCount);
         }
         public async Task WaitAsync()
@@ -33,28 +31,11 @@ namespace GoogleDrive2.Libraries
                 mainSemaphore.Release();
             }
         }
-        public void SetThreadLimit(int limit)
+        public async void SetThreadLimit(int limit)
         {
-            threadCountLimitRequest = limit;
-            new Action(async () =>
-            {
-                await setSemaphore.WaitAsync();
-                try
-                {
-                    for (; threadCountLimit < threadCountLimitRequest; threadCountLimit++)
-                    {
-                        this.Release();
-                    }
-                    for (; threadCountLimit > threadCountLimitRequest; threadCountLimit--)
-                    {
-                        await mainSemaphore.WaitAsync();
-                    }
-                }
-                finally
-                {
-                    setSemaphore.Release();
-                }
-            })();
+            var origin = Interlocked.Exchange(ref threadCountLimitRequest, limit);
+            for (; origin < limit; origin++) this.Release();
+            for (; origin > limit; origin--) await this.WaitAsync();
         }
     }
 }

@@ -259,20 +259,20 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             if (Treap.Count > 0)
             {
                 double difference = 0;
-                int l = UponIndex(), r = DownIndex();
-                int mid = (l + r) / 2;
-                List<int> order = new List<int>();
-                for(int i1=l,i2=r;i1<=i2;i1++,i2--)
-                {
-                    if (i1 == i2) order.Add(i1);
-                    else
-                    {
-                        order.Add(i1);
-                        order.Add(i2);
-                    }
-                }
                 Treap.DoAtomic(() =>
                 {
+                    int l = UponIndex(), r = DownIndex();
+                    int mid = (l + r) / 2;
+                    List<int> order = new List<int>();
+                    for (int i1 = l, i2 = r; i1 <= i2; i1++, i2--)
+                    {
+                        if (i1 == i2) order.Add(i1);
+                        else
+                        {
+                            order.Add(i1);
+                            order.Add(i2);
+                        }
+                    }
                     foreach (int i in order)
                     {
                         var targetBound = BarsLayoutMethod(Treap.QueryY(i));

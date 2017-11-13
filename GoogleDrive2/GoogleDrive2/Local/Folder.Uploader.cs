@@ -18,13 +18,6 @@ namespace GoogleDrive2.Local
             public int GetIndent() { return Parent == null ? 0 : Parent.GetIndent() + 1; }
             private Func<Api.Files.FullCloudFileMetadata, Task<Api.Files.FullCloudFileMetadata>> metadataFunc = null;
             public void SetFolderMetadata(Func<Api.Files.FullCloudFileMetadata, Task<Api.Files.FullCloudFileMetadata>> func) { metadataFunc = func; }
-            public Uploader(Uploader parent, Folder folder)
-            {
-                Parent = parent;
-                F = folder;
-                folderCreator = new Api.Files.FullCloudFileMetadata.FolderCreate();
-                NewUploaderCreated?.Invoke(this);
-            }
             Api.Files.FullCloudFileMetadata.FolderCreate folderCreator = null;
             bool ShouldReturn(bool? v, out bool result)
             {
@@ -62,17 +55,20 @@ namespace GoogleDrive2.Local
                             UploadSubfilesTask()
                         });
                 }
-                //if (!result.HasValue)
-                //{
-                //    var msg = $"!result.HasValue.\r\n" +
-                //        $"ThreadCount={ThreadCount}, NotCompleted={NotCompleted}, AddedThreadCount={AddedThreadCount}\r\n" +
-                //        $"Progress=({CreateFolderTaskProgress},{UploadSubfoldersTaskProgress},{UploadSubfilesTaskProgress})\r\n" +
-                //        $"FileCount={recordedSubfileCount}, FolderCount={recordedSubfolderCount}";
-                //    this.LogError(msg);
-                //    //await MyLogger.Alert(msg);
-                //}
                 MyLogger.Assert(ThreadCount == 0);
                 return NotCompleted == 0;
+            }
+            static volatile int InstanceCount = 0;
+            public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
+            static void AddInstanceCount(int value) { InstanceCountChanged?.Invoke(Interlocked.Add(ref InstanceCount, value)); }
+            ~Uploader() { AddInstanceCount(-1); }
+            public Uploader(Uploader parent, Folder folder)
+            {
+                AddInstanceCount(1);
+                Parent = parent;
+                F = folder;
+                folderCreator = new Api.Files.FullCloudFileMetadata.FolderCreate();
+                NewUploaderCreated?.Invoke(this);
             }
         }
     }

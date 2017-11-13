@@ -56,7 +56,7 @@ namespace GoogleDrive2.Local
             //await semaphore.WaitAsync();
             //try
             //{
-                return (await O.GetBasicPropertiesAsync()).Size;
+            return await Task.Run(async () => (await O.GetBasicPropertiesAsync()).Size);
             //}
             //finally { semaphore.Release(); }
         }
