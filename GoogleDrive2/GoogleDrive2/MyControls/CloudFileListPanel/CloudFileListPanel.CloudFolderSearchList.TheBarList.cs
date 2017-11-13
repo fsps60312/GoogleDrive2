@@ -23,7 +23,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     Initialize(q, OrderBy);
                 }
                 List<string> OrderBy;
-                Dictionary<string, BarsListPanel.Treap<CloudFileListPanelViewModel.CloudFileItemBarViewModel>.TreapNode> TreapNodes=new Dictionary<string, BarsListPanel.Treap<CloudFileListPanelViewModel.CloudFileItemBarViewModel>.TreapNode>();
+                Dictionary<string, BarsListPanel.Treap<CloudFileListPanelViewModel.CloudFileItemBarViewModel>.TreapNodePrototype> TreapNodes=new Dictionary<string, BarsListPanel.Treap<CloudFileListPanelViewModel.CloudFileItemBarViewModel>.TreapNodePrototype>();
                 void Initialize(string q, List<string> orderBy)
                 {
                     OrderBy = orderBy;
@@ -78,7 +78,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         var u = TreapNodes[fileProperty.id];
                         u.data.UnderVerification = false;
                         u.data.Initialize(fileProperty);
-                        var from = u.GetPosition();
+                        var from = Treap.QueryPosition(u);
                         this.MoveItem(from, desiredIdx);
                     }
                     else

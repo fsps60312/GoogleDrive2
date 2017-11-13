@@ -75,8 +75,8 @@ namespace GoogleDrive2.RestRequests
     }
     class RestRequestsLimiter : RestRequestsRetrier
     {
-        const int MaxConcurrentRequestPerSecond = 10;
-        const int MaxConcurrentCount = 10;
+        const int MaxRequestPerSecond = 10;
+        const int MaxConcurrentCount = 3;
         static DateTime front = DateTime.Now.AddSeconds(-1);
         static Queue<DateTime> history = new Queue<DateTime>();
         public static Libraries.MySemaphore semaphore { get; private set; } = new Libraries.MySemaphore(MaxConcurrentCount);
@@ -88,7 +88,7 @@ namespace GoogleDrive2.RestRequests
                 int timeToWait;
                 lock (history)
                 {
-                    while (history.Count + 1 >= MaxConcurrentRequestPerSecond) front = history.Dequeue();
+                    while (history.Count + 1 >= MaxRequestPerSecond) front = history.Dequeue();
                     var timeToStart = front.AddSeconds(1);
                     var timeNow = DateTime.Now;
                     if (timeNow >= timeToStart)
@@ -114,10 +114,13 @@ namespace GoogleDrive2.RestRequests
     {
         public bool AuthorizationRequired = true;
         //public RestRequestsAuthorizer(bool auth) { authorizationRequired = auth; }
+        static int quotaUserNumber = 0;
         private async Task UpdateRequestAuthorization(MyHttpRequest request,bool refresh)
         {
             if (AuthorizationRequired)
             {
+                //request.Uri += (request.Uri.IndexOf('?') == -1 ? "?" : "&") + $"quotaUser={WebUtility.UrlEncode($"fsps60312-GoogleDrive2-{quotaUserNumber++}")}";
+                quotaUserNumber %= 5;
                 request.Headers["Authorization"] = $"{await DriveAuthorizer.GetTokenTypeAsync()} {await DriveAuthorizer.GetAccessTokenAsync(refresh)}";
             }
         }

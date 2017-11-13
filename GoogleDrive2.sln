@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2005
+VisualStudioVersion = 15.0.27004.2008
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "GoogleDrive2", "GoogleDrive2\GoogleDrive2\GoogleDrive2.shproj", "{E2B1497F-A98C-4EE4-BA15-CEB32B78F974}"
 EndProject
@@ -200,8 +200,6 @@ Global
 		{7151CBA0-99E7-4262-89F1-8927C4CE96C3}.Debug|x86.Build.0 = Debug|x86
 		{7151CBA0-99E7-4262-89F1-8927C4CE96C3}.Debug|x86.Deploy.0 = Debug|x86
 		{7151CBA0-99E7-4262-89F1-8927C4CE96C3}.Release|Any CPU.ActiveCfg = Release|x86
-		{7151CBA0-99E7-4262-89F1-8927C4CE96C3}.Release|Any CPU.Build.0 = Release|x86
-		{7151CBA0-99E7-4262-89F1-8927C4CE96C3}.Release|Any CPU.Deploy.0 = Release|x86
 		{7151CBA0-99E7-4262-89F1-8927C4CE96C3}.Release|ARM.ActiveCfg = Release|ARM
 		{7151CBA0-99E7-4262-89F1-8927C4CE96C3}.Release|ARM.Build.0 = Release|ARM
 		{7151CBA0-99E7-4262-89F1-8927C4CE96C3}.Release|ARM.Deploy.0 = Release|ARM

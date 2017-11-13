@@ -23,7 +23,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             if (!fubv.IsFolded) return;
             this.DoAtomic(() =>
             {
-                var position = TreapNode[fubv].GetPosition();
+                var position = Treap.QueryPosition(TreapNode[fubv]);
                 foreach(var child in Children[fubv])
                 {
                     TreapNode[child] = this.Insert(child, ++position);
@@ -33,7 +33,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
         }
         Dictionary<FolderUploadBarViewModel, List<FolderUploadBarViewModel>> Children = new Dictionary<FolderUploadBarViewModel, List<FolderUploadBarViewModel>>();
         Dictionary<Local.Folder.Uploader, FolderUploadBarViewModel> VM = new Dictionary<Local.Folder.Uploader, FolderUploadBarViewModel>();
-        Dictionary<FolderUploadBarViewModel, MyControls.BarsListPanel.Treap<FolderUploadBarViewModel>.TreapNode> TreapNode = new Dictionary<FolderUploadBarViewModel, MyControls.BarsListPanel.Treap<FolderUploadBarViewModel>.TreapNode>();
+        Dictionary<FolderUploadBarViewModel, MyControls.BarsListPanel.Treap<FolderUploadBarViewModel>.TreapNodePrototype> TreapNode = new Dictionary<FolderUploadBarViewModel, MyControls.BarsListPanel.Treap<FolderUploadBarViewModel>.TreapNodePrototype>();
         public FolderUploadBarsList()
         {
             this.ItemHeight = 65;

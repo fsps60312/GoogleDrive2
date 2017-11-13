@@ -5,9 +5,12 @@ namespace GoogleDrive2.MyControls.BarsListPanel
 {
     public partial class Treap<DataType>
     {
-        public class TreapNode
+        public class TreapNodePrototype
         {
             public DataType data;
+        }
+        private class TreapNode:TreapNodePrototype
+        {
             //private TreapNode<DataType1> l
             //{
             //    get { return _l; }
