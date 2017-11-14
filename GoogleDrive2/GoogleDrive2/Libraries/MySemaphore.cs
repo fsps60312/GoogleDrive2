@@ -6,7 +6,11 @@ using System.Threading.Tasks;
 
 namespace GoogleDrive2.Libraries
 {
-    class MySemaphore
+    partial class MySemaphore
+    {
+        public static MySemaphore IOsemaphore = new MySemaphore(Constants.MaxConcurrentIOoperations);
+    }
+    partial class MySemaphore
     {
         SemaphoreSlim mainSemaphore;
         MySemaphore parentSemaphore;

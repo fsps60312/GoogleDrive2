@@ -9,14 +9,14 @@ namespace GoogleDrive2.Local
     {
         public abstract partial class Uploader : Api.AdvancedApiOperator
         {
-            const int MaxConcurrentCount = 7;
+            const int MaxConcurrentCount = 5;
             public const long MinChunkSize = 262144;// + 1;
             public static event Libraries.Events.MyEventHandler<Uploader> NewUploaderCreated;
             public event Libraries.Events.MyEventHandler<string> UploadCompleted;
             public event Libraries.Events.MyEventHandler<Tuple<long, long>> ProgressChanged;
             protected void OnUploadCompleted(string id) { UploadCompleted?.Invoke(id); }
             public File F { get; protected set; }
-            long? FileSize = null;
+            public long? FileSize { get; private set; } = null;
             private Func<Task<Api.Files.FullCloudFileMetadata>> GetFileMetadata = () => { return Task.FromResult(new Api.Files.FullCloudFileMetadata()); };
             public void SetFileMetadata(Func<Api.Files.FullCloudFileMetadata, Task<Api.Files.FullCloudFileMetadata>> func)
             {
@@ -72,8 +72,10 @@ namespace GoogleDrive2.Local
             public static async Task<Uploader> GetUploader(File file)
             {
                 Uploader up = null;
-                if (await file.GetSizeAsync() < Uploader.MinChunkSize) up = new MultipartUploader(file);
+                var fileSize = await file.GetSizeAsync();
+                if (fileSize < Uploader.MinChunkSize) up = new MultipartUploader(file);
                 else up = new ResumableUploader(file);
+                up.FileSize = (long)fileSize;
                 return up;
             }
         }

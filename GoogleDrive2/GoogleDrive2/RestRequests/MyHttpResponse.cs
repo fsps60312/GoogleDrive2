@@ -88,7 +88,7 @@ namespace GoogleDrive2
                                await Task.Delay(100);
                            }
                        });
-                    await Task.WhenAll(readTask, monitorTask);
+                    await Libraries.MyTask.WhenAll(readTask, monitorTask);
                     ProgressChanged?.Invoke(new Tuple<long, long?>(Bytes.Count, Bytes.Count));
                 }
             }

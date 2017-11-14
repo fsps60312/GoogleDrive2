@@ -125,7 +125,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
                     await (o as MyDisposable).OnDisposedAsync(false);
                     semaphore.Release();
                 }
-                var t= Task.WhenAll(visible.Select(async (o) =>
+                var t=Libraries.MyTask.WhenAll(visible.Select(async (o) =>
                 {
                     await (o as MyDisposable).OnDisposedAsync(false);
                     semaphore.Release();

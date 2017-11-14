@@ -24,6 +24,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Libraries\MyLogger.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Libraries\MySemaphore.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Libraries\MySerializer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Libraries\MyTask.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Libraries\StringAlgorithms.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Local\File.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Local\File.Uploader.cs" />

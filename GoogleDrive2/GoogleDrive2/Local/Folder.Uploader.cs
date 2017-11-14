@@ -49,7 +49,7 @@ namespace GoogleDrive2.Local
                 if (1 == StartPrivateAsyncProgress)
                 {
                     AddThreadCount(3);
-                    await Task.WhenAll(new Task[]{
+                    await Libraries.MyTask.WhenAll(new Task[]{
                             CreateFolderTask(),
                             UploadSubfoldersTask(),
                             UploadSubfilesTask()

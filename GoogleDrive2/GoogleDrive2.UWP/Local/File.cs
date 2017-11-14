@@ -53,20 +53,30 @@ namespace GoogleDrive2.Local
         //static Libraries.MySemaphore semaphore = new Libraries.MySemaphore(1);
         public override async Task<ulong> GetSizeAsync()
         {
-            //await semaphore.WaitAsync();
-            //try
-            //{
-            return await Task.Run(async () => (await O.GetBasicPropertiesAsync()).Size);
-            //}
-            //finally { semaphore.Release(); }
+            await Libraries.MySemaphore.IOsemaphore.WaitAsync();
+            try
+            {
+                return await Task.Run(async () => (await O.GetBasicPropertiesAsync()).Size);
+            }
+            finally { Libraries.MySemaphore.IOsemaphore.Release(); }
         }
-        public override Task<DateTime> GetTimeCreatedAsync()
+        public override async Task<DateTime> GetTimeCreatedAsync()
         {
-            return Task.FromResult(O.DateCreated.UtcDateTime);
+            await Libraries.MySemaphore.IOsemaphore.WaitAsync();
+            try
+            {
+                return O.DateCreated.UtcDateTime;
+            }
+            finally { Libraries.MySemaphore.IOsemaphore.Release(); }
         }
         public override async Task<DateTime> GetTimeModifiedAsync()
         {
-            return (await O.GetBasicPropertiesAsync()).DateModified.UtcDateTime;
+            await Libraries.MySemaphore.IOsemaphore.WaitAsync();
+            try
+            {
+                return (await O.GetBasicPropertiesAsync()).DateModified.UtcDateTime;
+            }
+            finally { Libraries.MySemaphore.IOsemaphore.Release(); }
         }
         public override string Name { get { return O.Name; } }
         public override string MimeType { get { return O.ContentType; } }

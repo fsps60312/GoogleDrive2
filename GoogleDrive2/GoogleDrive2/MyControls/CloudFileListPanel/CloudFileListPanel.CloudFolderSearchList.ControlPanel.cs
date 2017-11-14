@@ -68,7 +68,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                 private async Task Select(bool all)
                 {
                     SelectAllState = all;
-                    await Task.WhenAll((this.Parent as CloudFolderSearchList).BLmain.ToList().Select((o) =>
+                    await Libraries.MyTask.WhenAll((this.Parent as CloudFolderSearchList).BLmain.ToList().Select((o) =>
                      {
                          o.IsToggled = all;
                          return Task.CompletedTask;
@@ -137,7 +137,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     //await MyLogger.Alert(file.MimeType);
                     try
                     {
-                        await Task.WhenAll(files.Select(async (f) =>
+                        await Libraries.MyTask.WhenAll(files.Select(async (f) =>
                         {
                             var uploader = await f.GetUploader();
                             uploader.SetFileMetadata((metaData) =>
@@ -164,7 +164,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     }
                     if (Parent.IsMultiSelectionToggled)
                     {
-                        await Task.WhenAll(Parent.ToggledItems.Select(async (f) =>
+                        await Libraries.MyTask.WhenAll(Parent.ToggledItems.Select(async (f) =>
                         {
                             var trasher = f.File.GetTrasher(!f.File.trashed.Value);
                             trasher.ErrorLogged += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };
@@ -189,7 +189,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     }
                     if (Parent.IsMultiSelectionToggled)
                     {
-                        await Task.WhenAll(Parent.ToggledItems.Select(async (f) =>
+                        await Libraries.MyTask.WhenAll(Parent.ToggledItems.Select(async (f) =>
                         {
                             var starrer = f.File.GetStarrer(!f.File.starred.Value);
                             starrer.ErrorLogged += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };

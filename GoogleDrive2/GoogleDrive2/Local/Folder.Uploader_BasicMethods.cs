@@ -252,8 +252,9 @@ namespace GoogleDrive2.Local
                 if (1 == UploadSubfoldersTaskProgress)
                 {
                     this.Debug($"{Constants.Icons.Upload} Uploading subfolders...");
-                    await Task.WhenAll(UploadSubfoldersSubtasks.Select(async (subtask) =>
+                    await Libraries.MyTask.WhenAll(UploadSubfoldersSubtasks.Select(async (subtask) =>
                     {
+                        await Task.Delay(100);
                         if (this.IsActive) await subtask.Start();
                     }));
                     this.Debug($"{Constants.Icons.SubtaskCompleted} Subfolders upload completed or paused");
@@ -279,7 +280,7 @@ namespace GoogleDrive2.Local
                         var subfiles = await F.GetFilesAsync();
                         LocalSearchStatusChanged?.Invoke(new Tuple<long, long>(SearchLocalFoldersActions, Interlocked.Add(ref this.SearchLocalFilesActions, -1 + subfiles.Count)));
                         this.Debug($"{Constants.Icons.Magnifier} Found {recordedSubfileCount = subfiles.Count} subfiles");
-                        var uploaders = await Task.WhenAll(subfiles.Select(async (f) =>
+                        UploadSubfilesSubtasks =(await Libraries.MyTask.WhenAll(subfiles.Select(async (f) =>
                         {
                             var uploader = await f.GetUploader();
                             uploader.SetFileMetadata(async (metadata) =>
@@ -289,10 +290,6 @@ namespace GoogleDrive2.Local
                                 metadata.parents = new List<string> { cloudId };
                                 return metadata;
                             });
-                            return uploader;
-                        }));
-                        UploadSubfilesSubtasks = (await Task.WhenAll(uploaders.Select(async (uploader) =>
-                        {
                             var subtask = AddAndGetSubtask(uploader);
                             await uploader.GetFileSizeFirstAsync();
                             LocalSearchStatusChanged?.Invoke(new Tuple<long, long>(SearchLocalFoldersActions, Interlocked.Decrement(ref this.SearchLocalFilesActions)));
@@ -311,8 +308,9 @@ namespace GoogleDrive2.Local
                 if (1 == UploadSubfilesTaskProgress)
                 {
                     this.Debug($"{Constants.Icons.Upload} Uploading subfiles...");
-                    await Task.WhenAll(UploadSubfilesSubtasks.Select(async (subtask) =>
+                    await Libraries.MyTask.WhenAll(UploadSubfilesSubtasks.Select(async (subtask) =>
                     {
+                        await Task.Delay(100);
                         if (this.IsActive) await subtask.Start();
                     }));
                     this.Debug($"{Constants.Icons.SubtaskCompleted} Subfiles upload completed or paused");

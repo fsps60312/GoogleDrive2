@@ -6,6 +6,7 @@ namespace GoogleDrive2
 {
     static class Constants
     {
+        public const int MaxConcurrentIOoperations = 5;
         public static class Icons
         {
             public const string

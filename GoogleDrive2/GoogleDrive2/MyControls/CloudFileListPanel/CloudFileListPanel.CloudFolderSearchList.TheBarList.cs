@@ -37,7 +37,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     };
                     Lister.OperationEnded +=async delegate
                     {
-                        await Task.WhenAll(this.ToList().Select(async(f,idx) =>
+                        await Libraries.MyTask.WhenAll(this.ToList().Select(async(f,idx) =>
                         {
                             if (f.UnderVerification)
                             {
@@ -53,7 +53,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         await semaphore.WaitAsync();
                         try
                         {
-                            await Task.WhenAll(this.ToList().Select((f) => { f.UnderVerification = true;return Task.CompletedTask; }));
+                            await Libraries.MyTask.WhenAll(this.ToList().Select((f) => { f.UnderVerification = true;return Task.CompletedTask; }));
                         }
                         finally { semaphore.Release(); }
                     };
