@@ -13,21 +13,21 @@ namespace GoogleDrive2.Local
                 public const long FileBufferSize = 1 << 20;
                 public const double DesiredProgressUpdateInterval = 0.5;
                 string resumableUri = null;
-                private async Task<bool> CreateUpload()
+                private async Task<bool> CreateUpload(Api.Files.FullCloudFileMetadata metadata)
                 {
-                    return await CreateResumableUploadAsync();
+                    return await CreateResumableUploadAsync(metadata);
                 }
                 private async Task<bool> DoUpload()
                 {
                     return await StartResumableUploadAsync();
                 }
-                protected override async Task<bool> StartUploadAsync()
+                protected override async Task<bool> StartUploadAsync(Api.Files.FullCloudFileMetadata metadata)
                 {
                     if (CheckPause()) return false;
                     if (resumableUri == null)
                     {
                         this.Debug($"{Constants.Icons.Hourglass} Creating upload...");
-                        if (!await CreateUpload())
+                        if (!await CreateUpload(metadata))
                         {
                             this.LogError($"{Constants.Icons.Info} Resumable upload create paused or failed");
                             return false;

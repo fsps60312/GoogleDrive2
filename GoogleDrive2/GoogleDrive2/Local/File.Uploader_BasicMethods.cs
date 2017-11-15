@@ -32,20 +32,6 @@ namespace GoogleDrive2.Local
                     ProgressChanged?.Invoke(Tuple.Create(BytesUploaded, value));
                 }
             }
-            protected async Task AssignFileMetadata()
-            {
-                TotalSize = await this.GetFileSizeAsync();
-                var name = F.Name;
-                var createdTime = await F.GetTimeCreatedAsync();
-                var modifiedTime = await F.GetTimeModifiedAsync();
-                SetFileMetadata(new Func<Api.Files.FullCloudFileMetadata, Task<Api.Files.FullCloudFileMetadata>>((metadata) =>
-                {
-                    metadata.name = name;
-                    metadata.createdTime = createdTime;
-                    metadata.modifiedTime = modifiedTime;
-                    return Task.FromResult(metadata);
-                }));
-            }
             protected string ParseCloudId(string content)
             {
                 try

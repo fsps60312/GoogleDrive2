@@ -33,10 +33,11 @@ namespace GoogleDrive2
         }
         public abstract class AdvancedApiOperator:ApiOperator
         {
-            public event Libraries.Events.EmptyEventHandler Started,Pausing;//Paused now replaced by Completed(false)
+            public event Libraries.Events.EmptyEventHandler Started;
+            public event Libraries.Events.MyEventHandler<object> Pausing;//Paused now replaced by Completed(false)
             public event Libraries.Events.MyEventHandler<string> MessageAppended;
             protected void OnStarted() { Started?.Invoke(); }
-            protected void OnPausing() { Pausing?.Invoke(); }
+            protected void OnPausing() { Pausing?.Invoke(this); }
             protected void OnMessageAppended(string msg) { MessageAppended?.Invoke(msg); }
             protected bool CheckPause()
             {
@@ -51,7 +52,7 @@ namespace GoogleDrive2
             {
                 if (IsCompleted) return;
                 System.Threading.Interlocked.Exchange(ref pauseRequest, 1);
-                Pausing?.Invoke();
+                Pausing?.Invoke(this);
             }
             protected abstract Task<bool> StartPrivateAsync();
             Libraries.MySemaphore semaphore = new Libraries.MySemaphore(1);
@@ -95,8 +96,8 @@ namespace GoogleDrive2
             }
             protected AdvancedApiOperator()
             {
-                this.Completed += (success) => { pauseRequest = success ? 0 : 2; };
-                this.Pausing += () => { Debug($"{Constants.Icons.Pausing} Pausing..."); };
+                this.Completed += (sender,success) => { pauseRequest = success ? 0 : 2; };
+                this.Pausing += delegate { Debug($"{Constants.Icons.Pausing} Pausing..."); };
                 this.ErrorLogged += (error) => OnMessageAppended($"{Constants.Icons.Warning} {error}");
                 this.Debugged += (msg) => OnMessageAppended($"{msg}");
             }
@@ -104,11 +105,11 @@ namespace GoogleDrive2
         public abstract class ApiOperator : MyLoggerClass
         {
             public bool IsCompleted = false;
-            public event Libraries.Events.MyEventHandler<bool> Completed;
+            public event Libraries.Events.MyEventHandler<object,bool> Completed;
             protected void __OnCompleted(bool success)
             {
                 if (success) IsCompleted = true;
-                Completed?.Invoke(success);
+                Completed?.Invoke(this,success);
             }
             static volatile int InstanceCount = 0;
             public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;

@@ -50,7 +50,7 @@ namespace GoogleDrive2
         }
         protected void Debug(string log,bool printStackTrace=false)
         {
-            MyLogger.Debug(log, printStackTrace);
+            //MyLogger.Debug(log, printStackTrace);
             Debugged?.Invoke(MyLogger.CreateLog(log, printStackTrace));
         }
     }

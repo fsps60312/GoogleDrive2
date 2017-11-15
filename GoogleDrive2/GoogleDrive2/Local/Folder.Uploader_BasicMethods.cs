@@ -95,7 +95,7 @@ namespace GoogleDrive2.Local
                 RegisterProgressChange(subtask, ProgressType.Size);
                 RegisterProgressChange(subtask, ProgressType.LocalSearch);
                 RegisterProgressChange(subtask, ProgressType.RunningTaskCount);
-                this.Pausing += () => { subtask.Pause(); };
+                this.Pausing += delegate { subtask.Pause(); };
             }
             Subtask AddAndGetSubtask(File.Uploader uploader)
             {
@@ -109,7 +109,7 @@ namespace GoogleDrive2.Local
                     subtask.OnStarted();
                     AddThreadCount(1);
                 };
-                uploader.Completed += (success) =>
+                uploader.Completed += (sender,success) =>
                 {
                     subtask.OnCompleted(success);
                     AddThreadCount(-1);
@@ -138,7 +138,7 @@ namespace GoogleDrive2.Local
                     subtask.OnStarted();
                     AddThreadCount(1);
                 };
-                uploader.Completed += (success) =>
+                uploader.Completed += (sender,success) =>
                 {
                     subtask.OnCompleted(success);
                     AddThreadCount(-1);
@@ -178,7 +178,7 @@ namespace GoogleDrive2.Local
                                 metadata.modifiedTime = await F.GetTimeModifiedAsync();
                                 return this.metadataFunc == null ? metadata : await this.metadataFunc(metadata);
                             });
-                            this.Pausing += () => { folderCreator.Stop(); };
+                            this.Pausing += delegate { folderCreator.Stop(); };
                             this.FolderProgressChanged?.Invoke(new Tuple<long, long>(this.ProgressCurrentFolder, Interlocked.Increment(ref this.ProgressTotalFolder)));
                             AddNotCompleted(-1);
                             Interlocked.Increment(ref CreateFolderTaskProgress);

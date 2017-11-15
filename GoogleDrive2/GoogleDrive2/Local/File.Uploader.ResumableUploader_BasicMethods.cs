@@ -22,11 +22,10 @@ namespace GoogleDrive2.Local
                         return long.Parse(s.Substring(keyword.Length)) + 1;
                     }
                 }
-                public async Task<bool> CreateResumableUploadAsync()
+                public async Task<bool> CreateResumableUploadAsync(Api.Files.FullCloudFileMetadata metadata)
                 {
                     //await MyLogger.Alert($"file size: {totalSize}");
-                    var metadata = await GetFileMetadata();
-                    if (CheckPause() || metadata == null) return false;
+                    if (CheckPause()) return false;
                     var request = new Api.Files.ResumableCreate(metadata, TotalSize, null);
                     using (var response = await request.GetHttpResponseAsync())
                     {

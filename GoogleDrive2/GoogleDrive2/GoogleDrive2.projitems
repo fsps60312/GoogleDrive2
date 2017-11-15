@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Api\Files\FullCloudFileMetadata.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Api\Files\FullCloudFileMetadata.FolderCreate.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Api\Files\FullCloudFileMetadata.MetadataUpdater.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Api\Files\ResumableUpload.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Api\Files\MultipartUpload.cs" />
@@ -86,6 +87,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\NetworkStatusBarViewModel.ProgressHistoryMaintainer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\NetworkStatusPage\NetworkStatusWithSpeedBarViewModel.ImageProcessor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\StatisticsPage\StatisticsPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\StatisticsPage\StatisticsPage.StatusMonitor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\ButtonsPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\ColorTestPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\FilesListRequestPage.cs" />

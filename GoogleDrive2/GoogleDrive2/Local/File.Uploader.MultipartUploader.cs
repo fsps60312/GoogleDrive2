@@ -8,12 +8,10 @@ namespace GoogleDrive2.Local
         {
             public class MultipartUploader : Uploader
             {
-                protected override async Task<bool> StartUploadAsync()
+                protected override async Task<bool> StartUploadAsync(Api.Files.FullCloudFileMetadata metadata)
                 {
                     MyLogger.Assert(BytesUploaded == 0 && TotalSize <= int.MaxValue);
                     if (CheckPause()) return false;
-                    var metadata = await GetFileMetadata();
-                    if (CheckPause() || metadata == null) return false;
                     var request = new Api.Files.MultipartUpload(metadata, await F.ReadBytesAsync((int)TotalSize));
                     F.CloseReadIfNot();
                     using (var response = await request.GetHttpResponseAsync())

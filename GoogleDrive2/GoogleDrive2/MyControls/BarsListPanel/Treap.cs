@@ -7,13 +7,14 @@ namespace GoogleDrive2.MyControls.BarsListPanel
     public partial class Treap<DataType>
     {
         public event Libraries.Events.MyEventHandler<TreapNodePrototype> TreapNodeAdded, TreapNodeRemoved;
+        object syncRoot = new object();
         TreapNode root = new TreapNode(default(DataType), 0);
         public static double animationDuration = 500;
         public double itemHeight = 50;
         public Func<DataType, bool> FilterCondition = null;
         public void UnfilterIfNot()
         {
-            lock(root)
+            lock(syncRoot)
             {
                 if (FilterCondition == null) return;
                 // TODO
@@ -22,7 +23,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         }
         public void Filter(Func<DataType,bool>condition)
         {
-            lock(root)
+            lock(syncRoot)
             {
                 UnfilterIfNot();
                 if (condition == null) return;
@@ -32,7 +33,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         }
         public void DoAtomic(Action action)
         {
-            lock (root)
+            lock (syncRoot)
             {
                 action.Invoke();
             }
@@ -140,7 +141,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         }
         public void Insert(TreapNodePrototype o, double height, int position)
         {
-            lock(root)
+            lock(syncRoot)
             {
                 Insert(o as TreapNode, height, position, false);
             }
@@ -171,14 +172,14 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         }
         public T Query<T>(int position,Func<TreapNodePrototype,T>callBack)
         {
-            lock(root)
+            lock(syncRoot)
             {
                 return QueryPrivate(position, new Func<TreapNode,T>((o) => callBack(o)));
             }
         }
         public void Query(int position,Action<TreapNodePrototype>callBack)
         {
-            lock(root)
+            lock(syncRoot)
             {
                 QueryPrivate(position, (o) => callBack(o));
             }
@@ -202,14 +203,14 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         }
         public double QueryY(int position)
         {
-            lock(root)
+            lock(syncRoot)
             {
                 return QueryPrivate(position, (o) => o.QueryYOffset());
             }
         }
         public int QueryPosition(TreapNodePrototype o)
         {
-            lock(root)
+            lock(syncRoot)
             {
                 return (o as TreapNode).GetPosition();
             }
@@ -273,7 +274,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         }
         public void ChangeHeight(TreapNodePrototype o,double difference)
         {
-            lock(root)
+            lock(syncRoot)
             {
                 TreapNode.Split(root, out TreapNode a, out TreapNode b, (o as TreapNode).GetPosition() + 1);
                 if (b != null) b.AppendAnimation(DateTime.Now, difference);
