@@ -254,7 +254,6 @@ namespace GoogleDrive2.Local
                     this.Debug($"{Constants.Icons.Upload} Uploading subfolders...");
                     await Libraries.MyTask.WhenAll(UploadSubfoldersSubtasks.Select(async (subtask) =>
                     {
-                        await Task.Delay(100);
                         if (this.IsActive) await subtask.Start();
                     }));
                     this.Debug($"{Constants.Icons.SubtaskCompleted} Subfolders upload completed or paused");
