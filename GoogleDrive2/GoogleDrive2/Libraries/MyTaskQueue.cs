@@ -4,29 +4,29 @@ using System.Text;
 
 namespace GoogleDrive2.Libraries
 {
-    interface MyQueuedTask:IComparable
+    public interface MyQueuedTask:IComparable
     {
         void SchedulerReleaseSemaphore();
         event Events.MyEventHandler<object> NotifySchedulerCompleted,RemoveFromTaskQueueRequested;
     }
-    class MyTaskQueuePrototype
+    public class MyTaskQueuePrototype
     {
         protected Libraries.MySet<MyQueuedTask> TaskQueue = new Libraries.MySet<MyQueuedTask>();
-        public event Libraries.Events.MyEventHandler<int> QueuedUploaderCountChanged, RunningFileUploadingCountChanged;
-        public int MaxConcurrentCount { get; private set; }
-        int __FileUploadingCount__ = 0;
-        int RunningCount
+        public event Libraries.Events.MyEventHandler<long> QueuedUploaderCountChanged, RunningFileUploadingCountChanged;
+        public long MaxConcurrentCount { get; private set; }
+        long __RunningCount__ = 0;
+        long RunningCount
         {
-            get { return __FileUploadingCount__; }
+            get { return __RunningCount__; }
             set
             {
-                if (value == __FileUploadingCount__) return;
-                __FileUploadingCount__ = value;
+                if (value == __RunningCount__) return;
+                __RunningCount__ = value;
                 RunningFileUploadingCountChanged?.Invoke(value);
             }
         }
         object syncRoot = new object();
-        protected MyTaskQueuePrototype(int maxConcurrentCount)
+        protected MyTaskQueuePrototype(long maxConcurrentCount)
         {
             MaxConcurrentCount = maxConcurrentCount;
             TaskQueue.CountChanged += (c) => QueuedUploaderCountChanged?.Invoke(c);
@@ -45,10 +45,10 @@ namespace GoogleDrive2.Libraries
         }
         protected void TaskFinished() { lock (syncRoot) RunningCount--; }
     }
-    class MyTaskQueue : MyTaskQueuePrototype
+    public class MyTaskQueue : MyTaskQueuePrototype
     {
         Libraries.Events.MyEventHandler<object> notifySchedulerCompletedEventHandler, removeFromTaskQueueRequestedEventHandler;
-        public MyTaskQueue(int maxConcurrentCount) : base(maxConcurrentCount)
+        public MyTaskQueue(long maxConcurrentCount) : base(maxConcurrentCount)
         {
             notifySchedulerCompletedEventHandler = new Libraries.Events.MyEventHandler<object>((sender) =>
             {

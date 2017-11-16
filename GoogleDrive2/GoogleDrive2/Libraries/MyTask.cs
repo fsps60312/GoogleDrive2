@@ -4,36 +4,70 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
+using GoogleDrive2.Libraries.Events;
 
 namespace GoogleDrive2.Libraries
 {
-    static class MyTask
+    public abstract partial class MyTask : MyLoggerClass, MyQueuedTask
     {
-        //const int MaxConcurrentTasks = 10;
-        //static Libraries.MySemaphore semaphoreSlim = new MySemaphore(MaxConcurrentTasks);
-        public static async Task WhenAll(params Task[] tasks) { await WhenAll(tasks as IEnumerable<Task>); }
-        public static async Task WhenAll(IEnumerable<Task> tasks)
+        public event MyEventHandler<object> Started, Unstarted, Pausing,Completed;
+        public event Libraries.Events.MyEventHandler<string> MessageAppended;
+        protected void OnMessageAppended(string msg) { MessageAppended?.Invoke(msg); }
+        protected void OnCompleted() { IsCompleted = true; Completed?.Invoke(this); }
+        public event MyEventHandler<object> NotifySchedulerCompleted;
+        public event MyEventHandler<object> RemoveFromTaskQueueRequested;
+        protected event MyEventHandler<object> Queued, Unqueued;
+        Libraries.MySemaphore semaphore = new MySemaphore(0), semaphoreStartAsync = new MySemaphore(1);
+        public void SchedulerReleaseSemaphore() { semaphore.Release(); }
+        public int CompareTo(object obj)
         {
-            await Task.WhenAll(tasks);
-            //await Task.Run(() => Parallel.ForEach(tasks, new ParallelOptions { MaxDegreeOfParallelism = 10 }, (task) =>
-            //    {
-            //        Semaphore semaphore = new Semaphore(0, 1);
-            //        new Action(async () => { await task; semaphore.Release(); })();
-            //        semaphore.WaitOne();
-            //    }));
+            return SerialNumber.CompareTo((obj as MyTask).SerialNumber);
         }
-        public static async Task<T[]>WhenAll<T>(params Task<T>[] tasks) { return await WhenAll(tasks as IEnumerable<Task<T>>); }
-        public static async Task<T[]> WhenAll<T>(IEnumerable<Task<T>> tasks)
+        static long SerialNumberCounter = 0;
+        long SerialNumber;
+        protected MyTask()
         {
-            return await Task.WhenAll(tasks);
-            //var answer = new T[tasks.ToArray().Length];
-            //await Task.Run(() => Parallel.ForEach(tasks, new ParallelOptions { MaxDegreeOfParallelism = 10 }, (task, state, i) =>
-            // {
-            //     Semaphore semaphore = new Semaphore(0, 1);
-            //     new Action(async () => { answer[i] = await task; semaphore.Release(); })();
-            //     semaphore.WaitOne();
-            // }));
-            //return answer;
+            SerialNumber = Interlocked.Increment(ref SerialNumberCounter);
+            this.ErrorLogged += (error) => OnMessageAppended($"{Constants.Icons.Warning} {error}");
+            this.Debugged += (msg) => OnMessageAppended($"{msg}");
+        }
+        public void Pause()
+        {
+            IsPausing = true;
+            Pausing?.Invoke(this);
+            RemoveFromTaskQueueRequested?.Invoke(this);
+        }
+        protected abstract Task PrepareBeforeStartAsync();
+        static MyTaskQueue unlimitedTaskQueue = new MyTaskQueue(long.MaxValue);
+        protected MyTaskQueue TaskQueue { get; set; } = unlimitedTaskQueue;
+        public bool IsPausing { get; protected set; } = false;
+        public bool IsRunning { get; protected set; } = false;
+        public bool IsCompleted { get; protected set; } = false;
+        protected abstract Task StartMainTaskAsync();
+        public async Task StartAsync()
+        {
+            IsPausing = false;
+            await semaphoreStartAsync.WaitAsync();
+            if (IsCompleted) return;
+            IsRunning = true;
+            Started?.Invoke(this);
+            try
+            {
+                await PrepareBeforeStartAsync();
+                TaskQueue.AddToQueueAndStart(this);
+                Queued?.Invoke(this);
+                await semaphore.WaitAsync();
+                Unqueued?.Invoke(this);
+                await StartMainTaskAsync();
+            }
+            finally
+            {
+                IsPausing = false;
+                IsRunning = false;
+                Unstarted?.Invoke(this);
+                NotifySchedulerCompleted?.Invoke(this);
+                semaphoreStartAsync.Release();
+            }
         }
     }
 }

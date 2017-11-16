@@ -12,24 +12,24 @@ namespace GoogleDrive2.Pages.StatisticsPage
         {
             public event PropertyChangedEventHandler PropertyChanged;
             void OnPropertyChanged(string propertyName) { PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName)); }
-            public int HttpRequestInstanceCount { get; private set; } = 0;
-            public int HttpResponseInstanceCount { get; private set; } = 0;
-            public int LocalFileInstanceCount { get; private set; } = 0;
-            public int LocalFolderInstanceCount { get; private set; } = 0;
-            public int FileUploaderInstanceCount { get; private set; } = 0;
-            public int FolderUploaderInstanceCount { get; private set; } = 0;
-            public int ApiOperatorInstanceCount { get; private set; } = 0;
-            public int TreapNodeInstanceCount { get; private set; } = 0;
-            public int FileUploadingCount { get; private set; } = 0;
-            public int SmallFileUploadingCount { get; private set; } = 0;
-            public int LargeFileUploadingCount { get; private set; } = 0;
-            public int QueuedFileUploadingCount { get; private set; } = 0;
-            public int SmallQueuedFileUploadingCount { get; private set; } = 0;
-            public int LargeQueuedFileUploadingCount { get; private set; } = 0;
-            public int WaitingForMetadataFileUploadingCount { get; private set; } = 0;
-            public int FolderCreatingCount { get; private set; } = 0;
-            public int QueuedFolderCreatingCount { get; private set; } = 0;
-            public int WaitingForMetadataFolderCreatingCount { get; private set; } = 0;
+            public long HttpRequestInstanceCount { get; private set; } = 0;
+            public long HttpResponseInstanceCount { get; private set; } = 0;
+            public long LocalFileInstanceCount { get; private set; } = 0;
+            public long LocalFolderInstanceCount { get; private set; } = 0;
+            public long FileUploaderInstanceCount { get; private set; } = 0;
+            public long FolderUploaderInstanceCount { get; private set; } = 0;
+            public long ApiOperatorInstanceCount { get; private set; } = 0;
+            public long TreapNodeInstanceCount { get; private set; } = 0;
+            public long FileUploadingCount { get; private set; } = 0;
+            public long SmallFileUploadingCount { get; private set; } = 0;
+            public long LargeFileUploadingCount { get; private set; } = 0;
+            public long QueuedFileUploadingCount { get; private set; } = 0;
+            public long SmallQueuedFileUploadingCount { get; private set; } = 0;
+            public long LargeQueuedFileUploadingCount { get; private set; } = 0;
+            public long WaitingForMetadataFileUploadingCount { get; private set; } = 0;
+            public long FolderCreatingCount { get; private set; } = 0;
+            public long QueuedFolderCreatingCount { get; private set; } = 0;
+            public long WaitingForMetadataFolderCreatingCount { get; private set; } = 0;
             public long MemoryUsed { get; private set; } = 0;
             public StatusMonitor()
             {
@@ -49,7 +49,7 @@ namespace GoogleDrive2.Pages.StatisticsPage
                 Api.Files.FullCloudFileMetadata.FolderCreate.RunningCountChanged += (c) => { FolderCreatingCount = c; OnPropertyChanged("FolderCreatingCount"); };
                 Api.Files.FullCloudFileMetadata.FolderCreate.QueuedCountChanged += (c) => { QueuedFolderCreatingCount = c; OnPropertyChanged("QueuedFolderCreatingCount"); };
                 Api.Files.FullCloudFileMetadata.FolderCreate.WaitingForMetadataCountChanged += (c) => { WaitingForMetadataFolderCreatingCount = c; OnPropertyChanged("WaitingForMetadataFolderCreatingCount"); };
-                Api.ApiOperator.InstanceCountChanged += (c) => { ApiOperatorInstanceCount = c; OnPropertyChanged("ApiOperatorInstanceCount"); };
+                //Api.ApiOperator.InstanceCountChanged += (c) => { ApiOperatorInstanceCount = c; OnPropertyChanged("ApiOperatorInstanceCount"); };
                 MyControls.BarsListPanel.TreapNodeStatistics.InstanceCountChanged += (c) => { TreapNodeInstanceCount = c; OnPropertyChanged("TreapNodeInstanceCount"); };
                 new Action(async () =>
                 {
@@ -65,7 +65,7 @@ namespace GoogleDrive2.Pages.StatisticsPage
             {
                 public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
                 {
-                    return ((int)value).ToString();
+                    return ((long)value).ToString();
                 }
                 public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
                 {

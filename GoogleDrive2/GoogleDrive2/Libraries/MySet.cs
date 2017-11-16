@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace GoogleDrive2.Libraries
 {
-    class MySet<T>
+    public class MySet<T>
     {
         object syncRoot = new object();
         SortedSet<T> queue = new SortedSet<T>();

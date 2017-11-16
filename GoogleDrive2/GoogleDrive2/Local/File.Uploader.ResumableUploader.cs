@@ -17,25 +17,25 @@ namespace GoogleDrive2.Local
                 {
                     return await CreateResumableUploadAsync(metadata);
                 }
-                private async Task<bool> DoUpload()
+                private async Task DoUpload()
                 {
-                    return await StartResumableUploadAsync();
+                    await StartResumableUploadAsync();
                 }
-                protected override async Task<bool> StartUploadAsync(Api.Files.FullCloudFileMetadata metadata)
+                protected override async Task StartUploadAsync(Api.Files.FullCloudFileMetadata metadata)
                 {
-                    if (CheckPause()) return false;
+                    if (IsPausing) return;
                     if (resumableUri == null)
                     {
                         this.Debug($"{Constants.Icons.Hourglass} Creating upload...");
                         if (!await CreateUpload(metadata))
                         {
                             this.LogError($"{Constants.Icons.Info} Resumable upload create paused or failed");
-                            return false;
+                            return;
                         }
                         else this.Debug($"{Constants.Icons.Hourglass} Upload created, uploading...");
                     }
-                    if (CheckPause()) return false;
-                    return await DoUpload();
+                    if (IsPausing) return;
+                    await DoUpload();
                 }
                 public ResumableUploader(File file) : base(file) { }
             }

@@ -8,7 +8,7 @@ namespace GoogleDrive2.Local
 {
     partial class Folder
     {
-        public partial class Uploader : Api.AdvancedApiOperator
+        public partial class Uploader
         {
             public static event Libraries.Events.MyEventHandler<Uploader> NewUploaderCreated;
             public event Libraries.Events.MyEventHandler<Tuple<long, long>> FileProgressChanged, FolderProgressChanged, SizeProgressChanged, LocalSearchStatusChanged;
@@ -19,47 +19,33 @@ namespace GoogleDrive2.Local
             private Func<Api.Files.FullCloudFileMetadata, Task<Api.Files.FullCloudFileMetadata>> metadataFunc = null;
             public void SetFolderMetadata(Func<Api.Files.FullCloudFileMetadata, Task<Api.Files.FullCloudFileMetadata>> func) { metadataFunc = func; }
             Api.Files.FullCloudFileMetadata.FolderCreate folderCreator = null;
-            bool ShouldReturn(bool? v, out bool result)
+            int MainTaskProgress = 0;
+            protected override async Task AddSubtasksIfNot()
             {
-                if (v.HasValue)
+                if (IsPausing) return;
+                if (0 == MainTaskProgress)
                 {
-                    result = v.Value;
-                    return true;
+                    //this.Debug("Step 1...");
+                    await AddCreateFolderTask();
+                    Interlocked.Increment(ref MainTaskProgress);
                 }
-                else return result = false;//just to initialize "result"
-            }
-            bool? MergeResults(bool?[] status)
-            {
-                var s = status.SelectMany((v) => { return v.HasValue ? new bool?[] { v } : new bool?[] { }; }).ToArray();
-                MyLogger.Assert(s.Length <= 1);//Should not return twice
-                return s.Length == 0 ? null : s[0];
-            }
-            int recordedSubfileCount = -1, recordedSubfolderCount = -1;
-            int StartPrivateAsyncProgress = 0;
-            protected override async Task<bool> StartPrivateAsync()
-            {
-                if (CheckPause()) return false;
-                if (0 == StartPrivateAsyncProgress)
+                if (IsPausing) return;
+                if (1 == MainTaskProgress)
                 {
-                    //Interlocked.Add(ref AddedThreadCount, 3);
-                    AddNotCompleted(3);
-                    Interlocked.Increment(ref StartPrivateAsyncProgress);
+                    //this.Debug("Step 2...");
+                    await AddUploadSubfilesTasks();
+                    Interlocked.Increment(ref MainTaskProgress);
                 }
-                if (CheckPause()) return false;
-                if (1 == StartPrivateAsyncProgress)
+                if (IsPausing) return;
+                if (2 == MainTaskProgress)
                 {
-                    AddThreadCount(3);
-                    await Libraries.MyTask.WhenAll(new Task[]{
-                            CreateFolderTask(),
-                            UploadSubfoldersTask(),
-                            UploadSubfilesTask()
-                        });
+                    //this.Debug("Step 3...");
+                    await AddUploadSubfoldersTasks();
+                    Interlocked.Increment(ref MainTaskProgress);
                 }
-                MyLogger.Assert(ThreadCount == 0);
-                return NotCompleted == 0;
             }
             static volatile int InstanceCount = 0;
-            public new static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
+            public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
             static void AddInstanceCount(int value) { System.Threading.Interlocked.Add(ref InstanceCount, value); InstanceCountChanged?.Invoke(InstanceCount); }
             ~Uploader() { AddInstanceCount(-1); }
             public Uploader(Uploader parent, Folder folder)

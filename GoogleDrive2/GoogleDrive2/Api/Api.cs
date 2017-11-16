@@ -9,114 +9,114 @@ namespace GoogleDrive2
 {
     namespace Api
     {
-        public abstract class SimpleApiOperator:ApiOperator
-        {
-            protected abstract Task<bool> StartPrivateAsync();
-            Libraries.MySemaphore semaphore = new Libraries.MySemaphore(1);
-            public async Task<bool> StartAsync()
-            {
-                await semaphore.WaitAsync();
-                try
-                {
-                    if (IsCompleted)
-                    {
-                        __OnCompleted(false);
-                        return false;
-                    }
-                    var completed = await StartPrivateAsync();
-                     __OnCompleted(completed);
-                    return completed;
-                }
-                finally { semaphore.Release(); }
-            }
-            protected SimpleApiOperator(){ }
-        }
-        public abstract class AdvancedApiOperator:ApiOperator
-        {
-            public event Libraries.Events.EmptyEventHandler Started;
-            public event Libraries.Events.MyEventHandler<object> Pausing;//Paused now replaced by Completed(false)
-            public event Libraries.Events.MyEventHandler<string> MessageAppended;
-            protected void OnStarted() { Started?.Invoke(); }
-            protected void OnPausing() { Pausing?.Invoke(this); }
-            protected void OnMessageAppended(string msg) { MessageAppended?.Invoke(msg); }
-            protected bool CheckPause()
-            {
-                //this.Debug($"pauseRequest = {pauseRequest}");
-                if (System.Threading.Interlocked.CompareExchange(ref pauseRequest, 2, 1) == 1) return true;
-                else return false;
-            }
-            public bool IsActive { get { return pauseRequest == 0; } }
-            protected bool IsPausing { get { return pauseRequest == 1; } }
-            private volatile int pauseRequest = 0;// 0: Normal, 1: Pausing, 2: Paused
-            public void Pause()
-            {
-                if (IsCompleted) return;
-                System.Threading.Interlocked.Exchange(ref pauseRequest, 1);
-                Pausing?.Invoke(this);
-            }
-            protected abstract Task<bool> StartPrivateAsync();
-            Libraries.MySemaphore semaphore = new Libraries.MySemaphore(1);
-            public async Task<bool> StartAsync()
-            {
-                await semaphore.WaitAsync();
-                try
-                {
-                    Started?.Invoke();
-                    int prePauseRequest = System.Threading.Interlocked.Exchange(ref pauseRequest, 0);
-                    if (prePauseRequest == 1)
-                    {
-                        this.Debug($"{Constants.Icons.Info} Pause Request Canceled");
-                        return false;// Cancel pauseRequest
-                    }
-                    else if (prePauseRequest == 2)
-                    {
-                        this.Debug($"{Constants.Icons.Play} Resumed");
-                    }
-                    else
-                    {
-                        this.Debug($"{Constants.Icons.Play} Started");
-                    }
-                    if (IsCompleted)
-                    {
-                        this.LogError("StartAsync: Operation has already completed");
-                        __OnCompleted(false);
-                        return false;
-                    }
-                }
-                catch (Exception error)
-                {
-                    this.LogError(error.ToString());
-                    __OnCompleted(false);
-                    return false;
-                }
-                finally { semaphore.Release(); }
-                var completed = await StartPrivateAsync();
-                __OnCompleted(completed);
-                return completed;
-            }
-            protected AdvancedApiOperator()
-            {
-                this.Completed += (sender,success) => { pauseRequest = success ? 0 : 2; };
-                this.Pausing += delegate { Debug($"{Constants.Icons.Pausing} Pausing..."); };
-                this.ErrorLogged += (error) => OnMessageAppended($"{Constants.Icons.Warning} {error}");
-                this.Debugged += (msg) => OnMessageAppended($"{msg}");
-            }
-        }
-        public abstract class ApiOperator : MyLoggerClass
-        {
-            public bool IsCompleted = false;
-            public event Libraries.Events.MyEventHandler<object,bool> Completed;
-            protected void __OnCompleted(bool success)
-            {
-                if (success) IsCompleted = true;
-                Completed?.Invoke(this,success);
-            }
-            static volatile int InstanceCount = 0;
-            public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
-            static void AddInstanceCount(int value) { System.Threading.Interlocked.Add(ref InstanceCount, value); InstanceCountChanged?.Invoke(InstanceCount); }
-            ~ApiOperator() { AddInstanceCount(-1); }
-            protected ApiOperator() { AddInstanceCount(1); }
-        }
+        //public abstract class SimpleApiOperator:ApiOperator
+        //{
+        //    protected abstract Task<bool> StartPrivateAsync();
+        //    Libraries.MySemaphore semaphore = new Libraries.MySemaphore(1);
+        //    public async Task<bool> StartAsync()
+        //    {
+        //        await semaphore.WaitAsync();
+        //        try
+        //        {
+        //            if (IsCompleted)
+        //            {
+        //                __OnCompleted(false);
+        //                return false;
+        //            }
+        //            var completed = await StartPrivateAsync();
+        //             __OnCompleted(completed);
+        //            return completed;
+        //        }
+        //        finally { semaphore.Release(); }
+        //    }
+        //    protected SimpleApiOperator(){ }
+        //}
+        //public abstract class AdvancedApiOperator:ApiOperator
+        //{
+        //    public event Libraries.Events.EmptyEventHandler Started;
+        //    public event Libraries.Events.MyEventHandler<object> Pausing;//Paused now replaced by Completed(false)
+        //    public event Libraries.Events.MyEventHandler<string> MessageAppended;
+        //    protected void OnStarted() { Started?.Invoke(); }
+        //    protected void OnPausing() { Pausing?.Invoke(this); }
+        //    protected void OnMessageAppended(string msg) { MessageAppended?.Invoke(msg); }
+        //    protected bool CheckPause()
+        //    {
+        //        //this.Debug($"pauseRequest = {pauseRequest}");
+        //        if (System.Threading.Interlocked.CompareExchange(ref pauseRequest, 2, 1) == 1) return true;
+        //        else return false;
+        //    }
+        //    public bool IsActive { get { return pauseRequest == 0; } }
+        //    protected bool IsPausing { get { return pauseRequest == 1; } }
+        //    private volatile int pauseRequest = 0;// 0: Normal, 1: Pausing, 2: Paused
+        //    public void Pause()
+        //    {
+        //        if (IsCompleted) return;
+        //        System.Threading.Interlocked.Exchange(ref pauseRequest, 1);
+        //        Pausing?.Invoke(this);
+        //    }
+        //    protected abstract Task<bool> StartPrivateAsync();
+        //    Libraries.MySemaphore semaphore = new Libraries.MySemaphore(1);
+        //    public async Task<bool> StartAsync()
+        //    {
+        //        await semaphore.WaitAsync();
+        //        try
+        //        {
+        //            Started?.Invoke();
+        //            int prePauseRequest = System.Threading.Interlocked.Exchange(ref pauseRequest, 0);
+        //            if (prePauseRequest == 1)
+        //            {
+        //                this.Debug($"{Constants.Icons.Info} Pause Request Canceled");
+        //                return false;// Cancel pauseRequest
+        //            }
+        //            else if (prePauseRequest == 2)
+        //            {
+        //                this.Debug($"{Constants.Icons.Play} Resumed");
+        //            }
+        //            else
+        //            {
+        //                this.Debug($"{Constants.Icons.Play} Started");
+        //            }
+        //            if (IsCompleted)
+        //            {
+        //                this.LogError("StartAsync: Operation has already completed");
+        //                __OnCompleted(false);
+        //                return false;
+        //            }
+        //        }
+        //        catch (Exception error)
+        //        {
+        //            this.LogError(error.ToString());
+        //            __OnCompleted(false);
+        //            return false;
+        //        }
+        //        finally { semaphore.Release(); }
+        //        var completed = await StartPrivateAsync();
+        //        __OnCompleted(completed);
+        //        return completed;
+        //    }
+        //    protected AdvancedApiOperator()
+        //    {
+        //        this.Completed += (sender,success) => { pauseRequest = success ? 0 : 2; };
+        //        this.Pausing += delegate { Debug($"{Constants.Icons.Pausing} Pausing..."); };
+        //        this.ErrorLogged += (error) => OnMessageAppended($"{Constants.Icons.Warning} {error}");
+        //        this.Debugged += (msg) => OnMessageAppended($"{msg}");
+        //    }
+        //}
+        //public abstract class ApiOperator : MyLoggerClass
+        //{
+        //    public bool IsCompleted = false;
+        //    public event Libraries.Events.MyEventHandler<object, bool> Completed;
+        //    protected void __OnCompleted(bool success)
+        //    {
+        //        if (success) IsCompleted = true;
+        //        Completed?.Invoke(this, success);
+        //    }
+        //    static volatile int InstanceCount = 0;
+        //    public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
+        //    static void AddInstanceCount(int value) { System.Threading.Interlocked.Add(ref InstanceCount, value); InstanceCountChanged?.Invoke(InstanceCount); }
+        //    ~ApiOperator() { AddInstanceCount(-1); }
+        //    protected ApiOperator() { AddInstanceCount(1); }
+        //}
         public class ParametersClass
         {
             public string fields = null;// "nextPageToken,incompleteSearch,files(id,name,mimeType)";

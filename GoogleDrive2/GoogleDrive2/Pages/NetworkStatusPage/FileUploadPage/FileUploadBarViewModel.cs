@@ -33,10 +33,10 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FileUploadPage
         #endregion
         private void RegisterEvents(Local.File.Uploader up)
         {
-            up.Completed += (sender,success) => OnCompleted(success);
+            up.Completed += (sender) => OnCompleted(up.IsCompleted);
             up.MessageAppended += (msg) => OnMessageAppended(msg);
             up.Pausing += delegate { OnPausing(); };
-            up.Started += () => OnStarted();
+            up.Started += delegate { OnStarted(); };
             up.ProgressChanged += (p) =>
             {
                 Progress = p.Item2 == 0 ? 1 : (double)p.Item1 / p.Item2;
@@ -51,7 +51,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FileUploadPage
             PauseClicked = new Xamarin.Forms.Command(async () =>
               {
                   //this.OnMessageAppended($"Click {up.IsActive}");
-                  if (up.IsActive) up.Pause();
+                  if (up.IsRunning) up.Pause();
                   else await up.StartAsync();
               });
             RegisterEvents(up);

@@ -11,33 +11,16 @@ namespace GoogleDrive2.Local
 {
     partial class File
     {
-        public partial class Uploader : Libraries.MyQueuedTask
+        public partial class Uploader : MyTask
         {
             static Libraries.MyTaskQueue SmallFileUploaderScheduler = new MyTaskQueue(3), LargeFileUploaderScheduler = new MyTaskQueue(1);
-            public static event Libraries.Events.MyEventHandler<int> QueuedSmallFileCountChanged, QueuedLargeFileCountChanged, RunningSmallFileUploadingCountChanged, RunningLargeFileUploadingCountChanged;
+            public static event Libraries.Events.MyEventHandler<long> QueuedSmallFileCountChanged, QueuedLargeFileCountChanged, RunningSmallFileUploadingCountChanged, RunningLargeFileUploadingCountChanged;
             static Uploader()
             {
                 SmallFileUploaderScheduler.QueuedUploaderCountChanged += (c) => QueuedSmallFileCountChanged?.Invoke(c);
                 LargeFileUploaderScheduler.QueuedUploaderCountChanged += (c) => QueuedLargeFileCountChanged?.Invoke(c);
                 SmallFileUploaderScheduler.RunningFileUploadingCountChanged += (c) => RunningSmallFileUploadingCountChanged?.Invoke(c);
                 LargeFileUploaderScheduler.RunningFileUploadingCountChanged += (c) => RunningLargeFileUploadingCountChanged?.Invoke(c);
-            }
-            public event MyEventHandler<object> NotifySchedulerCompleted;
-            public event MyEventHandler<object> RemoveFromTaskQueueRequested;
-            void MyQueuedTask.SchedulerReleaseSemaphore()
-            {
-                semaphore.Release();
-            }
-            long SerialNumber;
-            static long SerialNumberCounter = 0;
-            public int CompareTo(object obj)
-            {
-                return SerialNumber.CompareTo((obj as Uploader).SerialNumber);
-            }
-            void MyQueuedTaskInitialize()
-            {
-                SerialNumber = Interlocked.Increment(ref SerialNumberCounter);
-                this.Pausing += delegate { RemoveFromTaskQueueRequested?.Invoke(this); };
             }
         }
         public partial class Uploader
@@ -48,13 +31,13 @@ namespace GoogleDrive2.Local
             static void AddQueuedCount(int value) { System.Threading.Interlocked.Add(ref QueuedCount, value); QueuedCountChanged?.Invoke(QueuedCount); }
             static void AddWaitingForMetadataCount(int value) { System.Threading.Interlocked.Add(ref WaitingForMetadataCount, value); WaitingForMetadataCountChanged?.Invoke(WaitingForMetadataCount); }
         }
-        public abstract partial class Uploader : Api.AdvancedApiOperator
+        public abstract partial class Uploader
         {
             public const long MinChunkSize = 262144;// + 1;
             public static event Libraries.Events.MyEventHandler<Uploader> NewUploaderCreated;
             public event Libraries.Events.MyEventHandler<string> UploadCompleted;
             public event Libraries.Events.MyEventHandler<Tuple<long, long>> ProgressChanged;
-            protected void OnUploadCompleted(string id) { UploadCompleted?.Invoke(id); }
+            protected void OnUploadCompleted(string id) { OnCompleted(); UploadCompleted?.Invoke(id); }
             public File F { get; protected set; }
             public long? FileSize { get; private set; } = null;
             private Func<Task<Api.Files.FullCloudFileMetadata>> GetFileMetadata;
@@ -78,45 +61,40 @@ namespace GoogleDrive2.Local
                 ProgressChanged?.Invoke(new Tuple<long, long>(0, sz));
                 return sz;
             }
-            protected abstract Task<bool> StartUploadAsync(Api.Files.FullCloudFileMetadata metadata);
-            Libraries.MySemaphore semaphore = new Libraries.MySemaphore(0);
-            protected override async Task<bool> StartPrivateAsync()
+            protected abstract Task StartUploadAsync(Api.Files.FullCloudFileMetadata metadata);
+            Api.Files.FullCloudFileMetadata metadataForMainTask = null;
+            protected override async Task PrepareBeforeStartAsync()
             {
                 AddWaitingForMetadataCount(1);
-                var metadata = await GetFileMetadata();
-                AddWaitingForMetadataCount(-1);
-                if (CheckPause() || metadata == null) return false;
-                AddQueuedCount(1);
-                if (this is MultipartUploader) SmallFileUploaderScheduler.AddToQueueAndStart(this);
-                else LargeFileUploaderScheduler.AddToQueueAndStart(this);
                 try
                 {
-                    await semaphore.WaitAsync();
-                    AddQueuedCount(-1);
-                    if (CheckPause()) return false;
-                    AddRunningCount(1);
-                    try
-                    {
-                        F.CloseReadIfNot();
-                        TotalSize = await this.GetFileSizeAsync();
-                        return await StartUploadAsync(metadata);
-                    }
-                    catch (Exception error)
-                    {
-                        this.LogError(error.ToString());
-                        return false;
-                    }
-                    finally
-                    {
-                        F.CloseReadIfNot();
-                        AddRunningCount(-1);
-                    }
+                    metadataForMainTask = await GetFileMetadata();
                 }
-                finally { NotifySchedulerCompleted?.Invoke(this); }
+                finally { AddWaitingForMetadataCount(-1); }
+            }
+            protected override async Task StartMainTaskAsync()
+            {
+                if (IsPausing || metadataForMainTask == null) return;
+                AddRunningCount(1);
+                try
+                {
+                    F.CloseReadIfNot();
+                    TotalSize = await this.GetFileSizeAsync();
+                    await StartUploadAsync(metadataForMainTask);
+                }
+                catch (Exception error)
+                {
+                    this.LogError(error.ToString());
+                }
+                finally
+                {
+                    F.CloseReadIfNot();
+                    AddRunningCount(-1);
+                }
             }
             static int InstanceCount = 0;
-            public new static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
-            static void AddInstanceCount(int value) { System.Threading.Interlocked.Add(ref InstanceCount, value); InstanceCountChanged?.Invoke(InstanceCount); }
+            public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
+            static void AddInstanceCount(int value) { Interlocked.Add(ref InstanceCount, value); InstanceCountChanged?.Invoke(InstanceCount); }
             ~Uploader() { AddInstanceCount(-1); }
             protected Uploader(File file)
             {
@@ -131,7 +109,9 @@ namespace GoogleDrive2.Local
                     return metadata;
                 };
                 this.UploadCompleted += (id) => { Debug($"{Constants.Icons.Completed} Upload Completed: fileId = \"{id}\""); };
-                MyQueuedTaskInitialize();
+                this.Queued += delegate { AddQueuedCount(1); };
+                this.Unqueued += delegate { AddQueuedCount(-1); };
+                this.TaskQueue = this is MultipartUploader ? SmallFileUploaderScheduler : LargeFileUploaderScheduler;
                 NewUploaderCreated?.Invoke(this);
             }
             public static async Task<Uploader> GetUploader(File file)

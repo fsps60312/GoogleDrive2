@@ -15,15 +15,24 @@ namespace GoogleDrive2.Api.Files
             static void AddQueuedCount(int value) { System.Threading.Interlocked.Add(ref QueuedCount, value); QueuedCountChanged?.Invoke(QueuedCount); }
             static void AddWaitingForMetadataCount(int value) { System.Threading.Interlocked.Add(ref WaitingForMetadataCount, value);WaitingForMetadataCountChanged?.Invoke(WaitingForMetadataCount); }
         }
-        public partial class FolderCreate : SimpleApiOperator
+        public partial class FolderCreate : Libraries.MyTask
         {
             public const int MaxConcurrentFolderCreateOperation = 5;
+            static Libraries.MyTaskQueue folderCreateQueue = new Libraries.MyTaskQueue(MaxConcurrentFolderCreateOperation);
+            public FolderCreate()
+            {
+                this.TaskQueue = folderCreateQueue;
+                this.Queued += delegate { AddQueuedCount(1); };
+                this.Unqueued += delegate { AddQueuedCount(-1); };
+                InitializeGetCloudIdTask();
+            }
             public event Libraries.Events.MyEventHandler<string> FolderCreateCompleted;
             private void OnFolderCreateCompleted(string id)
             {
                 if (id == null) this.LogError("id is null");
                 MyLogger.Assert(id != null);
                 GetCloudId = () => { return Task.FromResult(id); };
+                OnCompleted();
                 FolderCreateCompleted?.Invoke(id);
             }
             protected Func<Task<FullCloudFileMetadata>> GetFolderMetadata = ()
@@ -39,52 +48,46 @@ namespace GoogleDrive2.Api.Files
             }
             Libraries.MySemaphore semaphoreNotCreateTwice = new Libraries.MySemaphore(1);
             static Libraries.MySemaphore semaphore = new Libraries.MySemaphore(MaxConcurrentFolderCreateOperation);
-            bool stopRequest = false;
-            public void Stop()
+            Api.Files.FullCloudFileMetadata metadataForMainTask = null;
+            protected override async Task PrepareBeforeStartAsync()
             {
-                stopRequest = true;
-            }
-            protected override async Task<bool> StartPrivateAsync()
-            {
-                stopRequest = false;
                 AddWaitingForMetadataCount(1);
-                var metadata = await GetFolderMetadata();
+                metadataForMainTask = await GetFolderMetadata();
                 AddWaitingForMetadataCount(-1);
-                if (stopRequest || metadata == null) return false;
+            }
+            protected override async Task StartMainTaskAsync()
+            {
+                if (IsPausing || metadataForMainTask == null) return;
+                await semaphoreNotCreateTwice.WaitAsync();
+                AddRunningCount(1);
                 try
                 {
-                    AddQueuedCount(1);
-                    await semaphore.WaitAsync();
-                    await semaphoreNotCreateTwice.WaitAsync();
-                    AddQueuedCount(-1);
-                    AddRunningCount(1);
-                    if (stopRequest) return false;
-                    var request = new MultipartUpload(metadata, new byte[0]);
+                    if (IsPausing) return;
+                    var request = new MultipartUpload(metadataForMainTask, new byte[0]);
                     using (var response = await request.GetHttpResponseAsync())
                     {
                         if (response?.StatusCode == HttpStatusCode.OK)
                         {
                             var f = JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(await request.GetResponseTextAsync(response));
                             OnFolderCreateCompleted(f.id);
-                            return true;
+                            return;
                         }
                         else
                         {
                             this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
-                            return false;
+                            return;
                         }
                     }
                 }
                 catch (Exception error)
                 {
                     this.LogError(error.ToString());
-                    return false;
+                    return;
                 }
                 finally
                 {
                     AddRunningCount(-1);
                     semaphoreNotCreateTwice.Release();
-                    semaphore.Release();
                 }
             }
         }

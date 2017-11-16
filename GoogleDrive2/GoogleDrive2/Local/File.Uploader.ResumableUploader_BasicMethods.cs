@@ -25,7 +25,7 @@ namespace GoogleDrive2.Local
                 public async Task<bool> CreateResumableUploadAsync(Api.Files.FullCloudFileMetadata metadata)
                 {
                     //await MyLogger.Alert($"file size: {totalSize}");
-                    if (CheckPause()) return false;
+                    if (IsPausing) return false;
                     var request = new Api.Files.ResumableCreate(metadata, TotalSize, null);
                     using (var response = await request.GetHttpResponseAsync())
                     {
@@ -75,7 +75,7 @@ namespace GoogleDrive2.Local
                     request.ClearBody();
                     return ans;
                 }
-                async Task<bool> StartResumableUploadAsync(long position)
+                async Task StartResumableUploadAsync(long position)
                 {
                     try
                     {
@@ -97,7 +97,7 @@ namespace GoogleDrive2.Local
                                         BytesUploaded = TotalSize;
                                         MyLogger.Assert(position == TotalSize);
                                         OnUploadCompleted(ParseCloudId(await response.GetResponseString()));
-                                        return true;
+                                        return;
                                     default:
                                         if ((int?)response?.StatusCode == 308)
                                         {
@@ -115,21 +115,21 @@ namespace GoogleDrive2.Local
                                         else
                                         {
                                             this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
-                                            return false;
+                                            return;
                                         }
                                 }
                             }
-                            if (CheckPause()) return false;
+                            if (IsPausing) return;
                         }
                     }
                     catch(Exception error)
                     {
                         this.LogError($"Error in async Task<bool> StartResumableUploadAsync(long position):\r\n{error}");
-                        return false;
+                        return;
                     }
                     finally { F.CloseReadIfNot(); }
                 }
-                private async Task<bool> StartResumableUploadAsync()
+                private async Task StartResumableUploadAsync()
                 {
                     var request = new Api.Files.ResumableUpload(resumableUri, TotalSize);
                     long startPosition = -1;
@@ -141,7 +141,7 @@ namespace GoogleDrive2.Local
                             case System.Net.HttpStatusCode.Created:
                                 this.Debug(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
                                 this.Debug($"{Constants.Icons.Info} The upload was completed, and no further action is necessary.");
-                                return false;
+                                return;
                             case System.Net.HttpStatusCode.NotFound:
                                 this.Debug(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
                                 this.Debug($"{Constants.Icons.Warning} The upload session has expired and the upload needs to be restarted from the beginning");
@@ -156,12 +156,12 @@ namespace GoogleDrive2.Local
                                 else
                                 {
                                     this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
-                                    return false;
+                                    return;
                                 }
                         }
                     }
                     MyLogger.Assert(startPosition != -1);
-                    return await StartResumableUploadAsync(startPosition);
+                    await StartResumableUploadAsync(startPosition);
                 }
             }
         }

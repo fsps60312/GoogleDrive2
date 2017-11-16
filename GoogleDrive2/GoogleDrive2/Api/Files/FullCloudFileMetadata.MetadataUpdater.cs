@@ -7,10 +7,10 @@ namespace GoogleDrive2.Api.Files
 {
     public partial class FullCloudFileMetadata
     {
-        public partial class FolderCreate : SimpleApiOperator//be sure to call FolderCreateCompleted(id) or Completed(false) exactly once so that GetCloudId would work
+        public partial class FolderCreate //be sure to call FolderCreateCompleted(id) or Completed(false) exactly once so that GetCloudId would work
         {
             public Func<Task<string>> GetCloudId { get; private set; } = null;
-            public FolderCreate() 
+            private void InitializeGetCloudIdTask()
             {
                 Libraries.MySemaphore semaphore = new Libraries.MySemaphore(0);
                 string resultId = null;
@@ -27,17 +27,17 @@ namespace GoogleDrive2.Api.Files
                         });
                         FolderCreateCompleted += folderCreateCompletedEventHandler;
 
-                        Libraries.Events.MyEventHandler<object,bool> completedEventHandler = null;
-                        completedEventHandler = new Libraries.Events.MyEventHandler<object,bool>((sender,success) =>
+                        Libraries.Events.MyEventHandler<object> unstartedEventHandler = null;
+                        unstartedEventHandler = new Libraries.Events.MyEventHandler<object>((sender) =>
                         {
-                            if (!success)
+                            if (!IsCompleted)
                             {
-                                this.Completed -= completedEventHandler;
+                                this.Unstarted -= unstartedEventHandler;
                                 resultId = null;
                                 semaphore.Release();
                             }
                         });
-                        Completed += completedEventHandler;
+                        Unstarted += unstartedEventHandler;
                     }
                     await semaphore.WaitAsync();
                     return resultId;
@@ -52,11 +52,15 @@ namespace GoogleDrive2.Api.Files
         {
             public Trasher(string fileId, bool trashed) : base(fileId, new FullCloudFileMetadata { trashed = trashed }) { }
         }
-        public class MetadataUpdater : Api.SimpleApiOperator
+        public class MetadataUpdater : Libraries.MyTask
         {
             string fileId;
             FullCloudFileMetadata metadata;
-            protected override async Task<bool> StartPrivateAsync()
+            protected override Task PrepareBeforeStartAsync()
+            {
+                return Task.CompletedTask;
+            }
+            protected override async Task StartMainTaskAsync()
             {
                 var request = new UpdateMetadata(fileId, metadata);
                 using (var response = await request.GetHttpResponseAsync())
@@ -65,12 +69,13 @@ namespace GoogleDrive2.Api.Files
                     {
                         var f = JsonConvert.DeserializeObject<Api.Files.FullCloudFileMetadata>(await request.GetResponseTextAsync(response));
                         MyLogger.Assert(f.id == fileId);
-                        return true;
+                        OnCompleted();
+                        return;
                     }
                     else
                     {
                         this.LogError(await RestRequests.RestRequester.LogHttpWebResponse(response, true));
-                        return false;
+                        return;
                     }
                 }
             }
