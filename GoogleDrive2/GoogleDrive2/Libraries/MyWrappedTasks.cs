@@ -11,26 +11,49 @@ namespace GoogleDrive2.Libraries
         //protected event Libraries.Events.MyEventHandler<object> SubtaskStarted, SubtaskUnstarted;
         List<MyTask> subtasks = new List<MyTask>();
         long subtasksRunningCount = 0, subtasksCompletedCount = 0;
-        Libraries.MySemaphore semaphore = new MySemaphore(0);
+        event Libraries.Events.EmptyEventHandler SemaphoreReleased;
         void DecreaseRunningCount()
         {
             lock (syncRootChangeRunningState)
             {
                 if(--subtasksRunningCount==0)
                 {
-                    semaphore.Release();
+                    SemaphoreReleased?.Invoke();
                 }
+            }
+        }
+        MySemaphore GetSemaphore()
+        {
+            lock(syncRootChangeRunningState)
+            {
+                var ans = new MySemaphore(0);
+                Events.EmptyEventHandler semaphoreReleasedEventHandler = null;
+                semaphoreReleasedEventHandler = new Events.EmptyEventHandler(() =>
+                {
+                    ans.Release();
+                    this.SemaphoreReleased -= semaphoreReleasedEventHandler;
+                });
+                this.SemaphoreReleased += semaphoreReleasedEventHandler;
+                return ans;
             }
         }
         void IncreaseRunningCount()
         {
             lock (syncRootChangeRunningState) subtasksRunningCount++;
         }
-        async void StartSubask(MyTask subtask)
+        async void StartSubtask(MyTask subtask)
         {
             await subtask.StartAsync();
         }
-        protected MyWrappedTasks()
+        void StartSubtasks()
+        {
+            lock (syncRootChangeRunningState)
+            {
+                IncreaseRunningCount();
+                foreach (var task in subtasks) StartSubtask(task);
+            }
+        }
+        protected MyWrappedTasks() : base(false)
         {
             this.Started += delegate { Debug($"{Constants.Icons.Info} Started"); };
             this.Pausing += (sender) =>
@@ -54,7 +77,7 @@ namespace GoogleDrive2.Libraries
                 subtask.Started += delegate { IncreaseRunningCount(); };
                 subtask.Unstarted += delegate { DecreaseRunningCount(); };
                 subtasks.Add(subtask);
-                if (!IsPausing) StartSubask(subtask);
+                if (!IsPausing) StartSubtask(subtask);
             }
         }
         protected abstract Task<bool> AddSubtasksIfNot();
@@ -66,26 +89,19 @@ namespace GoogleDrive2.Libraries
                 base.CancelPauseRequests();
             }
         }
-        protected override void ReturnedBeforeStartMainTask()
-        {
-            lock (syncRootChangeRunningState)
-            {
-                base.ReturnedBeforeStartMainTask();
-            }
-        }
         protected override Task PrepareBeforeStartAsync()
         {
             //do nothing
             return Task.CompletedTask;
         }
+        Libraries.MySemaphore semaphoreAddSubtasks = new MySemaphore(1);
         protected override async Task StartMainTaskAsync()
         {
-            lock (syncRootChangeRunningState)
-            {
-                IncreaseRunningCount();
-                foreach (var task in subtasks) StartSubask(task);
-            }
+            var semaphore = GetSemaphore();
+            StartSubtasks();
+            await semaphoreAddSubtasks.WaitAsync();
             var allSubtaskAdded = await AddSubtasksIfNot();
+            semaphoreAddSubtasks.Release();
             lock (syncRootChangeRunningState)
             {
                 DecreaseRunningCount();
@@ -93,7 +109,7 @@ namespace GoogleDrive2.Libraries
             await semaphore.WaitAsync();
             lock (syncRootChangeRunningState)
             {
-                if (allSubtaskAdded && subtasksCompletedCount == subtasks.Count) OnCompleted();
+                if (allSubtaskAdded && subtasksCompletedCount == subtasks.Count&&!IsCompleted) OnCompleted();
             }
         }
     }

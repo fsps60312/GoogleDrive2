@@ -30,7 +30,7 @@ namespace GoogleDrive2.Libraries
         public event MyEventHandler<object> NotifySchedulerCompleted;
         public event MyEventHandler<object> RemoveFromTaskQueueRequested;
         protected event MyEventHandler<object> Queued, Unqueued;
-        Libraries.MySemaphore semaphore = new MySemaphore(0), semaphoreStartAsync = new MySemaphore(1);
+        Libraries.MySemaphore semaphore = new MySemaphore(0), semaphoreStartAsync = null;
         public void SchedulerReleaseSemaphore() { semaphore.Release(); }
         public int CompareTo(object obj)
         {
@@ -38,8 +38,9 @@ namespace GoogleDrive2.Libraries
         }
         static long SerialNumberCounter = 0;
         long SerialNumber;
-        protected MyTask()
+        protected MyTask(bool preventStartTwice = true)
         {
+            if (preventStartTwice) semaphoreStartAsync = new MySemaphore(1);
             SerialNumber = Interlocked.Increment(ref SerialNumberCounter);
             this.ErrorLogged += (error) => OnMessageAppended($"{Constants.Icons.Warning} {error}");
             this.Debugged += (msg) => OnMessageAppended($"{msg}");
@@ -71,22 +72,17 @@ namespace GoogleDrive2.Libraries
                 }
             }
         }
-        protected virtual void ReturnedBeforeStartMainTask() { }
         protected abstract Task PrepareBeforeStartAsync();
         protected abstract Task StartMainTaskAsync();
         public async Task StartAsync()
         {
             CancelPauseRequests();
-            await semaphoreStartAsync.WaitAsync();
+            if (semaphoreStartAsync != null) await semaphoreStartAsync.WaitAsync();
             try
             {
                 lock (syncRootChangeRunningState)
                 {
-                    if (IsCompleted || IsPausing)
-                    {
-                        ReturnedBeforeStartMainTask();
-                        return;//must be the first
-                    }
+                    if (IsCompleted || IsPausing) return;//must be the first
                     IsRunning = true;
                     Started?.Invoke(this);
                 }
@@ -111,7 +107,7 @@ namespace GoogleDrive2.Libraries
                     }
                 }
             }
-            finally { semaphoreStartAsync.Release(); }
+            finally { if (semaphoreStartAsync != null) semaphoreStartAsync.Release(); }
         }
     }
 }
