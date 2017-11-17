@@ -7,6 +7,43 @@ namespace GoogleDrive2.Api.Files
 {
     public partial class FullCloudFileMetadata
     {
+        public partial class FolderCreate //be sure to call FolderCreateCompleted(id) or Completed(false) exactly once so that GetCloudId would work
+        {
+            public event Libraries.Events.MyEventHandler<string> FolderCreateCompleted;
+            private string ResultCloudId = null;
+            public async Task<string> GetCloudId()
+            {
+                Libraries.MySemaphore semaphore = new Libraries.MySemaphore(0);
+                lock (syncRootChangeRunningState)
+                {
+                    if (!IsRunning) return ResultCloudId;
+                    Libraries.Events.MyEventHandler<object> unstartedEventHandler = null;
+                    unstartedEventHandler = new Libraries.Events.MyEventHandler<object>((sender) =>
+                    {
+                        semaphore.Release();
+                        Unstarted -= unstartedEventHandler;
+                    });
+                    Unstarted += unstartedEventHandler;
+                }
+                await semaphore.WaitAsync();
+                return ResultCloudId;
+            }
+            private void OnFolderCreateCompleted(string id)
+            {
+                lock (syncRootChangeRunningState)
+                {
+                    if (id == null) this.LogError("id is null");
+                    MyLogger.Assert(id != null);
+                    ResultCloudId = id;
+                    OnCompleted();
+                    FolderCreateCompleted?.Invoke(id);
+                }
+            }
+            private void InitializeGetCloudIdTask()
+            {
+                //Do nothing
+            }
+        }
         public partial class FolderCreate
         {
             static int RunningCount = 0, QueuedCount = 0, WaitingForMetadataCount = 0;
@@ -26,15 +63,6 @@ namespace GoogleDrive2.Api.Files
                 this.Unqueued += delegate { AddQueuedCount(-1); };
                 InitializeGetCloudIdTask();
             }
-            public event Libraries.Events.MyEventHandler<string> FolderCreateCompleted;
-            private void OnFolderCreateCompleted(string id)
-            {
-                if (id == null) this.LogError("id is null");
-                MyLogger.Assert(id != null);
-                GetCloudId = () => { return Task.FromResult(id); };
-                OnCompleted();
-                FolderCreateCompleted?.Invoke(id);
-            }
             protected Func<Task<FullCloudFileMetadata>> GetFolderMetadata = ()
                 => Task.FromResult(new FullCloudFileMetadata { mimeType = Constants.FolderMimeType });
             public void SetFolderMetadata(Func<FullCloudFileMetadata, Task<FullCloudFileMetadata>> func)
@@ -46,8 +74,6 @@ namespace GoogleDrive2.Api.Files
                     return metadata == null ? null : await func(metadata);
                 });
             }
-            Libraries.MySemaphore semaphoreNotCreateTwice = new Libraries.MySemaphore(1);
-            static Libraries.MySemaphore semaphore = new Libraries.MySemaphore(MaxConcurrentFolderCreateOperation);
             Api.Files.FullCloudFileMetadata metadataForMainTask = null;
             protected override async Task PrepareBeforeStartAsync()
             {
@@ -58,7 +84,6 @@ namespace GoogleDrive2.Api.Files
             protected override async Task StartMainTaskAsync()
             {
                 if (IsPausing || metadataForMainTask == null) return;
-                await semaphoreNotCreateTwice.WaitAsync();
                 AddRunningCount(1);
                 try
                 {
@@ -87,7 +112,6 @@ namespace GoogleDrive2.Api.Files
                 finally
                 {
                     AddRunningCount(-1);
-                    semaphoreNotCreateTwice.Release();
                 }
             }
         }

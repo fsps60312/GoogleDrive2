@@ -33,7 +33,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FileUploadPage
         #endregion
         private void RegisterEvents(Local.File.Uploader up)
         {
-            up.Completed += (sender) => OnCompleted(up.IsCompleted);
+            up.Unstarted += (sender) => OnCompleted(up.IsCompleted);
             up.MessageAppended += (msg) => OnMessageAppended(msg);
             up.Pausing += delegate { OnPausing(); };
             up.Started += delegate { OnStarted(); };

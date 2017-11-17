@@ -20,29 +20,30 @@ namespace GoogleDrive2.Local
             public void SetFolderMetadata(Func<Api.Files.FullCloudFileMetadata, Task<Api.Files.FullCloudFileMetadata>> func) { metadataFunc = func; }
             Api.Files.FullCloudFileMetadata.FolderCreate folderCreator = null;
             int MainTaskProgress = 0;
-            protected override async Task AddSubtasksIfNot()
+            protected override async Task<bool> AddSubtasksIfNot()
             {
-                if (IsPausing) return;
+                if (IsPausing) return false;
                 if (0 == MainTaskProgress)
                 {
-                    //this.Debug("Step 1...");
+                    this.Debug($"{Constants.Icons.Progress} Step 1/3...");
                     await AddCreateFolderTask();
                     Interlocked.Increment(ref MainTaskProgress);
                 }
-                if (IsPausing) return;
+                if (IsPausing) return false;
                 if (1 == MainTaskProgress)
                 {
-                    //this.Debug("Step 2...");
+                    this.Debug($"{Constants.Icons.Progress} Step 2/3...");
                     await AddUploadSubfilesTasks();
                     Interlocked.Increment(ref MainTaskProgress);
                 }
-                if (IsPausing) return;
+                if (IsPausing) return false;
                 if (2 == MainTaskProgress)
                 {
-                    //this.Debug("Step 3...");
+                    this.Debug($"{Constants.Icons.Progress} Step 3/3...");
                     await AddUploadSubfoldersTasks();
                     Interlocked.Increment(ref MainTaskProgress);
                 }
+                return true;
             }
             static volatile int InstanceCount = 0;
             public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;

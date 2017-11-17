@@ -314,7 +314,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
         }
         private void RegisterEvents(Local.Folder.Uploader up)
         {
-            up.Completed += (sender) => OnCompleted(up.IsCompleted);
+            up.Unstarted += (sender) => OnCompleted(up.IsCompleted);
             up.MessageAppended += (msg) => OnMessageAppended(msg);
             up.Pausing += delegate { OnPausing(); };
             up.Started += delegate { OnStarted(); };
@@ -337,8 +337,9 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             };
             PauseClicked = new Xamarin.Forms.Command(async () =>
             {
-                if (up.IsRunning) up.Pause();
-                else await up.StartAsync();
+                this.OnMessageAppended($"{up.IsPausing}");
+                if (up.IsPausing)await up.StartAsync();
+                else up.Pause();
             });
         }
     }

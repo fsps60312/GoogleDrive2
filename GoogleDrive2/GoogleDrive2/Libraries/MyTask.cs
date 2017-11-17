@@ -10,10 +10,23 @@ namespace GoogleDrive2.Libraries
 {
     public abstract partial class MyTask : MyLoggerClass, MyQueuedTask
     {
+        protected object syncRootChangeRunningState = new object();
         public event MyEventHandler<object> Started, Unstarted, Pausing,Completed;
         public event Libraries.Events.MyEventHandler<string> MessageAppended;
         protected void OnMessageAppended(string msg) { MessageAppended?.Invoke(msg); }
-        protected void OnCompleted() { IsCompleted = true; Completed?.Invoke(this); }
+        protected void OnCompleted()
+        {
+            lock (syncRootChangeRunningState)
+            {
+                if (IsCompleted)
+                {
+                    this.LogError("OnCompleted() twice or more");
+                    return;
+                }
+                IsCompleted = true;
+                Completed?.Invoke(this);
+            }
+        }
         public event MyEventHandler<object> NotifySchedulerCompleted;
         public event MyEventHandler<object> RemoveFromTaskQueueRequested;
         protected event MyEventHandler<object> Queued, Unqueued;
@@ -33,41 +46,72 @@ namespace GoogleDrive2.Libraries
         }
         public void Pause()
         {
-            IsPausing = true;
-            Pausing?.Invoke(this);
-            RemoveFromTaskQueueRequested?.Invoke(this);
+            lock (syncRootChangeRunningState)
+            {
+                if (!IsRunning || IsPausing) return;
+                IsPausing = true;
+                Pausing?.Invoke(this);
+                RemoveFromTaskQueueRequested?.Invoke(this);
+            }
         }
-        protected abstract Task PrepareBeforeStartAsync();
         static MyTaskQueue unlimitedTaskQueue = new MyTaskQueue(long.MaxValue);
         protected MyTaskQueue TaskQueue { get; set; } = unlimitedTaskQueue;
         public bool IsPausing { get; protected set; } = false;
         public bool IsRunning { get; protected set; } = false;
         public bool IsCompleted { get; protected set; } = false;
+        public virtual void CancelPauseRequests()
+        {
+            lock (syncRootChangeRunningState)
+            {
+                Debug("Canceling pause requests...");
+                if (IsPausing)
+                {
+                    IsPausing = false;
+                    Debug("Pause request Canceled");
+                }
+            }
+        }
+        protected virtual void ReturnedBeforeStartMainTask() { }
+        protected abstract Task PrepareBeforeStartAsync();
         protected abstract Task StartMainTaskAsync();
         public async Task StartAsync()
         {
-            IsPausing = false;
+            CancelPauseRequests();
             await semaphoreStartAsync.WaitAsync();
-            if (IsCompleted) return;
-            IsRunning = true;
-            Started?.Invoke(this);
             try
             {
-                await PrepareBeforeStartAsync();
-                TaskQueue.AddToQueueAndStart(this);
-                Queued?.Invoke(this);
-                await semaphore.WaitAsync();
-                Unqueued?.Invoke(this);
-                await StartMainTaskAsync();
+                lock (syncRootChangeRunningState)
+                {
+                    if (IsCompleted || IsPausing)
+                    {
+                        ReturnedBeforeStartMainTask();
+                        return;//must be the first
+                    }
+                    IsRunning = true;
+                    Started?.Invoke(this);
+                }
+                try
+                {
+                    await PrepareBeforeStartAsync();
+                    TaskQueue.AddToQueueAndStart(this);
+                    Queued?.Invoke(this);
+                    await semaphore.WaitAsync();
+                    Unqueued?.Invoke(this);
+                    await StartMainTaskAsync();//OnCompleted() might be called here
+                                               //Now IsCompleted is determined
+                }
+                finally
+                {
+                    lock (syncRootChangeRunningState)
+                    {
+                        //IsPausing = false;
+                        IsRunning = false;
+                        NotifySchedulerCompleted?.Invoke(this);
+                        Unstarted?.Invoke(this);
+                    }
+                }
             }
-            finally
-            {
-                IsPausing = false;
-                IsRunning = false;
-                Unstarted?.Invoke(this);
-                NotifySchedulerCompleted?.Invoke(this);
-                semaphoreStartAsync.Release();
-            }
+            finally { semaphoreStartAsync.Release(); }
         }
     }
 }

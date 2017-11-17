@@ -7,43 +7,6 @@ namespace GoogleDrive2.Api.Files
 {
     public partial class FullCloudFileMetadata
     {
-        public partial class FolderCreate //be sure to call FolderCreateCompleted(id) or Completed(false) exactly once so that GetCloudId would work
-        {
-            public Func<Task<string>> GetCloudId { get; private set; } = null;
-            private void InitializeGetCloudIdTask()
-            {
-                Libraries.MySemaphore semaphore = new Libraries.MySemaphore(0);
-                string resultId = null;
-                GetCloudId = async () =>
-                {
-                    lock (GetCloudId)
-                    {
-                        Libraries.Events.MyEventHandler<string> folderCreateCompletedEventHandler = null;
-                        folderCreateCompletedEventHandler = new Libraries.Events.MyEventHandler<string>((id) =>
-                        {
-                            this.FolderCreateCompleted -= folderCreateCompletedEventHandler;
-                            resultId = id;
-                            semaphore.Release();
-                        });
-                        FolderCreateCompleted += folderCreateCompletedEventHandler;
-
-                        Libraries.Events.MyEventHandler<object> unstartedEventHandler = null;
-                        unstartedEventHandler = new Libraries.Events.MyEventHandler<object>((sender) =>
-                        {
-                            if (!IsCompleted)
-                            {
-                                this.Unstarted -= unstartedEventHandler;
-                                resultId = null;
-                                semaphore.Release();
-                            }
-                        });
-                        Unstarted += unstartedEventHandler;
-                    }
-                    await semaphore.WaitAsync();
-                    return resultId;
-                };
-            }
-        }
         public class Starrer : MetadataUpdater
         {
             public Starrer(string fileId, bool starred) : base(fileId, new FullCloudFileMetadata { starred = starred }) { }

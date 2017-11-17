@@ -11,38 +11,41 @@ namespace GoogleDrive2.Local
     {
         public partial class Uploader :Libraries.MyWrappedTasks
         {
+            object syncRoot = new object();
             long ProgressCurrentFile = 0, ProgressTotalFile = 0;
             long ProgressCurrentFolder = 0, ProgressTotalFolder = 0;
             long ProgressCurrentSize = 0, ProgressTotalSize = 0;
             long SearchLocalFoldersActions = 0, SearchLocalFilesActions = 0;
-            long ThreadCount = 0, NotCompleted = 0, AddedThreadCount = 0;
+            long ThreadCount = 0, NotCompleted = 0;
             void OnRunningTaskCountChanged(Tuple<long,long>rawData)
             {
-                RunningTaskCountChanged?.Invoke(new Tuple<long, long>(rawData.Item1 - Interlocked.Read(ref AddedThreadCount), rawData.Item2));
-            }
-            bool? AddThreadCount(long v)
-            {
-                var threadCount = Interlocked.Add(ref ThreadCount, v);
-                OnRunningTaskCountChanged(new Tuple<long, long>(threadCount, NotCompleted));
-                if (threadCount == 0)//If threadCount==0, NotCompleted will not changed
+                lock (syncRoot)
                 {
-                    MyLogger.Assert(NotCompleted >= 0);
-                    return NotCompleted == 0;
+                    RunningTaskCountChanged?.Invoke(new Tuple<long, long>(rawData.Item1, rawData.Item2));
                 }
-                return null;
+            }
+            void AddThreadCount(long v)
+            {
+                lock (syncRoot)
+                {
+                    OnRunningTaskCountChanged(new Tuple<long, long>(ThreadCount += v, NotCompleted));
+                }
             }
             void AddNotCompleted(long v)
             {
-                var notCompleted = Interlocked.Add(ref NotCompleted, v);
-                OnRunningTaskCountChanged(new Tuple<long, long>(ThreadCount, notCompleted));
+                lock (syncRoot)
+                {
+                    OnRunningTaskCountChanged(new Tuple<long, long>(ThreadCount, NotCompleted += v));
+                }
             }
             Tuple<long, long> MaintainProgress(Tuple<long, long> p, ref long current, ref long total, ref long parentCurrent, ref long parentTotal)
             {
-                var cdif = p.Item1 - Interlocked.Exchange(ref current, p.Item1);
-                var tdif = p.Item2 - Interlocked.Exchange(ref total, p.Item2);
-                return new Tuple<long, long>(
-                    Interlocked.Add(ref parentCurrent, cdif),
-                    Interlocked.Add(ref parentTotal, tdif));
+                lock (syncRoot)
+                {
+                    var cdif = p.Item1 - current; current = p.Item1;
+                    var tdif = p.Item2 - total; total = p.Item2;
+                    return new Tuple<long, long>(parentCurrent += cdif, parentTotal += tdif);
+                }
             }
             enum ProgressType { File, Folder, Size,LocalSearch ,RunningTaskCount};
             void RegisterProgressChange(Folder.Uploader uploader, ProgressType progressType)

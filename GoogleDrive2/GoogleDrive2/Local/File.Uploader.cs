@@ -108,9 +108,11 @@ namespace GoogleDrive2.Local
                     metadata.modifiedTime = await F.GetTimeModifiedAsync();
                     return metadata;
                 };
+                this.Started += delegate { this.Debug($"{Constants.Icons.Info} Started"); };
+                this.Pausing += delegate { this.Debug($"{Constants.Icons.Pausing} Pausing..."); };
                 this.UploadCompleted += (id) => { Debug($"{Constants.Icons.Completed} Upload Completed: fileId = \"{id}\""); };
-                this.Queued += delegate { AddQueuedCount(1); };
-                this.Unqueued += delegate { AddQueuedCount(-1); };
+                this.Queued += delegate { this.Debug($"{Constants.Icons.Info} Queued"); AddQueuedCount(1); };
+                this.Unqueued += delegate { this.Debug($"{Constants.Icons.Info} Unqueued"); AddQueuedCount(-1); };
                 this.TaskQueue = this is MultipartUploader ? SmallFileUploaderScheduler : LargeFileUploaderScheduler;
                 NewUploaderCreated?.Invoke(this);
             }

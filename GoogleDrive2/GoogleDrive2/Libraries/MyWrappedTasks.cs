@@ -9,68 +9,92 @@ namespace GoogleDrive2.Libraries
     abstract class MyWrappedTasks:MyTask
     {
         //protected event Libraries.Events.MyEventHandler<object> SubtaskStarted, SubtaskUnstarted;
-        object syncRoot = new object();
         List<MyTask> subtasks = new List<MyTask>();
-        bool isSubtasksPaused = true;
-        long subtasksRunningCount = 0;
+        long subtasksRunningCount = 0, subtasksCompletedCount = 0;
         Libraries.MySemaphore semaphore = new MySemaphore(0);
         void DecreaseRunningCount()
         {
-            lock(syncRoot)
+            lock (syncRootChangeRunningState)
             {
                 if(--subtasksRunningCount==0)
                 {
                     semaphore.Release();
-                    isSubtasksPaused = true;
                 }
             }
         }
         void IncreaseRunningCount()
         {
-            lock (syncRoot) subtasksRunningCount++;
+            lock (syncRootChangeRunningState) subtasksRunningCount++;
         }
         async void StartSubask(MyTask subtask)
         {
-            IncreaseRunningCount();
-            try { await subtask.StartAsync(); }
-            finally { DecreaseRunningCount(); }
+            await subtask.StartAsync();
         }
         protected MyWrappedTasks()
         {
+            this.Started += delegate { Debug($"{Constants.Icons.Info} Started"); };
             this.Pausing += (sender) =>
             {
-                lock (syncRoot)
+                Debug($"{Constants.Icons.Hourglass} Pausing...");
+                lock (syncRootChangeRunningState)
                 {
                     foreach (var task in subtasks) task.Pause();
-                    isSubtasksPaused = true;
                 }
             };
         }
         protected void AddSubTask(MyTask subtask)
         {
-            lock (syncRoot)
+            lock (syncRootChangeRunningState)
             {
+                MyLogger.Assert(!subtask.IsCompleted);
+                subtask.Completed += delegate
+                {
+                    lock (syncRootChangeRunningState) ++subtasksCompletedCount;
+                };
+                subtask.Started += delegate { IncreaseRunningCount(); };
+                subtask.Unstarted += delegate { DecreaseRunningCount(); };
                 subtasks.Add(subtask);
-                if (!isSubtasksPaused) StartSubask(subtask);
+                if (!IsPausing) StartSubask(subtask);
             }
         }
-        protected abstract Task AddSubtasksIfNot();
-        protected override async Task StartMainTaskAsync()
+        protected abstract Task<bool> AddSubtasksIfNot();
+        public override void CancelPauseRequests()
         {
-            lock (syncRoot)
+            lock (syncRootChangeRunningState)
             {
-                IncreaseRunningCount();
-                foreach (var task in subtasks) StartSubask(task);
-                isSubtasksPaused = false;
+                foreach (var task in subtasks) task.CancelPauseRequests();
+                base.CancelPauseRequests();
             }
-            await AddSubtasksIfNot();
-            DecreaseRunningCount();
-            await semaphore.WaitAsync();
+        }
+        protected override void ReturnedBeforeStartMainTask()
+        {
+            lock (syncRootChangeRunningState)
+            {
+                base.ReturnedBeforeStartMainTask();
+            }
         }
         protected override Task PrepareBeforeStartAsync()
         {
             //do nothing
             return Task.CompletedTask;
+        }
+        protected override async Task StartMainTaskAsync()
+        {
+            lock (syncRootChangeRunningState)
+            {
+                IncreaseRunningCount();
+                foreach (var task in subtasks) StartSubask(task);
+            }
+            var allSubtaskAdded = await AddSubtasksIfNot();
+            lock (syncRootChangeRunningState)
+            {
+                DecreaseRunningCount();
+            }
+            await semaphore.WaitAsync();
+            lock (syncRootChangeRunningState)
+            {
+                if (allSubtaskAdded && subtasksCompletedCount == subtasks.Count) OnCompleted();
+            }
         }
     }
 }

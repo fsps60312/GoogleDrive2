@@ -29,7 +29,7 @@ namespace GoogleDrive2
                 Pausing = Hourglass + Pause,
                 Play = "▶",
                 Initial = Play + Hourglass,
-                Size = "⋙",
+                Progress = "⋙",
                 Magnifier = "🔍",
                 Folded = "▸",
                 Unfolded="▾",
