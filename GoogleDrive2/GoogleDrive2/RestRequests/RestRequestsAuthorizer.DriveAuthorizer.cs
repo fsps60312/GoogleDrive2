@@ -17,6 +17,10 @@ namespace GoogleDrive2.RestRequests
             {
                 return await FileSystem.Current.LocalStorage.CreateFileAsync(SaveFileName, CreationCollisionOption.OpenIfExists);
             }
+            public static async Task DeleteSaveFileAsync()
+            {
+                await (await GetSaveFileAsync()).DeleteAsync();
+            }
             static async Task WriteAsync(string data)
             {
                 await (await GetSaveFileAsync()).WriteAllTextAsync(data);
@@ -27,8 +31,8 @@ namespace GoogleDrive2.RestRequests
             }
             static readonly string auth_uri = "https://accounts.google.com/o/oauth2/auth";
             static readonly string token_uri = "https://accounts.google.com/o/oauth2/token";
-            static readonly string client_id = "767856013993-4jsq7q0iujolnd9bomvd36ff4md16rv7.apps.googleusercontent.com";
-            static readonly string client_secret = "fqHbRlaQ1Imh4bQNPdfths2U";
+            static readonly string client_id = "767856013993-29e90lvkoid2mhb5v37igd02aoe5oqr2.apps.googleusercontent.com";
+            static readonly string client_secret = "tTBDH_iUf2P8fsT1NHouneG9";
             static readonly string redirect_uri = "http://localhost";//or: "urn:ietf:wg:oauth:2.0:oob"
             static RestRequests.RestRequestsLimiter responseGetter = new RestRequests.RestRequestsLimiter();
             static string refreshToken = null, accessToken = null, tokenType = null;

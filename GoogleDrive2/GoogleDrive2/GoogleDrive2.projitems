@@ -21,6 +21,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Constants.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Libraries\ColorTuner.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Libraries\Events.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Libraries\FrequentExecutionLimiter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Libraries\MyExponentialBackOff.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Libraries\MyLogger.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Libraries\MySemaphore.cs" />

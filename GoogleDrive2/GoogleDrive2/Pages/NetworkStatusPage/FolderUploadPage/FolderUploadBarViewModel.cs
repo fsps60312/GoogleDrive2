@@ -314,22 +314,37 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
         }
         private void RegisterEvents(Local.Folder.Uploader up)
         {
-            up.Unstarted += (sender) => OnCompleted(up.IsCompleted);
+            up.Unstarted += (sender) => { OnCompleted(up.IsCompleted); };
             up.MessageAppended += (msg) => OnMessageAppended(msg);
             up.Pausing += delegate { OnPausing(); };
             up.Started += delegate { OnStarted(); };
-            up.RunningTaskCountChanged += (ts) =>
             {
-                if (ts == new Tuple<long, long>(0, 0)) TaskStatus = null;
-                else
+                var limiter = new Libraries.FrequentExecutionLimiter(0.2);
+                up.RunningTaskCountChanged += (ts) => limiter.Execute(() =>
                 {
-                    TaskStatus = $"{(ts.Item1 == 0 ? (ts.Item2 == 0 ? Constants.Icons.Completed : Constants.Icons.Pause) : Constants.Icons.Hourglass)}: {ts.Item1} / {ts.Item2}";
-                }
-            };
-            up.FileProgressChanged += (p) => UpdateProgress(p, ProgressType.File);
-            up.FolderProgressChanged += (p) => UpdateProgress(p, ProgressType.Folder);
-            up.SizeProgressChanged += (p) => UpdateProgress(p, ProgressType.Size);
-            up.LocalSearchStatusChanged += (p) => UpdateProgress(p, ProgressType.LocalSearch);
+                    if (ts == new Tuple<long, long>(0, 0)) TaskStatus = null;
+                    else
+                    {
+                        TaskStatus = $"{(ts.Item1 == 0 ? (ts.Item2 == 0 ? Constants.Icons.Completed : Constants.Icons.Pause) : Constants.Icons.Hourglass)}: {ts.Item1} / {ts.Item2}";
+                    }
+                });
+            }
+            {
+                var limiter = new Libraries.FrequentExecutionLimiter(0.2);
+                up.FileProgressChanged += (p) => limiter.Execute(() => UpdateProgress(p, ProgressType.File));
+            }
+            {
+                var limiter = new Libraries.FrequentExecutionLimiter(0.2);
+                up.FolderProgressChanged += (p) => limiter.Execute(() => UpdateProgress(p, ProgressType.Folder));
+            }
+            {
+                var limiter = new Libraries.FrequentExecutionLimiter(0.2);
+                up.SizeProgressChanged += (p) => limiter.Execute(() => UpdateProgress(p, ProgressType.Size));
+            }
+            {
+                var limiter = new Libraries.FrequentExecutionLimiter(0.2);
+                up.LocalSearchStatusChanged += (p) => limiter.Execute(() => UpdateProgress(p, ProgressType.LocalSearch));
+            }
             this.PropertyChanged += (o, p) =>
             {
                 if (!PropertyChangedEventChain.ContainsKey(p.PropertyName)) return;

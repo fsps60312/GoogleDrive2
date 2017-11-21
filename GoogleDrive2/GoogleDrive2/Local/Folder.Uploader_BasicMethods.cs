@@ -9,45 +9,173 @@ namespace GoogleDrive2.Local
 {
     partial class Folder
     {
-        public partial class Uploader :Libraries.MyWrappedTasks
+        public partial class Uploader : Libraries.MyWrappedTasks
         {
-            object syncRoot = new object();
+            class MySet<T>
+            {
+                object syncRoot = new object();
+                SortedSet<T> data = new SortedSet<T>();
+                public void Add(T v)
+                {
+                    lock (syncRoot) data.Add(v);
+                }
+                public T Get(int index)
+                {
+                    lock (syncRoot) return data.ElementAt(index);
+                }
+                public void Remove(int index)
+                {
+                    lock (syncRoot) data.Remove(this.Get(index));
+                }
+                public void SetComparer(IComparer<T> comparer)
+                {
+                    lock (syncRoot)
+                    {
+                        var preData = data;
+                        data = new SortedSet<T>(comparer);
+                        data.UnionWith(preData);
+                    }
+                }
+                public void Clear()
+                {
+                    lock (syncRoot) data.Clear();
+                }
+            }
+
+            //Libraries.FrequentExecutionLimiter
+            //    FileProgressChangedLimiter = new Libraries.FrequentExecutionLimiter(0.2),
+            //    FolderProgressChangedLimiter = new Libraries.FrequentExecutionLimiter(0.2),
+            //    SizeProgressChangedLimiter = new Libraries.FrequentExecutionLimiter(0.2),
+            //    SearchProgressChangedLimiter = new Libraries.FrequentExecutionLimiter(0.2),
+            //    ThreadProgressChangedLimiter = new Libraries.FrequentExecutionLimiter(0.2);
             long ProgressCurrentFile = 0, ProgressTotalFile = 0;
             long ProgressCurrentFolder = 0, ProgressTotalFolder = 0;
             long ProgressCurrentSize = 0, ProgressTotalSize = 0;
             long SearchLocalFoldersActions = 0, SearchLocalFilesActions = 0;
             long ThreadCount = 0, NotCompleted = 0;
-            void OnRunningTaskCountChanged(Tuple<long,long>rawData)
+            void Add(ref long v, long addv) { Interlocked.Add(ref v, addv); }
+            void Increment(ref long v) { Interlocked.Increment(ref v); }
+            void Decrement(ref long v) { Interlocked.Decrement(ref v); }
+            long Exchange(ref long a, long b) { return Interlocked.Exchange(ref a, b); }
+            long Read(ref long v) { return Interlocked.Read(ref v); }
+            void TriggerEvent(ProgressType progressType)
             {
-                lock (syncRoot)
+                switch (progressType)
                 {
-                    RunningTaskCountChanged?.Invoke(new Tuple<long, long>(rawData.Item1, rawData.Item2));
+                    case ProgressType.File: FileProgressChanged?.Invoke(new Tuple<long, long>(Read(ref ProgressCurrentFile), Read(ref ProgressTotalFile))); return;
+                    case ProgressType.Folder: FolderProgressChanged?.Invoke(new Tuple<long, long>(Read(ref ProgressCurrentFolder), Read(ref ProgressTotalFolder))); return;
+                    case ProgressType.Size: SizeProgressChanged?.Invoke(new Tuple<long, long>(Read(ref ProgressCurrentSize), Read(ref ProgressTotalSize))); return;
+                    case ProgressType.LocalSearch: LocalSearchStatusChanged?.Invoke(new Tuple<long, long>(Read(ref SearchLocalFoldersActions), Read(ref SearchLocalFilesActions))); return;
+                    case ProgressType.RunningTaskCount: RunningTaskCountChanged?.Invoke(new Tuple<long, long>(Read(ref ThreadCount), Read(ref NotCompleted))); return;
+                    default: MyLogger.LogError($"Unexpected progressType: {progressType}"); break;
                 }
             }
-            void AddThreadCount(long v)
+            //void OnFileProgressChanged(long c,long t)
+            //{
+            //    FileProgressChangedLimiter.Execute(() => FileProgressChanged?.Invoke(new Tuple<long, long>(c, t)));
+            //}
+            //void OnFolderProgressChanged(long c, long t)
+            //{
+            //    FolderProgressChangedLimiter.Execute(() => FolderProgressChanged?.Invoke(new Tuple<long, long>(c, t)));
+            //}
+            //void OnSizeProgressChanged(long c, long t)
+            //{
+            //    SizeProgressChangedLimiter.Execute(() => SizeProgressChanged?.Invoke(new Tuple<long, long>(c, t)));
+            //}
+            //void OnSearchProgressChanged(long c, long t)
+            //{
+            //    SearchProgressChangedLimiter.Execute(() => LocalSearchStatusChanged?.Invoke(new Tuple<long, long>(c, t)));
+            //}
+            //void OnThreadProgressChanged(long c, long t)
+            //{
+            //    ThreadProgressChangedLimiter.Execute(() => RunningTaskCountChanged?.Invoke(new Tuple<long, long>(c, t)));
+            //}
+            //long __ProgressCurrentFile__ = 0, __ProgressTotalFile__ = 0;
+            //long __ProgressCurrentFolder__ = 0, __ProgressTotalFolder__ = 0;
+            //long __ProgressCurrentSize__ = 0, __ProgressTotalSize__ = 0;
+            //long __SearchLocalFoldersActions__ = 0, __SearchLocalFilesActions__ = 0;
+            //long __ThreadCount__ = 0, __NotCompleted__ = 0;
+            //long ProgressCurrentFile
+            //{
+            //    get { return __ProgressCurrentFile__; }
+            //    set { OnFileProgressChanged(__ProgressCurrentFile__ = value, ProgressTotalFile); }
+            //}
+            //long ProgressTotalFile
+            //{
+            //    get { return __ProgressTotalFile__; }
+            //    set { OnFileProgressChanged(ProgressCurrentFile, __ProgressTotalFile__ = value); }
+            //}
+            //long ProgressCurrentFolder
+            //{
+            //    get { return __ProgressCurrentFolder__; }
+            //    set { OnFolderProgressChanged(__ProgressCurrentFolder__ = value, ProgressTotalFolder); }
+            //}
+            //long ProgressTotalFolder
+            //{
+            //    get { return __ProgressTotalFolder__; }
+            //    set { OnFolderProgressChanged(ProgressCurrentFolder, __ProgressTotalFolder__ = value); }
+            //}
+            //long ProgressCurrentSize
+            //{
+            //    get { return __ProgressCurrentSize__; }
+            //    set { OnSizeProgressChanged(__ProgressCurrentSize__ = value, ProgressTotalSize); }
+            //}
+            //long ProgressTotalSize
+            //{
+            //    get { return __ProgressTotalSize__; }
+            //    set { OnSizeProgressChanged(ProgressCurrentSize, __ProgressTotalSize__ = value); }
+            //}
+            //long SearchLocalFoldersActions
+            //{
+            //    get { return __SearchLocalFoldersActions__; }
+            //    set { OnSearchProgressChanged(__SearchLocalFoldersActions__ = value, SearchLocalFilesActions); }
+            //}
+            //long SearchLocalFilesActions
+            //{
+            //    get { return __SearchLocalFilesActions__; }
+            //    set { OnSearchProgressChanged(SearchLocalFoldersActions, __SearchLocalFilesActions__ = value); }
+            //}
+            //long ThreadCount
+            //{
+            //    get { return __ThreadCount__; }
+            //    set { OnThreadProgressChanged(__ThreadCount__ = value, NotCompleted); }
+            //}
+            //long NotCompleted
+            //{
+            //    get { return __NotCompleted__; }
+            //    set { OnThreadProgressChanged(ThreadCount, __NotCompleted__ = value); }
+            //}
+            enum ProgressType { File, Folder, Size, LocalSearch, RunningTaskCount };
+            void MaintainProgress(Tuple<long, long> p, ref long current, ref long total, ProgressType progressType)
             {
-                lock (syncRoot)
+                var cdif = p.Item1 - Exchange(ref current, p.Item1);
+                var tdif = p.Item2 - Exchange(ref total, p.Item2);
+                switch (progressType)
                 {
-                    OnRunningTaskCountChanged(new Tuple<long, long>(ThreadCount += v, NotCompleted));
+                    case ProgressType.File:
+                        Add(ref ProgressCurrentFile, cdif);
+                        Add(ref ProgressTotalFile, tdif);
+                        break;
+                    case ProgressType.Folder:
+                        Add(ref ProgressCurrentFolder, cdif);
+                        Add(ref ProgressTotalFolder, tdif);
+                        break;
+                    case ProgressType.Size:
+                        Add(ref ProgressCurrentSize, cdif);
+                        Add(ref ProgressTotalSize, tdif);
+                        break;
+                    case ProgressType.LocalSearch:
+                        Add(ref SearchLocalFoldersActions, cdif);
+                        Add(ref SearchLocalFilesActions, tdif);
+                        break;
+                    case ProgressType.RunningTaskCount:
+                        Add(ref ThreadCount, cdif);
+                        Add(ref NotCompleted, tdif);
+                        break;
+                    default: MyLogger.LogError($"Unexpected progressType: {progressType}"); break;
                 }
+                TriggerEvent(progressType);
             }
-            void AddNotCompleted(long v)
-            {
-                lock (syncRoot)
-                {
-                    OnRunningTaskCountChanged(new Tuple<long, long>(ThreadCount, NotCompleted += v));
-                }
-            }
-            Tuple<long, long> MaintainProgress(Tuple<long, long> p, ref long current, ref long total, ref long parentCurrent, ref long parentTotal)
-            {
-                lock (syncRoot)
-                {
-                    var cdif = p.Item1 - current; current = p.Item1;
-                    var tdif = p.Item2 - total; total = p.Item2;
-                    return new Tuple<long, long>(parentCurrent += cdif, parentTotal += tdif);
-                }
-            }
-            enum ProgressType { File, Folder, Size,LocalSearch ,RunningTaskCount};
             void RegisterProgressChange(Folder.Uploader uploader, ProgressType progressType)
             {
                 long current = 0, total = 0;
@@ -56,36 +184,31 @@ namespace GoogleDrive2.Local
                     case ProgressType.File:
                         uploader.FileProgressChanged += (p) =>
                         {
-                            this.FileProgressChanged?.Invoke(MaintainProgress(p,
-                                ref current, ref total, ref ProgressCurrentFile, ref ProgressTotalFile));
+                            MaintainProgress(p, ref current, ref total, progressType);
                         };
                         break;
                     case ProgressType.Folder:
                         uploader.FolderProgressChanged += (p) =>
                         {
-                            this.FolderProgressChanged?.Invoke(MaintainProgress(p,
-                                ref current, ref total, ref ProgressCurrentFolder, ref ProgressTotalFolder));
+                            MaintainProgress(p, ref current, ref total, progressType);
                         };
                         break;
                     case ProgressType.Size:
                         uploader.SizeProgressChanged += (p) =>
                         {
-                            this.SizeProgressChanged?.Invoke(MaintainProgress(p,
-                                ref current, ref total, ref ProgressCurrentSize, ref ProgressTotalSize));
+                            MaintainProgress(p, ref current, ref total, progressType);
                         };
                         break;
                     case ProgressType.LocalSearch:
                         uploader.LocalSearchStatusChanged += (p) =>
                         {
-                            this.LocalSearchStatusChanged?.Invoke(MaintainProgress(p,
-                                ref current, ref total, ref SearchLocalFoldersActions, ref SearchLocalFilesActions));
+                            MaintainProgress(p, ref current, ref total, progressType);
                         };
                         break;
                     case ProgressType.RunningTaskCount:
                         uploader.RunningTaskCountChanged += (p) =>
                         {
-                            this.OnRunningTaskCountChanged(MaintainProgress(p,
-                                ref current, ref total, ref ThreadCount, ref NotCompleted));
+                            MaintainProgress(p, ref current, ref total, progressType);
                         };
                         break;
                     default: MyLogger.LogError($"Unexpected progressType: {progressType}"); break;
@@ -100,27 +223,29 @@ namespace GoogleDrive2.Local
                     metadata.modifiedTime = await F.GetTimeModifiedAsync();
                     return this.metadataFunc == null ? metadata : await this.metadataFunc(metadata);
                 });
-                this.FolderProgressChanged?.Invoke(new Tuple<long, long>(this.ProgressCurrentFolder, Interlocked.Increment(ref this.ProgressTotalFolder)));
-                folderCreator.Started += delegate { AddThreadCount(1); };
-                folderCreator.Unstarted += delegate { AddThreadCount(-1); };
+                Increment(ref ProgressTotalFolder); TriggerEvent(ProgressType.Folder);
+                folderCreator.Started += delegate { Increment(ref ThreadCount); TriggerEvent(ProgressType.RunningTaskCount); };
+                folderCreator.Unstarted += delegate { Decrement(ref ThreadCount); TriggerEvent(ProgressType.RunningTaskCount); };
                 folderCreator.Completed += delegate
                 {
-                    this.FolderProgressChanged?.Invoke(new Tuple<long, long>(Interlocked.Increment(ref this.ProgressCurrentFolder), this.ProgressTotalFolder));
+                    Increment(ref ProgressCurrentFolder); TriggerEvent(ProgressType.Folder);
                     this.Debug($"{Constants.Icons.SubtaskCompleted} Folder created");
-                    AddNotCompleted(-1);
+                    Decrement(ref NotCompleted); TriggerEvent(ProgressType.RunningTaskCount);
                 };
-                AddNotCompleted(1);
+                Increment(ref NotCompleted); TriggerEvent(ProgressType.RunningTaskCount);
                 this.Debug($"{Constants.Icons.SubtaskCompleted} Folder \"{F.Name}\" is ready to be created");
                 this.AddSubTask(folderCreator);
                 return Task.CompletedTask;
             }
             void RegisterFolderUploader(Folder.Uploader uploader)
             {
-                uploader.Started += delegate { AddThreadCount(1); };
-                uploader.Unstarted += delegate { AddThreadCount(-1); };
-                uploader.Completed += delegate { AddNotCompleted(-1); };
+                uploader.Started += delegate { Increment(ref ThreadCount); TriggerEvent(ProgressType.RunningTaskCount); };
+                uploader.ExtraThreadWaited += delegate { Decrement(ref ThreadCount); TriggerEvent(ProgressType.RunningTaskCount); };
+                uploader.ExtraThreadReleased += delegate { Increment(ref ThreadCount); TriggerEvent(ProgressType.RunningTaskCount); };
+                uploader.Unstarted += delegate { Decrement(ref ThreadCount); TriggerEvent(ProgressType.RunningTaskCount); };
+                uploader.Completed += delegate { Decrement(ref NotCompleted); TriggerEvent(ProgressType.RunningTaskCount); };
                 uploader.ErrorLogged += (msg) => OnErrorLogged(msg);
-                AddNotCompleted(1);
+                Increment(ref NotCompleted); TriggerEvent(ProgressType.RunningTaskCount);
                 foreach (var type in Enum.GetValues(typeof(ProgressType)))
                 {
                     RegisterProgressChange(uploader, (ProgressType)type);
@@ -130,33 +255,31 @@ namespace GoogleDrive2.Local
             {
                 long currentFile = 0, totalFile = 0, currentSize = 0, totalSize = 0;
                 var fileProgressCall = new Action<Tuple<long, long>>((p) =>
-                   {
-                       this.FileProgressChanged?.Invoke(MaintainProgress(p,
-                           ref currentFile, ref totalFile, ref ProgressCurrentFile, ref ProgressTotalFile));
-                   });
+                {
+                    MaintainProgress(p, ref currentFile, ref totalFile, ProgressType.File);
+                });
                 var sizeProgressCall = new Action<Tuple<long, long>>((p) =>
-                   {
-                       this.SizeProgressChanged?.Invoke(MaintainProgress(p,
-                           ref currentSize, ref totalSize, ref ProgressCurrentSize, ref ProgressTotalSize));
-                   });
-                uploader.Started += delegate { AddThreadCount(1); };
-                uploader.Unstarted += delegate { AddThreadCount(-1); };
+                {
+                    MaintainProgress(p, ref currentSize, ref totalSize, ProgressType.Size);
+                });
+                uploader.Started += delegate { Increment(ref ThreadCount); TriggerEvent(ProgressType.RunningTaskCount); };
+                uploader.Unstarted += delegate { Decrement(ref ThreadCount); TriggerEvent(ProgressType.RunningTaskCount); };
                 uploader.Completed += delegate
                   {
                       fileProgressCall(new Tuple<long, long>(1, 1));
-                      AddNotCompleted(-1);
+                      Decrement(ref NotCompleted); TriggerEvent(ProgressType.RunningTaskCount);
                   };
                 uploader.ErrorLogged += (msg) => OnErrorLogged(msg);
-                AddNotCompleted(1);
+                Increment(ref NotCompleted); TriggerEvent(ProgressType.RunningTaskCount);
                 uploader.ProgressChanged += (p) => { sizeProgressCall(p); };
                 fileProgressCall(new Tuple<long, long>(0, 1));
             }
             private async Task AddUploadSubfoldersTasks()
             {
                 this.Debug($"{Constants.Icons.Magnifier} Searching subfolders...");
-                LocalSearchStatusChanged?.Invoke(new Tuple<long, long>(Interlocked.Increment(ref SearchLocalFoldersActions), this.SearchLocalFilesActions));
+                Increment(ref SearchLocalFoldersActions); TriggerEvent(ProgressType.LocalSearch);
                 var subfolders = await F.GetFoldersAsync();
-                LocalSearchStatusChanged?.Invoke(new Tuple<long, long>(Interlocked.Decrement(ref SearchLocalFoldersActions), this.SearchLocalFilesActions));
+                Decrement(ref SearchLocalFoldersActions); TriggerEvent(ProgressType.LocalSearch);
                 this.Debug($"{Constants.Icons.Magnifier} Found {subfolders.Count} subfolders");
                 foreach (var uploader in subfolders.Select((f) =>
                 {
@@ -178,9 +301,9 @@ namespace GoogleDrive2.Local
             private async Task AddUploadSubfilesTasks()
             {
                 this.Debug($"{Constants.Icons.Magnifier} Searching subfiles...");
-                LocalSearchStatusChanged?.Invoke(new Tuple<long, long>(SearchLocalFoldersActions, Interlocked.Increment(ref this.SearchLocalFilesActions)));
+                Increment(ref SearchLocalFilesActions); TriggerEvent(ProgressType.LocalSearch);
                 var subfiles = await F.GetFilesAsync();
-                LocalSearchStatusChanged?.Invoke(new Tuple<long, long>(SearchLocalFoldersActions, Interlocked.Add(ref this.SearchLocalFilesActions, -1 + subfiles.Count)));
+                Add(ref SearchLocalFilesActions, subfiles.Count - 1); TriggerEvent(ProgressType.LocalSearch);
                 this.Debug($"{Constants.Icons.Magnifier} Found {subfiles.Count} subfiles");
                 foreach (var uploader in await Task.WhenAll(subfiles.Select(async (f) =>
                 {
@@ -192,7 +315,7 @@ namespace GoogleDrive2.Local
                         metadata.parents = new List<string> { cloudId };
                         return metadata;
                     });
-                    LocalSearchStatusChanged?.Invoke(new Tuple<long, long>(SearchLocalFoldersActions, Interlocked.Decrement(ref this.SearchLocalFilesActions)));
+                    Decrement(ref SearchLocalFilesActions); TriggerEvent(ProgressType.LocalSearch);
                     RegisterFileUploader(uploader);
                     await uploader.GetFileSizeFirstAsync();
                     return uploader;

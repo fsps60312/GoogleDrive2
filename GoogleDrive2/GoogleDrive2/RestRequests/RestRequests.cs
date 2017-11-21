@@ -76,7 +76,7 @@ namespace GoogleDrive2.RestRequests
     class RestRequestsLimiter : RestRequestsRetrier
     {
         const int MaxRequestPerSecond = 10;
-        const int MaxConcurrentCount = 10;
+        const int MaxConcurrentCount = 20;
         static DateTime front = DateTime.Now.AddSeconds(-1);
         static Queue<DateTime> history = new Queue<DateTime>();
         public static Libraries.MySemaphore semaphore { get; private set; } = new Libraries.MySemaphore(MaxConcurrentCount);

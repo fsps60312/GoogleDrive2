@@ -10,9 +10,16 @@ namespace GoogleDrive2.Pages.StatisticsPage
     {
         MyGrid GDmain;
         MyScrollView SVmain;
-        MyButton BTNclearMemory;
+        MyButton BTNclearMemory,BTNdeleteAuthorationSaveFile;
         private void RegisterEvents()
         {
+            BTNdeleteAuthorationSaveFile.Clicked += async delegate
+            {
+                BTNdeleteAuthorationSaveFile.IsEnabled = false;
+                await RestRequests.RestRequestsAuthorizer.DriveAuthorizer.DeleteSaveFileAsync();
+                await MyLogger.Alert("Cached Authorization Saved File deleted, you might need to log in your Google Drive again.");
+                BTNdeleteAuthorationSaveFile.IsEnabled = true;
+            };
             BTNclearMemory.Clicked += delegate
               {
                   BTNclearMemory.IsEnabled = false;
@@ -50,6 +57,11 @@ namespace GoogleDrive2.Pages.StatisticsPage
                     {
                         BTNclearMemory = new MyButton { Text = $"{Constants.Icons.Clear} Clear Memory" };
                         GDmain.Children.Add(BTNclearMemory, 1, 0);
+                    }
+                    GDmain.RowDefinitions.Add(new RowDefinition { Height = new GridLength(50, GridUnitType.Absolute) });
+                    {
+                        BTNdeleteAuthorationSaveFile = new MyButton { Text = $"{Constants.Icons.TrashCan} Delete Cached Authorization Data" };
+                        GDmain.Children.Add(BTNdeleteAuthorationSaveFile, 2, 0);
                     }
                     {
                         AddWatcher("Memory Used", "MemoryUsed", new StatusMonitor.MemoryValueConverter());

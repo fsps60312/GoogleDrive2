@@ -13,7 +13,7 @@ namespace GoogleDrive2.Local
     {
         public partial class Uploader : MyTask
         {
-            static Libraries.MyTaskQueue SmallFileUploaderScheduler = new MyTaskQueue(3), LargeFileUploaderScheduler = new MyTaskQueue(1);
+            static Libraries.MyTaskQueue SmallFileUploaderScheduler = new MyTaskQueue(7), LargeFileUploaderScheduler = new MyTaskQueue(2);
             public static event Libraries.Events.MyEventHandler<long> QueuedSmallFileCountChanged, QueuedLargeFileCountChanged, RunningSmallFileUploadingCountChanged, RunningLargeFileUploadingCountChanged;
             static Uploader()
             {

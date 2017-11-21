@@ -8,6 +8,7 @@ namespace GoogleDrive2.Libraries
 {
     abstract class MyWrappedTasks:MyTask
     {
+        public event Libraries.Events.MyEventHandler<object> ExtraThreadWaited, ExtraThreadReleased;
         //protected event Libraries.Events.MyEventHandler<object> SubtaskStarted, SubtaskUnstarted;
         List<MyTask> subtasks = new List<MyTask>();
         long subtasksRunningCount = 0, subtasksCompletedCount = 0;
@@ -95,22 +96,29 @@ namespace GoogleDrive2.Libraries
             return Task.CompletedTask;
         }
         Libraries.MySemaphore semaphoreAddSubtasks = new MySemaphore(1);
+        int threadCount = 0;
         protected override async Task StartMainTaskAsync()
         {
-            var semaphore = GetSemaphore();
+            this.Debug("+++++");
             StartSubtasks();
             await semaphoreAddSubtasks.WaitAsync();
             var allSubtaskAdded = await AddSubtasksIfNot();
             semaphoreAddSubtasks.Release();
+            bool isExtraThread = false;
             lock (syncRootChangeRunningState)
             {
                 DecreaseRunningCount();
+                if (threadCount++ > 0) isExtraThread = true;
+                if (isExtraThread) ExtraThreadWaited?.Invoke(this);
             }
-            await semaphore.WaitAsync();
+            await GetSemaphore().WaitAsync();// Paused might be misjudged if not all thread wait here
             lock (syncRootChangeRunningState)
             {
+                if (isExtraThread) ExtraThreadReleased?.Invoke(this);
+                threadCount--;
                 if (allSubtaskAdded && subtasksCompletedCount == subtasks.Count&&!IsCompleted) OnCompleted();
             }
+            this.Debug("-----");
         }
     }
 }
