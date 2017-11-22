@@ -28,8 +28,10 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
             }
             private static double GetMax(List<double>s)
             {
+                if (s.Count == 0) return double.Epsilon;
                 s.Sort();
-                return s[(s.Count - 1) * 4 / 5] * 5 / 4;
+                var c = Math.Max(1, s.Count / 5);
+                return Math.Max(double.Epsilon, s/*.GetRange(s.Count - c, c)*/.Average() * 2.5);
             }
             public static Stream GetImageStream(int width, int height, List<Tuple<double, double>> points)
             {
