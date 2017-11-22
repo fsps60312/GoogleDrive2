@@ -156,8 +156,8 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
         {
             get
             {
-                RegisterBinding(new List<string> { "FileProgress", "FolderProgress", "SizeProgress" }, "Progress");
-                const double createFileCost = 1024, createFolderCost = 1024;
+                RegisterBinding(new List<string> { "CurrentFile", "TotalFile", "CurrentFolder", "TotalFolder", "CurrentSize", "TotalSize" }, "Progress");
+                const double createFileCost = 1024 * 1024, createFolderCost = 1024 * 1024;
                 if (searchStatus.Item1 == 0 && searchStatus.Item2 == 0)
                 {
                     var ans = (CurrentSize + CurrentFile * createFileCost + CurrentFolder * createFolderCost) / (TotalSize + TotalFile * createFileCost + TotalFolder * createFolderCost);

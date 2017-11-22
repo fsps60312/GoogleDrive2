@@ -26,6 +26,11 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
             {
                 WriteAsync(stream, new byte[2] { (byte)(v & 0xFF), (byte)((v >> 8) & 0xFF) });
             }
+            private static double GetMax(List<double>s)
+            {
+                s.Sort();
+                return s[(s.Count - 1) * 4 / 5] * 5 / 4;
+            }
             public static Stream GetImageStream(int width, int height, List<Tuple<double, double>> points)
             {
                 //width = 100;
@@ -63,8 +68,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
                 // Start of the Pixel Array (the bitmap Data)
                 List<Tuple<int, double>> hList = new List<Tuple<int, double>>();
                 {
-                    double max = double.Epsilon;
-                    foreach (var p in points) max = Math.Max(max, p.Item2);
+                    double max = GetMax(points.Select(p => p.Item2).ToList());
                     int count = 0, now = 0;
                     double sum = 0;
                     for (int i = 0; ; i++)

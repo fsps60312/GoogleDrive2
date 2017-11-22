@@ -46,6 +46,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
                 else Speed = $"{ByteCountToString((long)v, 3)}/s";
                 lock (SpeedHistory)
                 {
+                    while (SpeedHistory.Count > 0 && SpeedHistory.Last().Item1 > Progress) SpeedHistory.RemoveAt(SpeedHistory.Count - 1);
                     SpeedHistory.Add(new Tuple<double, double>(Progress, v));
                 }
                 //MyLogger.Debug(Progress.ToString());

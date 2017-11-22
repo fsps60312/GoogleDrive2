@@ -97,7 +97,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             //PBprogress.SetBinding(MyProgressBar.ProgressProperty, "Progress");
             PBfileProgress.SetBinding(MyProgressBar.ProgressProperty, "FileProgress");
             PBfolderProgress.SetBinding(MyProgressBar.ProgressProperty, "FolderProgress");
-            PBsizeProgress.SetBinding(MyProgressBar.ProgressProperty, "SizeProgress");
+            PBsizeProgress.SetBinding(MyProgressBar.ProgressProperty, "Progress");
             IMGspeedGraph.SetBinding(MyImage.SourceProperty, "SpeedGraph");
             BTNpause.SetBinding(MyButton.TextProperty, "PauseButtonText");
             BTNpause.SetBinding(MyButton.CommandProperty, "PauseClicked");
