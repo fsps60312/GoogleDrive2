@@ -78,7 +78,7 @@ namespace GoogleDrive2.Libraries
                 subtask.Started += delegate { IncreaseRunningCount(); };
                 subtask.Unstarted += delegate { DecreaseRunningCount(); };
                 subtasks.Add(subtask);
-                if (!IsPausing) StartSubtask(subtask);
+                if (IsRunningRequest) StartSubtask(subtask);
             }
         }
         protected abstract Task<bool> AddSubtasksIfNot();
@@ -99,26 +99,26 @@ namespace GoogleDrive2.Libraries
         int threadCount = 0;
         protected override async Task StartMainTaskAsync()
         {
-            this.Debug("+++++");
             StartSubtasks();
             await semaphoreAddSubtasks.WaitAsync();
             var allSubtaskAdded = await AddSubtasksIfNot();
             semaphoreAddSubtasks.Release();
             bool isExtraThread = false;
+            Libraries.MySemaphore semaphore;
             lock (syncRootChangeRunningState)
             {
+                semaphore = GetSemaphore();
                 DecreaseRunningCount();
                 if (threadCount++ > 0) isExtraThread = true;
                 if (isExtraThread) ExtraThreadWaited?.Invoke(this);
             }
-            await GetSemaphore().WaitAsync();// Paused might be misjudged if not all thread wait here
+            await semaphore.WaitAsync();// Paused might be misjudged if not all thread wait here
             lock (syncRootChangeRunningState)
             {
                 if (isExtraThread) ExtraThreadReleased?.Invoke(this);
                 threadCount--;
                 if (allSubtaskAdded && subtasksCompletedCount == subtasks.Count&&!IsCompleted) OnCompleted();
             }
-            this.Debug("-----");
         }
     }
 }

@@ -22,21 +22,21 @@ namespace GoogleDrive2.Local
             int MainTaskProgress = 0;
             protected override async Task<bool> AddSubtasksIfNot()
             {
-                if (IsPausing) return false;
+                if (ConfirmPauseSignal()) return false;
                 if (0 == MainTaskProgress)
                 {
                     this.Debug($"{Constants.Icons.Progress} Step 1/3...");
                     await AddCreateFolderTask();
                     Interlocked.Increment(ref MainTaskProgress);
                 }
-                if (IsPausing) return false;
+                if (ConfirmPauseSignal()) return false;
                 if (1 == MainTaskProgress)
                 {
                     this.Debug($"{Constants.Icons.Progress} Step 2/3...");
                     await AddUploadSubfilesTasks();
                     Interlocked.Increment(ref MainTaskProgress);
                 }
-                if (IsPausing) return false;
+                if (ConfirmPauseSignal()) return false;
                 if (2 == MainTaskProgress)
                 {
                     this.Debug($"{Constants.Icons.Progress} Step 3/3...");
@@ -47,7 +47,7 @@ namespace GoogleDrive2.Local
             }
             static volatile int InstanceCount = 0;
             public static event Libraries.Events.MyEventHandler<int> InstanceCountChanged;
-            static void AddInstanceCount(int value) { System.Threading.Interlocked.Add(ref InstanceCount, value); InstanceCountChanged?.Invoke(InstanceCount); }
+            static void AddInstanceCount(int value) { Interlocked.Add(ref InstanceCount, value); InstanceCountChanged?.Invoke(InstanceCount); }
             ~Uploader() { AddInstanceCount(-1); }
             public Uploader(Uploader parent, Folder folder)
             {

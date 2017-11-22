@@ -83,11 +83,11 @@ namespace GoogleDrive2.Api.Files
             }
             protected override async Task StartMainTaskAsync()
             {
-                if (IsPausing || metadataForMainTask == null) return;
+                if (ConfirmPauseSignal() || metadataForMainTask == null) return;
                 AddRunningCount(1);
                 try
                 {
-                    if (IsPausing) return;
+                    if (ConfirmPauseSignal()) return;
                     var request = new MultipartUpload(metadataForMainTask, new byte[0]);
                     using (var response = await request.GetHttpResponseAsync())
                     {

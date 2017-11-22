@@ -49,26 +49,43 @@ namespace GoogleDrive2.Libraries
         {
             lock (syncRootChangeRunningState)
             {
-                if (!IsRunning || IsPausing) return;
+                if (IsPausing) return;
                 IsPausing = true;
+                if (!IsRunning) return;
                 Pausing?.Invoke(this);
                 RemoveFromTaskQueueRequested?.Invoke(this);
             }
         }
         static MyTaskQueue unlimitedTaskQueue = new MyTaskQueue(long.MaxValue);
         protected MyTaskQueue TaskQueue { get; set; } = unlimitedTaskQueue;
-        public bool IsPausing { get; protected set; } = false;
+        protected bool ConfirmPauseSignal()
+        {
+            lock(syncRootChangeRunningState)
+            {
+                if(IsPausing)
+                {
+                    PausingSignalReceived = true;
+                    //this.Debug("Pausing request received");
+                    return true;
+                }
+                else return false;
+            }
+        }
+        private bool PausingSignalReceived = false;//leave for further use
+        private bool IsPausing { get; set; } = false;
+        public bool IsRunningRequest { get { return !IsPausing; } }
         public bool IsRunning { get; protected set; } = false;
         public bool IsCompleted { get; protected set; } = false;
         public virtual void CancelPauseRequests()
         {
             lock (syncRootChangeRunningState)
             {
-                Debug("Canceling pause requests...");
+                //Debug("Canceling pause requests...");
+                PausingSignalReceived = false;
                 if (IsPausing)
                 {
                     IsPausing = false;
-                    Debug("Pause request Canceled");
+                    //Debug("Pause request Canceled");
                 }
             }
         }
@@ -82,7 +99,11 @@ namespace GoogleDrive2.Libraries
             {
                 lock (syncRootChangeRunningState)
                 {
-                    if (IsCompleted || IsPausing) return;//must be the first
+                    if (IsCompleted || IsPausing)
+                    {
+                        //Debug($"{IsCompleted} {IsPausing}");
+                        return;//must be the first
+                    }
                     IsRunning = true;
                     Started?.Invoke(this);
                 }

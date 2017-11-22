@@ -318,8 +318,9 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             up.MessageAppended += (msg) => OnMessageAppended(msg);
             up.Pausing += delegate { OnPausing(); };
             up.Started += delegate { OnStarted(); };
+            const double updateInterval = 1.0 / 60;
             {
-                var limiter = new Libraries.FrequentExecutionLimiter(0.2);
+                var limiter = new Libraries.FrequentExecutionLimiter(updateInterval);
                 up.RunningTaskCountChanged += (ts) => limiter.Execute(() =>
                 {
                     if (ts == new Tuple<long, long>(0, 0)) TaskStatus = null;
@@ -330,19 +331,19 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
                 });
             }
             {
-                var limiter = new Libraries.FrequentExecutionLimiter(0.2);
+                var limiter = new Libraries.FrequentExecutionLimiter(updateInterval);
                 up.FileProgressChanged += (p) => limiter.Execute(() => UpdateProgress(p, ProgressType.File));
             }
             {
-                var limiter = new Libraries.FrequentExecutionLimiter(0.2);
+                var limiter = new Libraries.FrequentExecutionLimiter(updateInterval);
                 up.FolderProgressChanged += (p) => limiter.Execute(() => UpdateProgress(p, ProgressType.Folder));
             }
             {
-                var limiter = new Libraries.FrequentExecutionLimiter(0.2);
+                var limiter = new Libraries.FrequentExecutionLimiter(updateInterval);
                 up.SizeProgressChanged += (p) => limiter.Execute(() => UpdateProgress(p, ProgressType.Size));
             }
             {
-                var limiter = new Libraries.FrequentExecutionLimiter(0.2);
+                var limiter = new Libraries.FrequentExecutionLimiter(updateInterval);
                 up.LocalSearchStatusChanged += (p) => limiter.Execute(() => UpdateProgress(p, ProgressType.LocalSearch));
             }
             this.PropertyChanged += (o, p) =>
@@ -352,9 +353,9 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             };
             PauseClicked = new Xamarin.Forms.Command(async () =>
             {
-                this.OnMessageAppended($"{up.IsPausing}");
-                if (up.IsPausing)await up.StartAsync();
-                else up.Pause();
+                //this.OnMessageAppended($"{up.IsRunningRequest}");
+                if (up.IsRunningRequest) up.Pause();
+                else await up.StartAsync();
             });
         }
     }

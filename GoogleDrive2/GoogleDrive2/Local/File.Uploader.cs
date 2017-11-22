@@ -74,7 +74,7 @@ namespace GoogleDrive2.Local
             }
             protected override async Task StartMainTaskAsync()
             {
-                if (IsPausing || metadataForMainTask == null) return;
+                if (ConfirmPauseSignal() || metadataForMainTask == null) return;
                 AddRunningCount(1);
                 try
                 {

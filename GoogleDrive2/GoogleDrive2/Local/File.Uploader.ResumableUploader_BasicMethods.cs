@@ -25,7 +25,7 @@ namespace GoogleDrive2.Local
                 public async Task<bool> CreateResumableUploadAsync(Api.Files.FullCloudFileMetadata metadata)
                 {
                     //await MyLogger.Alert($"file size: {totalSize}");
-                    if (IsPausing) return false;
+                    if (ConfirmPauseSignal()) return false;
                     var request = new Api.Files.ResumableCreate(metadata, TotalSize, null);
                     using (var response = await request.GetHttpResponseAsync())
                     {
@@ -119,7 +119,7 @@ namespace GoogleDrive2.Local
                                         }
                                 }
                             }
-                            if (IsPausing) return;
+                            if (ConfirmPauseSignal()) return;
                         }
                     }
                     catch(Exception error)

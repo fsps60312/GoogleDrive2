@@ -11,7 +11,7 @@ namespace GoogleDrive2.Local
                 protected override async Task StartUploadAsync(Api.Files.FullCloudFileMetadata metadata)
                 {
                     MyLogger.Assert(BytesUploaded == 0 && TotalSize <= int.MaxValue);
-                    if (IsPausing) return;
+                    if (ConfirmPauseSignal()) return;
                     var request = new Api.Files.MultipartUpload(metadata, await F.ReadBytesAsync((int)TotalSize));
                     F.CloseReadIfNot();
                     using (var response = await request.GetHttpResponseAsync())

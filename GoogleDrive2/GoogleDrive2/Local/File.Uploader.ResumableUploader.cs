@@ -23,7 +23,7 @@ namespace GoogleDrive2.Local
                 }
                 protected override async Task StartUploadAsync(Api.Files.FullCloudFileMetadata metadata)
                 {
-                    if (IsPausing) return;
+                    if (ConfirmPauseSignal()) return;
                     if (resumableUri == null)
                     {
                         this.Debug($"{Constants.Icons.Hourglass} Creating upload...");
@@ -34,7 +34,7 @@ namespace GoogleDrive2.Local
                         }
                         else this.Debug($"{Constants.Icons.Hourglass} Upload created, uploading...");
                     }
-                    if (IsPausing) return;
+                    if (ConfirmPauseSignal()) return;
                     await DoUpload();
                 }
                 public ResumableUploader(File file) : base(file) { }

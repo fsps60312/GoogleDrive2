@@ -39,7 +39,8 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
         }
         protected NetworkStatusWithSpeedBarViewModel():base()
         {
-            speedMaintainer.SpeedUpdated += (v) =>
+            var frequencyLimiter = new Libraries.FrequentExecutionLimiter(0.5);
+            speedMaintainer.SpeedUpdated += (v) => frequencyLimiter.Execute(() =>
             {
                 if (v == 0) Speed = null;
                 else Speed = $"{ByteCountToString((long)v, 3)}/s";
@@ -65,7 +66,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
                     }
                     return ImageProcessor.GetImageStream(width, height, points);
                 }));
-            };
+            });
         }
     }
     partial class PausableNetworkStatusBarViewModel : NetworkStatusBarViewModel
