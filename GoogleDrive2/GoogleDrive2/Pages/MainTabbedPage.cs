@@ -16,6 +16,7 @@ namespace GoogleDrive2.Pages
             this.Children.Add(new HttpStatusPage.HttpStatusPage());
             this.Children.Add(new StatisticsPage.StatisticsPage());
             this.Children.Add(new TestPage.TestTabbedPage());
+            this.Children.Add(new AboutPage.AboutPage());
         }
     }
 }

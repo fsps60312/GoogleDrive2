@@ -79,6 +79,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyTabbedPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyUnwipableView.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MyControls\MyWebView.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\AboutPage\AboutPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\FileBrowsePage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\MainTabbedPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\HttpStatusPage\HttpStatusBar.cs" />
