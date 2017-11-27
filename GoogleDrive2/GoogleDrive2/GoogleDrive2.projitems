@@ -95,6 +95,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Pages\StatisticsPage\StatisticsPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\StatisticsPage\StatisticsPage.StatusMonitor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\ButtonsPage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\CancellationTokenTestPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\ColorTestPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\FilesListRequestPage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Pages\TestPage\GetAuthorizationCodePage.cs" />

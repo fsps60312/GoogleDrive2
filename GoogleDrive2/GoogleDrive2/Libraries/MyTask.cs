@@ -11,6 +11,8 @@ namespace GoogleDrive2.Libraries
     public abstract partial class MyTask : MyLoggerClass, MyQueuedTask
     {
         protected object syncRootChangeRunningState = new object();
+        private CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
+        public CancellationToken CancellationToken { get { return CancellationTokenSource.Token; } }
         public event MyEventHandler<object> Started, Unstarted, Pausing,Completed;
         public event Libraries.Events.MyEventHandler<string> MessageAppended;
         protected void OnMessageAppended(string msg) { MessageAppended?.Invoke(msg); }
@@ -52,6 +54,7 @@ namespace GoogleDrive2.Libraries
                 if (IsPausing) return;
                 IsPausing = true;
                 if (!IsRunning) return;
+                this.CancellationTokenSource.Cancel();
                 Pausing?.Invoke(this);
                 RemoveFromTaskQueueRequested?.Invoke(this);
             }
@@ -81,7 +84,7 @@ namespace GoogleDrive2.Libraries
             lock (syncRootChangeRunningState)
             {
                 //Debug("Canceling pause requests...");
-                PausingSignalReceived = false;
+                this.CancellationTokenSource = new CancellationTokenSource();
                 if (IsPausing)
                 {
                     IsPausing = false;
@@ -93,6 +96,7 @@ namespace GoogleDrive2.Libraries
         protected abstract Task StartMainTaskAsync();
         public async Task StartAsync()
         {
+            //Debug("StartAsync()");
             CancelPauseRequests();
             if (semaphoreStartAsync != null) await semaphoreStartAsync.WaitAsync();
             try
@@ -109,6 +113,7 @@ namespace GoogleDrive2.Libraries
                 }
                 try
                 {
+                    //index_restart:;
                     await PrepareBeforeStartAsync();
                     TaskQueue.AddToQueueAndStart(this);
                     Queued?.Invoke(this);
@@ -116,11 +121,16 @@ namespace GoogleDrive2.Libraries
                     Unqueued?.Invoke(this);
                     await StartMainTaskAsync();//OnCompleted() might be called here
                                                //Now IsCompleted is determined
+                    //lock(syncRootChangeRunningState)
+                    //{
+                    //    if (!IsCompleted && PausingSignalReceived && !IsPausing) goto index_restart;
+                    //}
                 }
                 finally
                 {
                     lock (syncRootChangeRunningState)
                     {
+                        PausingSignalReceived = false;
                         //IsPausing = false;
                         IsRunning = false;
                         NotifySchedulerCompleted?.Invoke(this);

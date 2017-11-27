@@ -44,7 +44,9 @@ namespace GoogleDrive2.Libraries
         }
         async void StartSubtask(MyTask subtask)
         {
+            IncreaseRunningCount();
             await subtask.StartAsync();
+            DecreaseRunningCount();
         }
         void StartSubtasks()
         {
@@ -75,8 +77,8 @@ namespace GoogleDrive2.Libraries
                 {
                     lock (syncRootChangeRunningState) ++subtasksCompletedCount;
                 };
-                subtask.Started += delegate { IncreaseRunningCount(); };
-                subtask.Unstarted += delegate { DecreaseRunningCount(); };
+                //subtask.Started += delegate { IncreaseRunningCount(); };
+                //subtask.Unstarted += delegate { DecreaseRunningCount(); };
                 subtasks.Add(subtask);
                 if (IsRunningRequest) StartSubtask(subtask);
             }

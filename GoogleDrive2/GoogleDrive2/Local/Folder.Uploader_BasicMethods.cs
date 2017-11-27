@@ -286,7 +286,7 @@ namespace GoogleDrive2.Local
                     var uploader = new Folder.Uploader(this, f);
                     uploader.folderCreator.SetFolderMetadata(async (metadata) =>
                     {
-                        var cloudId = await folderCreator.GetCloudId();
+                        var cloudId = await folderCreator.GetCloudId(uploader.folderCreator.CancellationToken);
                         if (cloudId == null) return null;
                         metadata.parents = new List<string> { cloudId };
                         return metadata;
@@ -310,7 +310,7 @@ namespace GoogleDrive2.Local
                     var uploader = await f.GetUploader();
                     uploader.SetFileMetadata(async (metadata) =>
                     {
-                        var cloudId = await folderCreator.GetCloudId();
+                        var cloudId = await folderCreator.GetCloudId(uploader.CancellationToken);
                         if (cloudId == null) return null;
                         metadata.parents = new List<string> { cloudId };
                         return metadata;

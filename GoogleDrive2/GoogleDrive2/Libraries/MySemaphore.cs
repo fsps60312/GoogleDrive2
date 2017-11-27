@@ -22,6 +22,19 @@ namespace GoogleDrive2.Libraries
             parentSemaphore = _parentSemaphore;
             SetThreadLimit(initialCount);
         }
+        public async Task<bool> WaitAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await mainSemaphore.WaitAsync(cancellationToken);
+                if (parentSemaphore != null) await parentSemaphore.WaitAsync(cancellationToken);
+                return true;
+            }
+            catch(OperationCanceledException)
+            {
+                return false;
+            }
+        }
         public async Task WaitAsync()
         {
             await mainSemaphore.WaitAsync();

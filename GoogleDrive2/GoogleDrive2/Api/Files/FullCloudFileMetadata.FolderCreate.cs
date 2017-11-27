@@ -11,21 +11,26 @@ namespace GoogleDrive2.Api.Files
         {
             public event Libraries.Events.MyEventHandler<string> FolderCreateCompleted;
             private string ResultCloudId = null;
-            public async Task<string> GetCloudId()
+            public async Task<string> GetCloudId(System.Threading.CancellationToken cancellationToken)
             {
-                Libraries.MySemaphore semaphore = new Libraries.MySemaphore(0);
+                Libraries.MySemaphore semaphore;
                 lock (syncRootChangeRunningState)
                 {
-                    if (!IsRunning) return ResultCloudId;
+                    if (IsCompleted) return ResultCloudId;
+                    //if (!IsRunning) return ResultCloudId;//This line cause file.uploader behave like start & pause immediately
+                    semaphore = new Libraries.MySemaphore(0);
                     Libraries.Events.MyEventHandler<object> unstartedEventHandler = null;
                     unstartedEventHandler = new Libraries.Events.MyEventHandler<object>((sender) =>
                     {
-                        semaphore.Release();
-                        Unstarted -= unstartedEventHandler;
+                        lock (syncRootChangeRunningState)
+                        {
+                            semaphore.Release();
+                            Unstarted -= unstartedEventHandler;
+                        }
                     });
                     Unstarted += unstartedEventHandler;
                 }
-                await semaphore.WaitAsync();
+                await semaphore.WaitAsync(cancellationToken);//No matter if the semaphore is cancelled
                 return ResultCloudId;
             }
             private void OnFolderCreateCompleted(string id)

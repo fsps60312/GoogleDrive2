@@ -18,6 +18,7 @@ namespace GoogleDrive2.Pages.TestPage
         public TestTabbedPage()
         {
             this.Title = "Test Page";
+            this.Children.Add(new CancellationTokenTestPage());
             this.Children.Add(new ColorTestPage());
             this.Children.Add(new SearchFileListPage());
             this.Children.Add(new TouchEventImplementPage());
