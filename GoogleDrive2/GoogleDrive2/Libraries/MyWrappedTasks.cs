@@ -105,20 +105,17 @@ namespace GoogleDrive2.Libraries
             await semaphoreAddSubtasks.WaitAsync();
             var allSubtaskAdded = await AddSubtasksIfNot();
             semaphoreAddSubtasks.Release();
-            bool isExtraThread = false;
             Libraries.MySemaphore semaphore;
             lock (syncRootChangeRunningState)
             {
                 semaphore = GetSemaphore();
                 DecreaseRunningCount();
-                if (threadCount++ > 0) isExtraThread = true;
-                if (isExtraThread) ExtraThreadWaited?.Invoke(this);
+                if (threadCount++ > 0)ExtraThreadWaited?.Invoke(this);
             }
             await semaphore.WaitAsync();// Paused might be misjudged if not all thread wait here
             lock (syncRootChangeRunningState)
             {
-                if (isExtraThread) ExtraThreadReleased?.Invoke(this);
-                threadCount--;
+                if (--threadCount > 0) ExtraThreadReleased?.Invoke(this);
                 if (allSubtaskAdded && subtasksCompletedCount == subtasks.Count&&!IsCompleted) OnCompleted();
             }
         }
