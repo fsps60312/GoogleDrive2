@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace GoogleDrive2.Pages.NetworkStatusPage.FileUploadPage
 {
-    class FileUploadBarsList:MyControls.BarsListPanel.BarsListPanel<FileUploadBar,FileUploadBarViewModel>
+    class FileUploadBarsList : MyControls.BarsListPanel.BarsListPanel<FileUploadBar, FileUploadBarViewModel>
     {
         public FileUploadBarsList()
         {
@@ -15,10 +15,10 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FileUploadPage
               };
         }
     }
-    class FileUploadBar:MyControls.BarsListPanel.DataBindedGrid<FileUploadBarViewModel>
+    class FileUploadBar : MyControls.BarsListPanel.DataBindedGrid<FileUploadBarViewModel>
     {
-        MyLabel LBicon, LBname, LBuploaded,LBtotal,LBpercentage,LBspeed,LBtimeRemaining,LBtimePassed;
-        MyButton BTNinfo,BTNpause;
+        MyLabel LBicon, LBname, LBuploaded, LBtotal, LBpercentage, LBspeed, LBtimeRemaining, LBtimePassed;
+        MyButton BTNinfo, BTNpause;
         MyImage IMGspeedGraph;
         MyProgressBar PBprogress;
         private void SetBindings()
@@ -86,7 +86,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FileUploadPage
                 LBtimePassed = new MyLabel();
                 BTNinfo = new MyButton();
                 PBprogress = new MyProgressBar();
-                IMGspeedGraph = new MyImage {Aspect=Aspect.Fill };
+                IMGspeedGraph = new MyImage { Aspect = Aspect.Fill };
                 BTNpause = new MyButton();
             }
         }
@@ -97,7 +97,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FileUploadPage
             SetBindings();
         }
     }
-    class FileUploadPage:MyContentPage
+    class FileUploadPage : MyContentPage
     {
         public FileUploadPage()
         {

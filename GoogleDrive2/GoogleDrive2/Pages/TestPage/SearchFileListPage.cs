@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 
 namespace GoogleDrive2.Pages.TestPage
 {
-    class SearchFileListPage:MyContentPage
+    class SearchFileListPage : MyContentPage
     {
         MyGrid GDmain;
         MyEntry ETq;

@@ -122,7 +122,7 @@ namespace GoogleDrive2.Local
                             if (ConfirmPauseSignal()) return;
                         }
                     }
-                    catch(Exception error)
+                    catch (Exception error)
                     {
                         this.LogError($"Error in async Task<bool> StartResumableUploadAsync(long position):\r\n{error}");
                         return;

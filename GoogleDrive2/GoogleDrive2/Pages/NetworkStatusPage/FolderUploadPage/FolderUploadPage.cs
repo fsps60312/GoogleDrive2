@@ -6,7 +6,7 @@ using Xamarin.Forms;
 
 namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
 {
-    class FolderUploadBarsList:MyControls.BarsListPanel.BarsListPanel<FolderUploadBar,FolderUploadBarViewModel>
+    class FolderUploadBarsList : MyControls.BarsListPanel.BarsListPanel<FolderUploadBar, FolderUploadBarViewModel>
     {
         void Fold(FolderUploadBarViewModel fubv)
         {
@@ -24,7 +24,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             this.DoAtomic(() =>
             {
                 var position = Treap.QueryPosition(TreapNode[fubv]);
-                foreach(var child in Children[fubv])
+                foreach (var child in Children[fubv])
                 {
                     TreapNode[child] = this.Insert(child, ++position);
                 }
@@ -68,12 +68,12 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             MyGrid.SetRowSpan(view, Math.Max(1, grid.RowDefinitions.Count));
         }
     }
-    class FolderUploadBar:MyControls.BarsListPanel.DataBindedGrid<FolderUploadBarViewModel>
+    class FolderUploadBar : MyControls.BarsListPanel.DataBindedGrid<FolderUploadBarViewModel>
     {
-        MyLabel LBname, LBpercentage,LBcurrentSize,LBtotalSize,LBfileStatus,LBcurrentFolder,LBfolderStatus, LBspeed, LBtimeRemaining, LBcurrentFile,LBtaskStatus;
+        MyLabel LBname, LBpercentage, LBcurrentSize, LBtotalSize, LBfileStatus, LBcurrentFolder, LBfolderStatus, LBspeed, LBtimeRemaining, LBcurrentFile, LBtaskStatus;
         MyButton BTNicon, BTNinfo, BTNpause;
         MyImage IMGspeedGraph;
-        MyProgressBar PBsizeProgress,PBfileProgress,PBfolderProgress;
+        MyProgressBar PBsizeProgress, PBfileProgress, PBfolderProgress;
         private void SetBindings()
         {
             this.SetBinding(FolderUploadBar.MarginProperty, "Margin");
@@ -88,7 +88,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             LBtotalSize.SetBinding(MyLabel.TextProperty, "TotalSize", BindingMode.Default, new FolderUploadBarViewModel.SizeTextValueConverter());
             LBfileStatus.SetBinding(MyLabel.TextProperty, "FileStatus");
             LBfolderStatus.SetBinding(MyLabel.TextProperty, "FolderStatus");
-            LBpercentage.SetBinding(MyLabel.TextProperty, "Progress",BindingMode.Default,new FolderUploadBarViewModel.ProgressTextValueConverter());
+            LBpercentage.SetBinding(MyLabel.TextProperty, "Progress", BindingMode.Default, new FolderUploadBarViewModel.ProgressTextValueConverter());
             LBspeed.SetBinding(MyLabel.TextProperty, "Speed");
             LBtimeRemaining.SetBinding(MyLabel.TextProperty, "TimeRemaining");
             BTNinfo.SetBinding(MyButton.TextProperty, "Info");
@@ -176,7 +176,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             SetBindings();
         }
     }
-    class FolderUploadPage:MyContentPage
+    class FolderUploadPage : MyContentPage
     {
         public FolderUploadPage()
         {

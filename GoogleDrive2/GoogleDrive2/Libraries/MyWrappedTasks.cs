@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace GoogleDrive2.Libraries
 {
-    abstract class MyWrappedTasks:MyTask
+    abstract class MyWrappedTasks : MyTask
     {
         public event Libraries.Events.MyEventHandler<object> ExtraThreadWaited, ExtraThreadReleased;
         //protected event Libraries.Events.MyEventHandler<object> SubtaskStarted, SubtaskUnstarted;
@@ -17,7 +17,7 @@ namespace GoogleDrive2.Libraries
         {
             lock (syncRootChangeRunningState)
             {
-                if(--subtasksRunningCount==0)
+                if (--subtasksRunningCount == 0)
                 {
                     SemaphoreReleased?.Invoke();
                 }
@@ -25,7 +25,7 @@ namespace GoogleDrive2.Libraries
         }
         MySemaphore GetSemaphore()
         {
-            lock(syncRootChangeRunningState)
+            lock (syncRootChangeRunningState)
             {
                 var ans = new MySemaphore(0);
                 Events.EmptyEventHandler semaphoreReleasedEventHandler = null;
@@ -110,13 +110,13 @@ namespace GoogleDrive2.Libraries
             {
                 semaphore = GetSemaphore();
                 DecreaseRunningCount();
-                if (threadCount++ > 0)ExtraThreadWaited?.Invoke(this);
+                if (threadCount++ > 0) ExtraThreadWaited?.Invoke(this);
             }
             await semaphore.WaitAsync();// Paused might be misjudged if not all thread wait here
             lock (syncRootChangeRunningState)
             {
                 if (--threadCount > 0) ExtraThreadReleased?.Invoke(this);
-                if (allSubtaskAdded && subtasksCompletedCount == subtasks.Count&&!IsCompleted) OnCompleted();
+                if (allSubtaskAdded && subtasksCompletedCount == subtasks.Count && !IsCompleted) OnCompleted();
             }
         }
     }

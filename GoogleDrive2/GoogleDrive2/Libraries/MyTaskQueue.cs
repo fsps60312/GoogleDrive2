@@ -4,10 +4,10 @@ using System.Text;
 
 namespace GoogleDrive2.Libraries
 {
-    public interface MyQueuedTask:IComparable
+    public interface MyQueuedTask : IComparable
     {
         void SchedulerReleaseSemaphore();
-        event Events.MyEventHandler<object> NotifySchedulerCompleted,RemoveFromTaskQueueRequested;
+        event Events.MyEventHandler<object> NotifySchedulerCompleted, RemoveFromTaskQueueRequested;
     }
     public class MyTaskQueuePrototype
     {

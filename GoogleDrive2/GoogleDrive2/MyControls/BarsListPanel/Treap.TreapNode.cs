@@ -17,7 +17,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             ~TreapNodePrototype() { TreapNodeStatistics.AddInstanceCount(-1); }
             public TreapNodePrototype() { TreapNodeStatistics.AddInstanceCount(1); }
         }
-        private class TreapNode:TreapNodePrototype
+        private class TreapNode : TreapNodePrototype
         {
             //private TreapNode<DataType1> l
             //{
@@ -186,12 +186,12 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             }
             public static void Split(TreapNode o, out TreapNode a, out TreapNode b, int position)
             {
-                if(position<0)
+                if (position < 0)
                 {
                     MyLogger.LogError($"TreapNode: position = {position}");
                     position = 0;
                 }
-                if(position>GetSize(o))
+                if (position > GetSize(o))
                 {
                     MyLogger.LogError($"TreapNode: position = {position}");
                     position = GetSize(o);
@@ -203,7 +203,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
                 {
                     b = o;
                     if (b.l != null) b.l.parent = null;
-                    Split(b.l, out a,out b.l, position);
+                    Split(b.l, out a, out b.l, position);
                     if (b.l != null) b.l.parent = b;
                     b.Maintain();
                 }

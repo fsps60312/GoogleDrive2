@@ -55,7 +55,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
             //}
             DateTime nextCountDownData;
             int runningCountDown = 0;
-            private TimeSpan AdjustToFitIntoTolerance(TimeSpan a,TimeSpan b)
+            private TimeSpan AdjustToFitIntoTolerance(TimeSpan a, TimeSpan b)
             {
                 if (a.Ticks * (1 - RemainingTimeTolerance) > b.Ticks) a = new TimeSpan((long)Math.Floor(b.Ticks / (1 - RemainingTimeTolerance)));
                 if (b.Ticks * (1 - RemainingTimeTolerance) > a.Ticks) a = new TimeSpan((long)Math.Ceiling(b.Ticks * (1 - RemainingTimeTolerance)));
@@ -118,9 +118,9 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
             protected ProgressHistoryMaintainer(double progressHistoryLifeTime) { ProgressHistoryLifeTime = progressHistoryLifeTime; }
             Queue<Tuple<DateTime, double>> history = new Queue<Tuple<DateTime, double>>();
             int currentTrackId = 0;
-            protected Tuple<Tuple<DateTime,double>,Tuple<DateTime,double>>GetEndpoints()
+            protected Tuple<Tuple<DateTime, double>, Tuple<DateTime, double>> GetEndpoints()
             {
-                lock(history)
+                lock (history)
                 {
                     return new Tuple<Tuple<DateTime, double>, Tuple<DateTime, double>>(history.Peek(), history.Last());
                 }

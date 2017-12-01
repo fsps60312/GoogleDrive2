@@ -5,7 +5,7 @@ using GoogleDrive2.MyControls;
 
 namespace GoogleDrive2.Pages.NetworkStatusPage
 {
-    class OperationalPage:MyContentPage
+    class OperationalPage : MyContentPage
     {
         public OperationalPage()
         {

@@ -6,7 +6,7 @@ using Xamarin.Forms;
 
 namespace GoogleDrive2.Pages.TestPage
 {
-    class TouchEventPage:MyContentPage
+    class TouchEventPage : MyContentPage
     {
         MyGrid view;
         MyLabel LBtxt;
@@ -19,8 +19,8 @@ namespace GoogleDrive2.Pages.TestPage
                 view.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) });
                 view.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                 {
-                    LBtxt = new MyLabel {Text="Touch status" };
-                    view.Children.Add(LBtxt,0,0);
+                    LBtxt = new MyLabel { Text = "Touch status" };
+                    view.Children.Add(LBtxt, 0, 0);
                 }
                 {
                     AIidle = new MyActivityIndicator();

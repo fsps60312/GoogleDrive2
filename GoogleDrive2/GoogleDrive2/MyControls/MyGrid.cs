@@ -5,7 +5,7 @@ using Xamarin.Forms;
 
 namespace GoogleDrive2.MyControls
 {
-    public class MyGrid:Grid
+    public class MyGrid : Grid
     {
     }
 }

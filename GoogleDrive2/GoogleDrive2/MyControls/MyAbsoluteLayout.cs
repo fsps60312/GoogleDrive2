@@ -5,7 +5,7 @@ using Xamarin.Forms;
 
 namespace GoogleDrive2.MyControls
 {
-    class MyAbsoluteLayout:AbsoluteLayout
+    class MyAbsoluteLayout : AbsoluteLayout
     {
     }
 }

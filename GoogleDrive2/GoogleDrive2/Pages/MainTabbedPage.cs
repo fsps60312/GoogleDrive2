@@ -5,7 +5,7 @@ using GoogleDrive2.MyControls;
 
 namespace GoogleDrive2.Pages
 {
-    class MainTabbedPage:MyTabbedPage
+    class MainTabbedPage : MyTabbedPage
     {
         public MainTabbedPage()
         {

@@ -5,7 +5,7 @@ using Xamarin.Forms;
 
 namespace GoogleDrive2.MyControls
 {
-    class MyNavigationPage:NavigationPage
+    class MyNavigationPage : NavigationPage
     {
         public MyNavigationPage(Page root) : base(root) { }
     }

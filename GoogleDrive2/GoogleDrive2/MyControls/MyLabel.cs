@@ -5,7 +5,7 @@ using Xamarin.Forms;
 
 namespace GoogleDrive2.MyControls
 {
-    public class MyLabel:Label
+    public class MyLabel : Label
     {
     }
 }

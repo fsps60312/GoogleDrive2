@@ -5,7 +5,7 @@ using Xamarin.Forms;
 
 namespace GoogleDrive2.MyControls
 {
-    class MyImage:Image
+    class MyImage : Image
     {
     }
 }

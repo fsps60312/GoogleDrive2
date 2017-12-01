@@ -206,7 +206,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             {
                 RegisterBinding(new List<string> { "CurrentFolder", "TotalFolder" }, "FolderProgress");
                 if (!CurrentFolder.HasValue || !TotalFolder.HasValue) return 0;
-                var ans= TotalFolder == 0 ? 1 : (double?)CurrentFolder / TotalFolder;
+                var ans = TotalFolder == 0 ? 1 : (double?)CurrentFolder / TotalFolder;
                 return ans.HasValue ? ans.Value : 0;
             }
         }

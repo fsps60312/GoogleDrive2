@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 
 namespace GoogleDrive2.Api.Files
 {
-    class UpdateParameters: ParametersClass
+    class UpdateParameters : ParametersClass
     {
 #pragma warning disable 0649 // Fields are assigned to by JSON deserialization
         public string uploadType;
@@ -16,9 +16,9 @@ namespace GoogleDrive2.Api.Files
         public bool? supportsTeamDrives/*default: false*/, useContentAsIndexableText/*default: false*/;
 #pragma warning restore 0649 // Fields are assigned to by JSON deserialization
     }
-    class UpdateMetadata: RequesterB<UpdateParameters>
+    class UpdateMetadata : RequesterB<UpdateParameters>
     {
-        public UpdateMetadata(string fileId,object metadata):base("PATCH", $"https://www.googleapis.com/drive/v3/files/{fileId}",true)
+        public UpdateMetadata(string fileId, object metadata) : base("PATCH", $"https://www.googleapis.com/drive/v3/files/{fileId}", true)
         {
             this.ContentType = "application/json; charset=UTF-8";
             this.Body = EncodeToBytes(JsonConvert.SerializeObject(metadata, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, DateFormatString = "yyyy-MM-ddTHH:mm:ssZ" }));

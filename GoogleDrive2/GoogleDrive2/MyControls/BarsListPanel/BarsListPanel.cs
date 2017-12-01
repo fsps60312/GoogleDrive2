@@ -36,7 +36,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             });
         }
     }
-    public class DataBindedGrid<DataType> :MyGrid, IDataBindedView<DataType> where DataType : MyDisposable
+    public class DataBindedGrid<DataType> : MyGrid, IDataBindedView<DataType> where DataType : MyDisposable
     {
         public event Libraries.Events.EmptyEventHandler Appeared;
         public Func<Task> Disappearing { get; set; }
@@ -65,13 +65,13 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             });
         }
     }
-    public interface IDataBindedView<DataType> where DataType: MyDisposable
+    public interface IDataBindedView<DataType> where DataType : MyDisposable
     {
         event Libraries.Events.EmptyEventHandler Appeared;
         Func<Task> Disappearing { get; set; }
         void Reset(DataType data);
     }
-    class BarsListPanel<GenericView,DataType>:MyContentView where DataType:MyDisposable where GenericView : Xamarin.Forms.View, IDataBindedView<DataType>,new()
+    class BarsListPanel<GenericView, DataType> : MyContentView where DataType : MyDisposable where GenericView : Xamarin.Forms.View, IDataBindedView<DataType>, new()
     {
         public event Libraries.Events.MyEventHandler<DataType> DataInserted, DataRemoved;
         public event Libraries.Events.MyEventHandler<Treap<DataType>.TreapNodePrototype> TreapNodeAdded, TreapNodeRemoved;
@@ -83,7 +83,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             get { return Treap.itemHeight; }
             set { Treap.itemHeight = value; }
         }
-        public List<DataType>ToList()
+        public List<DataType> ToList()
         {
             return Treap.ToList();
         }
@@ -98,7 +98,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
         {
             Treap.ChangeHeight(node, difference);
         }
-        public void Sort(Comparison<DataType>comparer)
+        public void Sort(Comparison<DataType> comparer)
         {
             Treap.Sort(comparer);
             OnTreapLayoutChanged();
@@ -125,12 +125,12 @@ namespace GoogleDrive2.MyControls.BarsListPanel
                     await (o as MyDisposable).OnDisposedAsync(false);
                     semaphore.Release();
                 }
-                var t=Libraries.MyTask.WhenAll(visible.Select(async (o) =>
-                {
-                    await (o as MyDisposable).OnDisposedAsync(false);
-                    semaphore.Release();
-                }));
-                
+                var t = Libraries.MyTask.WhenAll(visible.Select(async (o) =>
+                  {
+                      await (o as MyDisposable).OnDisposedAsync(false);
+                      semaphore.Release();
+                  }));
+
                 await t;
                 //foreach (var o in visible)
                 //{
@@ -161,7 +161,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             data.HeightChanged += heightChangedEventHandler;
             OnDataInserted(data);
         }
-        public void MoveItem(int from,int to)
+        public void MoveItem(int from, int to)
         {
             Treap.MoveItem(from, to);
             OnTreapLayoutChanged();
@@ -199,7 +199,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             await SVmain.ScrollToAsync(0, double.MaxValue, true);
             await SVmain.ScrollToAsync(0, double.MaxValue, false);
         }
-        Stack<GenericView> AvaiableChildrenPool=new Stack<GenericView>();
+        Stack<GenericView> AvaiableChildrenPool = new Stack<GenericView>();
         Dictionary<DataType, GenericView> ChildrenInUse = new Dictionary<DataType, GenericView>();
         public Func<double, Tuple<Rectangle, AbsoluteLayoutFlags>> BarsLayoutMethod = null;
         GenericView GetGenericView()
@@ -334,23 +334,23 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             //return;
             var width = DesiredWidth();
             if (width == WidthRequestTo) return;
-            double WidthRequestFrom = (ALmain.WidthRequest==-1?ALmain.Width: ALmain.WidthRequest);
+            double WidthRequestFrom = (ALmain.WidthRequest == -1 ? ALmain.Width : ALmain.WidthRequest);
             WidthRequestTo = width;
             ALmain.AbortAnimation("width");
             ALmain.WidthRequest = WidthRequestFrom;
             bool immediatelyChange = WidthRequestTo > WidthRequestFrom;
-                ALmain.Animate("width", new Animation(new Action<double>((ratio) =>
+            ALmain.Animate("width", new Animation(new Action<double>((ratio) =>
+            {
+                if (!immediatelyChange)
                 {
-                    if (!immediatelyChange)
-                    {
-                        if (ratio <= 0.5) return;
-                        ratio = (ratio - 0.5) * 2;
-                    }
-                    ALmain.WidthRequest = ratio * WidthRequestTo + (1 - ratio) * WidthRequestFrom;
-                })), 16, (uint)(Treap<DataType>.animationDuration * (immediatelyChange?0.5:1.0)), null, new Action<double, bool>((dv, bv) =>
-              {
-                  ALmain.WidthRequest = WidthRequestTo;
-              }));
+                    if (ratio <= 0.5) return;
+                    ratio = (ratio - 0.5) * 2;
+                }
+                ALmain.WidthRequest = ratio * WidthRequestTo + (1 - ratio) * WidthRequestFrom;
+            })), 16, (uint)(Treap<DataType>.animationDuration * (immediatelyChange ? 0.5 : 1.0)), null, new Action<double, bool>((dv, bv) =>
+                  {
+              ALmain.WidthRequest = WidthRequestTo;
+          }));
         }
         private void AnimateLayout()
         {
@@ -365,16 +365,16 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             ALmain.Animate("animation", new Animation(new Action<double>((ratio) =>
             {
                 adding |= UpdateLayout();
-            })), 16, (uint)Treap<DataType>.animationDuration,null,new Action<double, bool>((dv,bv)=>
-            {
-                adding |= UpdateLayout();
-                isLayoutRunning = false;
-                if (adding||needRunAgain)
-                {
-                    needRunAgain = false;
-                    AnimateLayout();
-                }
-            }));
+            })), 16, (uint)Treap<DataType>.animationDuration, null, new Action<double, bool>((dv, bv) =>
+              {
+                  adding |= UpdateLayout();
+                  isLayoutRunning = false;
+                  if (adding || needRunAgain)
+                  {
+                      needRunAgain = false;
+                      AnimateLayout();
+                  }
+              }));
             //AbsoluteLayout.AutoSize
             //double width = 0, cnt = 0;
             //foreach(var c in ALmain.Children)
@@ -391,7 +391,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             Treap.TreapNodeAdded += (o) => { TreapNodeAdded?.Invoke(o); };
             Treap.TreapNodeRemoved += (o) => { TreapNodeRemoved?.Invoke(o); };
             this.TreapLayoutChanged += () => { AnimateLayout(); };
-            SVmain.Scrolled += (sender,args) => { AnimateLayout(); };
+            SVmain.Scrolled += (sender, args) => { AnimateLayout(); };
             SVmain.SizeChanged += (sender, args) => { AnimateLayout(); };
         }
         private void InitializeViews()
@@ -413,14 +413,14 @@ namespace GoogleDrive2.MyControls.BarsListPanel
                             IsEnabled = false
                         };
                         var layoutMethod = BarsLayoutMethod(0);
-                        ALmain.Children.Add(LBend,layoutMethod.Item1,layoutMethod.Item2);
+                        ALmain.Children.Add(LBend, layoutMethod.Item1, layoutMethod.Item2);
                     }
                     SVmain.Content = ALmain;
                 }
                 this.Content = SVmain;
             }
         }
-        public BarsListPanel(double itemHeight=50)
+        public BarsListPanel(double itemHeight = 50)
         {
             Treap.itemHeight = itemHeight;
             BarsLayoutMethod = new Func<double, Tuple<Rectangle, AbsoluteLayoutFlags>>((y) =>

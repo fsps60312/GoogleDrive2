@@ -32,7 +32,7 @@ namespace GoogleDrive2
                 Progress = "⋙",
                 Magnifier = "🔍",
                 Folded = "▸",
-                Unfolded="▾",
+                Unfolded = "▾",
                 Timers = "🕐🕑🕒🕓🕔🕕🕖🕗🕘🕙🕚🕛";
         }
         public const string FolderMimeType = "application/vnd.google-apps.folder";

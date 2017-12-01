@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace GoogleDrive2.MyControls.CloudFileListPanel
 {
-    partial class CloudFileListPanel:MyUnwipableView
+    partial class CloudFileListPanel : MyUnwipableView
     {
         MyStackPanel SPmain;
         MyLabel BVpadding;
@@ -33,18 +33,18 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
         private void AddList(ChainedSearchList list)
         {
             SPmain.Children.Remove(BVpadding);
-            list.ListAdded += async(l) =>
+            list.ListAdded += async (l) =>
             {
                 AddList(l);
                 //if (l.leftChild != null)
-                if(!list.IsMultiSelectionToggled)
+                if (!list.IsMultiSelectionToggled)
                 {
                     await Task.Delay(100);
                     try
                     {
                         await SPmain.ScrollToAsync(l, Xamarin.Forms.ScrollToPosition.Center, true);
                     }
-                    catch(System.ArgumentException error)
+                    catch (System.ArgumentException error)
                     {
                         if (error.Message != "element does not belong to this ScrollVIew\r\nParameter name: element") throw error;
                     }

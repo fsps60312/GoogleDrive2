@@ -54,7 +54,7 @@ namespace GoogleDrive2.Local
                     out Action<Tuple<long, long>> folderProgressCall,
                     out Action<Tuple<long, long>> sizeProgressCall,
                     out Action<Tuple<long, long>> localSearchStatusCall,
-                    out Action<Tuple<long,long>>runningTaskCountCall)
+                    out Action<Tuple<long, long>> runningTaskCountCall)
                 {
                     StartTask = startTask;
                     PauseTask = pauseTask;

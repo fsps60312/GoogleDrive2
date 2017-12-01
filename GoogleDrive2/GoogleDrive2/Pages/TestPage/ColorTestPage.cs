@@ -10,7 +10,7 @@ using Xamarin.Forms;
 
 namespace GoogleDrive2.Pages.TestPage
 {
-    class ColorTestPage:MyContentPage
+    class ColorTestPage : MyContentPage
     {
         public class ColorItemBarViewModel : MyControls.BarsListPanel.MyDisposable
         {
@@ -98,7 +98,7 @@ namespace GoogleDrive2.Pages.TestPage
         MyGrid GDmain;
         MyEntry ETsearch;
         MySwitch SWonlyName;
-        MyControls.BarsListPanel.BarsListPanel<ColorItemBar,ColorItemBarViewModel> BLmain;
+        MyControls.BarsListPanel.BarsListPanel<ColorItemBar, ColorItemBarViewModel> BLmain;
         List<Tuple<Color, string>> AllLBs = new List<Tuple<Color, string>>(), LBs = new List<Tuple<Color, string>>();
         async Task RefreshLabels()
         {
@@ -115,12 +115,12 @@ namespace GoogleDrive2.Pages.TestPage
                    return a.Item2.CompareTo(b.Item2);
                }) : new Comparison<Tuple<Color, string>>((a, b) =>
              {
-                   return (a.Item1.R + a.Item1.G + a.Item1.B).CompareTo(b.Item1.R + b.Item1.G + b.Item1.B);
-                //if (a.Item1.R != b.Item1.R) return a.Item1.R.CompareTo(b.Item1.R);
-                //if (a.Item1.G != b.Item1.G) return a.Item1.G.CompareTo(b.Item1.G);
-                //if (a.Item1.B != b.Item1.B) return a.Item1.B.CompareTo(b.Item1.B);
-                //return 0;
-            });
+                 return (a.Item1.R + a.Item1.G + a.Item1.B).CompareTo(b.Item1.R + b.Item1.G + b.Item1.B);
+                 //if (a.Item1.R != b.Item1.R) return a.Item1.R.CompareTo(b.Item1.R);
+                 //if (a.Item1.G != b.Item1.G) return a.Item1.G.CompareTo(b.Item1.G);
+                 //if (a.Item1.B != b.Item1.B) return a.Item1.B.CompareTo(b.Item1.B);
+                 //return 0;
+             });
             LBs.Sort(cp);
             AllLBs.Sort(cp);
             BLmain.Sort(new Comparison<ColorItemBarViewModel>((a, b) => { return cp(new Tuple<Color, string>(a.BackgroundColor, a.Text), new Tuple<Color, string>(b.BackgroundColor, b.Text)); }));
@@ -165,7 +165,7 @@ namespace GoogleDrive2.Pages.TestPage
             }
             this.Content = GDmain;
         }
-        
+
 
         private void RegisterEvents()
         {
@@ -183,10 +183,10 @@ namespace GoogleDrive2.Pages.TestPage
               {
                   await searchAction();
               };
-            ETsearch.Completed +=async delegate
-              {
-                  await searchAction();
-              };
+            ETsearch.Completed += async delegate
+               {
+                   await searchAction();
+               };
             ETsearch.TextChanged += async delegate
             {
                 await searchAction();
@@ -196,7 +196,7 @@ namespace GoogleDrive2.Pages.TestPage
                 {
                     NumberOfTapsRequired = 2
                 };
-                bool sortByName=false;
+                bool sortByName = false;
                 r.Tapped += delegate
                 {
                     sortByName ^= true;

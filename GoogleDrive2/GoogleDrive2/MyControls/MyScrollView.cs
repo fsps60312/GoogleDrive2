@@ -5,7 +5,7 @@ using Xamarin.Forms;
 
 namespace GoogleDrive2.MyControls
 {
-    class MyScrollView:ScrollView
+    class MyScrollView : ScrollView
     {
         public double MyScrollY
         {

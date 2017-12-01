@@ -55,7 +55,7 @@ namespace GoogleDrive2.Api.Files
             public static event Libraries.Events.MyEventHandler<int> RunningCountChanged, QueuedCountChanged, WaitingForMetadataCountChanged;
             static void AddRunningCount(int value) { System.Threading.Interlocked.Add(ref RunningCount, value); RunningCountChanged?.Invoke(RunningCount); }
             static void AddQueuedCount(int value) { System.Threading.Interlocked.Add(ref QueuedCount, value); QueuedCountChanged?.Invoke(QueuedCount); }
-            static void AddWaitingForMetadataCount(int value) { System.Threading.Interlocked.Add(ref WaitingForMetadataCount, value);WaitingForMetadataCountChanged?.Invoke(WaitingForMetadataCount); }
+            static void AddWaitingForMetadataCount(int value) { System.Threading.Interlocked.Add(ref WaitingForMetadataCount, value); WaitingForMetadataCountChanged?.Invoke(WaitingForMetadataCount); }
         }
         public partial class FolderCreate : Libraries.MyTask
         {

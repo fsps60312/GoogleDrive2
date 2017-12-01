@@ -14,10 +14,10 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
         {
             class ControlPanel : MyGrid
             {
-                MyButton BTNselectAll,BTNshowInfo,BTNuploadFile,BTNuploadFolder,BTNtrash,BTNstar,BTNnewFolder;
+                MyButton BTNselectAll, BTNshowInfo, BTNuploadFile, BTNuploadFolder, BTNtrash, BTNstar, BTNnewFolder;
                 public RefreshButton BTNrefresh;
                 public MyLabel LBtitle;
-                MySwitch SWmultiSelectEnabled,SWtrash;
+                MySwitch SWmultiSelectEnabled, SWtrash;
                 new CloudFolderSearchList Parent;
                 volatile int SelectedFileCount = 0, SelectedFolderCount = 0;
                 private void ArrangeViews()
@@ -148,7 +148,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                             await uploader.StartAsync();
                         }));
                     }
-                    catch(Exception error)
+                    catch (Exception error)
                     {
                         var msg = $"Unexpected error:\r\n{error}";
                         MyLogger.LogError(msg);
@@ -207,16 +207,16 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                 }
                 async Task CreateFolder()
                 {
-                    if(Parent.ClickedItem==null)
+                    if (Parent.ClickedItem == null)
                     {
                         await MyLogger.Alert($"{Constants.Icons.Info} No item selected");
                         return;
                     }
                     var cloud = Parent.ClickedItem.File;
-                    if(cloud.mimeType!=Constants.FolderMimeType)
+                    if (cloud.mimeType != Constants.FolderMimeType)
                     {
                         var badChoice = "I still want to try";
-                        var response=await MyLogger.ActionSheet(Constants.Icons.Warning,"Please select a Folder or Google Drive will hate you",new List<string> {"OK", badChoice});
+                        var response = await MyLogger.ActionSheet(Constants.Icons.Warning, "Please select a Folder or Google Drive will hate you", new List<string> { "OK", badChoice });
                         if (response.Item2 != badChoice) return;
                     }
                     Tuple<string, string> name;
@@ -238,7 +238,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                 }
                 private void RegisterEvents()
                 {
-                    Parent.ItemClicked += (f)=>
+                    Parent.ItemClicked += (f) =>
                       {
                           {
                               var s1 = f.File.mimeType == Constants.FolderMimeType ? Constants.Icons.Folder : Constants.Icons.File;
@@ -267,7 +267,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                           try { await StarButtonClicked(); }
                           finally { BTNstar.Text = text; BTNstar.IsEnabled = true; }
                       };
-                    SWtrash.Toggled += (sender,args)=>
+                    SWtrash.Toggled += (sender, args) =>
                       {
                           Parent.ToggleTrashed(args.Value);
                       };
@@ -289,7 +289,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                       };
                     BTNshowInfo.Clicked += async delegate
                       {
-                          if(Parent.ClickedItem==null)
+                          if (Parent.ClickedItem == null)
                           {
                               await MyLogger.Alert("ℹ No item selected");
                               return;
@@ -305,7 +305,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                             else SelectedFileCount += v;
                             UpdateText();
                         });
-                        Libraries.Events.MyEventHandler<object> disposedEventHandler=null;
+                        Libraries.Events.MyEventHandler<object> disposedEventHandler = null;
                         disposedEventHandler = new Libraries.Events.MyEventHandler<object>((fo) =>
                           {
                               var f = fo as CloudFileListPanelViewModel.CloudFileItemBarViewModel;

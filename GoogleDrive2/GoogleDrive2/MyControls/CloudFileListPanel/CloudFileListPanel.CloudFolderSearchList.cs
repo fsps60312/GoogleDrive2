@@ -7,11 +7,11 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
 {
     partial class CloudFileListPanel
     {
-        public partial class CloudFolderSearchList: MyContentView
+        public partial class CloudFolderSearchList : MyContentView
         {
             public CloudFileListPanelViewModel.CloudFileItemBarViewModel ClickedItem = null;
             public HashSet<CloudFileListPanelViewModel.CloudFileItemBarViewModel> ToggledItems = new HashSet<CloudFileListPanelViewModel.CloudFileItemBarViewModel>();
-            public event Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel> ItemClicked,ItemAdded,ItemRemoved, ItemToggled;
+            public event Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel> ItemClicked, ItemAdded, ItemRemoved, ItemToggled;
             public event Libraries.Events.MyEventHandler<bool> MultiSelectionToggled;
             event Libraries.Events.EmptyEventHandler RefreshRequested;
             public bool IsMultiSelectionToggled { get; private set; } = false;
@@ -155,7 +155,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                 RegisterEvents();
                 Refresh();
             }
-            class RefreshButton:MyButton
+            class RefreshButton : MyButton
             {
                 EventHandler action1, action2;
                 public RefreshButton()
@@ -166,7 +166,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                 {
                     var searchList = parent.BLmain;
                     parent.RefreshRequested += async delegate { await searchList.RefreshAsync(); };
-                    action1 = new EventHandler(async(sender, args) =>
+                    action1 = new EventHandler(async (sender, args) =>
                     {
                         await searchList.RefreshAsync();
                     });
@@ -189,7 +189,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         }
                         UpdateText(isRunning, folders, files);
                     };
-                    searchList.ErrorOccurred += (errorText)=>
+                    searchList.ErrorOccurred += (errorText) =>
                     {
                         this.IsEnabled = true; isRunning = false;
                         UpdateText(null, folders, files);

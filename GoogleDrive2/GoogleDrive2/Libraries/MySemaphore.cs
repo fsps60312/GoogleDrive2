@@ -30,7 +30,7 @@ namespace GoogleDrive2.Libraries
                 if (parentSemaphore != null) await parentSemaphore.WaitAsync(cancellationToken);
                 return true;
             }
-            catch(OperationCanceledException)
+            catch (OperationCanceledException)
             {
                 return false;
             }

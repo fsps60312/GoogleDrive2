@@ -7,11 +7,11 @@ using Xamarin.Forms;
 
 namespace GoogleDrive2
 {
-	public partial class MainPage : ContentPage
-	{
-		public MainPage()
-		{
+    public partial class MainPage : ContentPage
+    {
+        public MainPage()
+        {
             this.Content = new Button();
         }
-	}
+    }
 }

@@ -26,7 +26,7 @@ namespace GoogleDrive2.Local
         public partial class Uploader
         {
             static int RunningCount = 0, QueuedCount = 0, WaitingForMetadataCount = 0;
-            public static event Libraries.Events.MyEventHandler<int> RunningCountChanged,QueuedCountChanged,WaitingForMetadataCountChanged;
+            public static event Libraries.Events.MyEventHandler<int> RunningCountChanged, QueuedCountChanged, WaitingForMetadataCountChanged;
             static void AddRunningCount(int value) { System.Threading.Interlocked.Add(ref RunningCount, value); RunningCountChanged?.Invoke(RunningCount); }
             static void AddQueuedCount(int value) { System.Threading.Interlocked.Add(ref QueuedCount, value); QueuedCountChanged?.Invoke(QueuedCount); }
             static void AddWaitingForMetadataCount(int value) { System.Threading.Interlocked.Add(ref WaitingForMetadataCount, value); WaitingForMetadataCountChanged?.Invoke(WaitingForMetadataCount); }

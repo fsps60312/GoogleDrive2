@@ -23,7 +23,7 @@ namespace GoogleDrive2
         public Dictionary<string, string> Headers { get; private set; } = new Dictionary<string, string>();
         public event Libraries.Events.EmptyEventHandler Started, Writing, Requesting, Receiving, Received, Finished;
         public event Libraries.Events.MyEventHandler<HttpWebResponse> Responded;
-        public event Libraries.Events.MyEventHandler<Tuple<long,long?>> ProgressChanged;
+        public event Libraries.Events.MyEventHandler<Tuple<long, long?>> ProgressChanged;
         public static event Libraries.Events.MyEventHandler<MyHttpRequest> NewRequestCreated;
         public string ContentType
         {

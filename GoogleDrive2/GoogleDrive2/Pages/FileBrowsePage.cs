@@ -5,7 +5,7 @@ using GoogleDrive2.MyControls;
 
 namespace GoogleDrive2.Pages
 {
-    class FileBrowsePage:MyContentPage
+    class FileBrowsePage : MyContentPage
     {
         public FileBrowsePage()
         {

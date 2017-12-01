@@ -53,7 +53,7 @@ namespace GoogleDrive2.Pages.StatisticsPage
                 MyControls.BarsListPanel.TreapNodeStatistics.InstanceCountChanged += (c) => { TreapNodeInstanceCount = c; OnPropertyChanged("TreapNodeInstanceCount"); };
                 new Action(async () =>
                 {
-                    while(true)
+                    while (true)
                     {
                         MemoryUsed = GC.GetTotalMemory(false);
                         OnPropertyChanged("MemoryUsed");

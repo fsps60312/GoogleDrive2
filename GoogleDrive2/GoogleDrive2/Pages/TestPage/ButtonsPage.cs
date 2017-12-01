@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 
 namespace GoogleDrive2.Pages.TestPage
 {
-    class ButtonsPage:MyContentPage
+    class ButtonsPage : MyContentPage
     {
         MyStackPanel SPmain;
         private void AddButtons()
@@ -18,7 +18,7 @@ namespace GoogleDrive2.Pages.TestPage
         }
         void AddButton3()
         {
-            AddButton("Recursive lock", new Func<Task>(async() =>
+            AddButton("Recursive lock", new Func<Task>(async () =>
              {
                  MyBoxView o = new MyBoxView();
                  Action<int> dfs = null;
@@ -69,7 +69,7 @@ namespace GoogleDrive2.Pages.TestPage
         class TemporaryClass1
         {
 #pragma warning disable 0649 // Fields are assigned to by JSON deserialization
-            public string id, name, mimeType,md5Checksum;
+            public string id, name, mimeType, md5Checksum;
 #pragma warning restore 0649 // Fields are assigned to by JSON deserialization
         }
         void AddButton1()
@@ -80,7 +80,7 @@ namespace GoogleDrive2.Pages.TestPage
                 r.Parameters.fields = "nextPageToken,incompleteSearch,files(id,name,mimeType,md5Checksum)";
                 using (var response = await r.GetHttpResponseAsync())
                 {
-                    var text =await r.GetResponseTextAsync(response);
+                    var text = await r.GetResponseTextAsync(response);
                     //await MyLogger.Alert(text);
                     {
                         var result = JsonConvert.DeserializeObject<Api.Files.ListRequest.ListResponse<object>>(text);
@@ -93,7 +93,7 @@ namespace GoogleDrive2.Pages.TestPage
                 }
             }));
         }
-        private void AddButton(string name,Func<Task>func)
+        private void AddButton(string name, Func<Task> func)
         {
             var btn = new MyButton { Text = name };
             btn.Clicked += async delegate { await func(); };

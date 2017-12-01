@@ -4,7 +4,7 @@ using System.ComponentModel;
 
 namespace GoogleDrive2.MyControls.BarsListPanel
 {
-    public abstract class MyDisposable:INotifyPropertyChanged
+    public abstract class MyDisposable : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
         const double MinUpdatePeriodForEachProperty = 0.5;
@@ -15,7 +15,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         public event Libraries.Events.MyEventHandler<object> Disposed;
-        public Func<System.Threading.Tasks.Task>Disposing = null;
+        public Func<System.Threading.Tasks.Task> Disposing = null;
         public void UnregisterDisposingEvents() { Disposing = null; }
         public event Libraries.Events.MyEventHandler<double> HeightChanged;
         public void OnHeightChanged(double difference)
@@ -27,7 +27,7 @@ namespace GoogleDrive2.MyControls.BarsListPanel
             Disposed?.Invoke(this);
             Disposing = null; Disposed = null;
         }
-        public async System.Threading.Tasks.Task OnDisposedAsync(bool animated=true)
+        public async System.Threading.Tasks.Task OnDisposedAsync(bool animated = true)
         {
             if (animated && Disposing != null) await Disposing();
             OnDisposed();

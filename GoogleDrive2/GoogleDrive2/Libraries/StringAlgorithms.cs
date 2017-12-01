@@ -18,7 +18,7 @@ namespace GoogleDrive2.Libraries
             }
             return fail;
         }
-        public static int IndexOf(byte[]data,string s)
+        public static int IndexOf(byte[] data, string s)
         {
             var fail = GetFailArray(s);
             for (int i = 0, u = 0; i < data.Length; i++)
@@ -27,7 +27,7 @@ namespace GoogleDrive2.Libraries
                 if (data[i] == s[u])
                 {
                     ++u;
-                    if (u == s.Length) return i-u+1;
+                    if (u == s.Length) return i - u + 1;
                 }
             }
             return -1;

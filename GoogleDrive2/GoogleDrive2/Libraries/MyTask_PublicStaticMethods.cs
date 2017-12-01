@@ -14,7 +14,7 @@ namespace GoogleDrive2.Libraries
         {
             await Task.WhenAll(tasks);
         }
-        public static async Task<T[]>WhenAll<T>(params Task<T>[] tasks) { return await WhenAll(tasks as IEnumerable<Task<T>>); }
+        public static async Task<T[]> WhenAll<T>(params Task<T>[] tasks) { return await WhenAll(tasks as IEnumerable<Task<T>>); }
         public static async Task<T[]> WhenAll<T>(IEnumerable<Task<T>> tasks)
         {
             return await Task.WhenAll(tasks);

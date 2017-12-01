@@ -124,7 +124,7 @@ namespace GoogleDrive2
             {
                 if (t == typeof(List<string>))
                 {
-                    if (includeNull || (o != null&&(o as List<string>).Count>0)) ps[s] = string.Join(",", o as List<string>);
+                    if (includeNull || (o != null && (o as List<string>).Count > 0)) ps[s] = string.Join(",", o as List<string>);
                 }
                 else if (t == typeof(bool?))
                 {
@@ -187,7 +187,7 @@ namespace GoogleDrive2
             {
                 var request = await this.GetHttpRequest();
                 //await MyLogger.Alert(request.RequestUri.ToString());
-                var response= await requester.GetHttpResponseAsync(request);
+                var response = await requester.GetHttpResponseAsync(request);
                 return response;
             }
             public async Task<string> GetResponseTextAsync(MyHttpResponse response)
@@ -222,7 +222,7 @@ namespace GoogleDrive2
                 return Task.FromResult(request);
             }
         }
-        public class RequesterP<P>: RequesterPrototype where P : ParametersClass, new()
+        public class RequesterP<P> : RequesterPrototype where P : ParametersClass, new()
         {
             public RequesterP(string method, string uri, bool authorizationRequired) : base(method, uri, authorizationRequired)
             {
@@ -293,7 +293,7 @@ namespace GoogleDrive2
                 func(list);
                 Body = list.ToArray();
             }
-            public async Task CreateBodyAsync(Func<List<byte>,Task>func)
+            public async Task CreateBodyAsync(Func<List<byte>, Task> func)
             {
                 var list = new List<byte>();
                 await func(list);
@@ -309,7 +309,7 @@ namespace GoogleDrive2
                 var request = await base.GetHttpRequest();
                 request.Headers["Content-Length"] = Body == null ? contentSize.ToString() : Body.Length.ToString();
                 //await MyLogger.Alert(Encoding.UTF8.GetString(bd));
-                if(Body != null)request.CreateGetBodyMethod(Body);
+                if (Body != null) request.CreateGetBodyMethod(Body);
                 else
                 {
                     MyLogger.Assert(createBodyMethod != null);

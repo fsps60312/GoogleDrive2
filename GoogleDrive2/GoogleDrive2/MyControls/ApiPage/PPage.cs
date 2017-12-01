@@ -9,7 +9,7 @@ using System.Net;
 
 namespace GoogleDrive2.MyControls.ApiPage
 {
-    class FieldsListView: MyContentView
+    class FieldsListView : MyContentView
     {
         public class KeyValueItemBar : BarsListPanel.DataBindedGrid<KeyValueItemBarViewModel>
         {
@@ -105,22 +105,22 @@ namespace GoogleDrive2.MyControls.ApiPage
         public async Task Update<P>(P v) where P : ParametersClass, new()
         {
             Dictionary<string, string> data = new Dictionary<string, string>();
-            ParametersClass.AddParameters(v, data,true);
+            ParametersClass.AddParameters(v, data, true);
             await listView.ClearAsync();
-            foreach(var p in data)
+            foreach (var p in data)
             {
                 listView.PushBack(new KeyValueItemBarViewModel { Key = p.Key, Value = p.Value });
             }
         }
     }
-    class PPage: MyContentPage //where P : ParametersClass, new() where R:RequesterP<P>,new()
+    class PPage : MyContentPage //where P : ParametersClass, new() where R:RequesterP<P>,new()
     {
-        MyGrid GDmain,GDctrl;
+        MyGrid GDmain, GDctrl;
         MyButton BTNsend;
         FieldsListView FLVmain;
         MyEditor EDmain;
         MyEntry ETuri;
-        protected async Task Update<P,R>() where P : ParametersClass, new() where R:RequesterP<P>,new()
+        protected async Task Update<P, R>() where P : ParametersClass, new() where R : RequesterP<P>, new()
         {
             await FLVmain.Update(new P());
             var r = new R();
@@ -159,7 +159,7 @@ namespace GoogleDrive2.MyControls.ApiPage
             this.Content = GDmain;
         }
         RestRequests.RestRequester requester = new RestRequests.RestRequester();
-        volatile int threadCnt=0;
+        volatile int threadCnt = 0;
         void UpdateBtnText()
         {
             if (threadCnt == 0) BTNsend.Text = "Send";
@@ -172,16 +172,16 @@ namespace GoogleDrive2.MyControls.ApiPage
                   threadCnt++; UpdateBtnText();
                   var uri = ETuri.Text;
                   var request = new RequesterRaw(uri.Remove(uri.IndexOf(' ')), uri.Substring(uri.IndexOf(' ') + 1), true);
-                  foreach (var p in FLVmain.listView.ToList())if(!string.IsNullOrEmpty(p.Value))
-                  {
-                      //await MyLogger.Alert($"Header: {header.Key} = {header.Value}");
-                      request.Parameters[p.Key] = p.Value;
-                  }
+                  foreach (var p in FLVmain.listView.ToList()) if (!string.IsNullOrEmpty(p.Value))
+                      {
+                          //await MyLogger.Alert($"Header: {header.Key} = {header.Value}");
+                          request.Parameters[p.Key] = p.Value;
+                      }
                   using (var response = await request.GetHttpResponseAsync())
                   {
-                      var txt= await RestRequests.RestRequester.LogHttpWebResponse(response, true);
+                      var txt = await RestRequests.RestRequester.LogHttpWebResponse(response, true);
                       int maxLength = 10000;
-                      if (txt.Length > maxLength) txt = txt.Remove(maxLength+1)+"...(Cut since too long)";
+                      if (txt.Length > maxLength) txt = txt.Remove(maxLength + 1) + "...(Cut since too long)";
                       EDmain.Text = txt;
                   }
                   threadCnt--; UpdateBtnText();

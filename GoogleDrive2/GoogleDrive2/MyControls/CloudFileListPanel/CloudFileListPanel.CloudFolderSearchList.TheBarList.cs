@@ -10,7 +10,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
         {
             class TheBarList : BarsListPanel.BarsListPanel<CloudFileItemBar, CloudFileListPanelViewModel.CloudFileItemBarViewModel>
             {
-                public event Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel> ItemAdded,ItemRemoved;
+                public event Libraries.Events.MyEventHandler<CloudFileListPanelViewModel.CloudFileItemBarViewModel> ItemAdded, ItemRemoved;
                 public event Libraries.Events.EmptyEventHandler OperationStarted, OperationEnded, CloudFileListCleared;
                 public event Libraries.Events.MyEventHandler<List<Api.Files.FullCloudFileMetadata>> CloudFilesAdded;
                 public event Libraries.Events.MyEventHandler<string> ErrorOccurred;
@@ -23,7 +23,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     Initialize(q, OrderBy);
                 }
                 List<string> OrderBy;
-                Dictionary<string, BarsListPanel.Treap<CloudFileListPanelViewModel.CloudFileItemBarViewModel>.TreapNodePrototype> TreapNodes=new Dictionary<string, BarsListPanel.Treap<CloudFileListPanelViewModel.CloudFileItemBarViewModel>.TreapNodePrototype>();
+                Dictionary<string, BarsListPanel.Treap<CloudFileListPanelViewModel.CloudFileItemBarViewModel>.TreapNodePrototype> TreapNodes = new Dictionary<string, BarsListPanel.Treap<CloudFileListPanelViewModel.CloudFileItemBarViewModel>.TreapNodePrototype>();
                 void Initialize(string q, List<string> orderBy)
                 {
                     OrderBy = orderBy;
@@ -35,17 +35,17 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         desiredIdx = 0;
                         OperationStarted?.Invoke();
                     };
-                    Lister.OperationEnded +=async delegate
-                    {
-                        await Libraries.MyTask.WhenAll(this.ToList().Select(async(f,idx) =>
-                        {
-                            if (f.UnderVerification)
-                            {
-                                await f.OnDisposedAsync(IsBarVisible(idx));
-                            }
-                        }));
-                        OperationEnded?.Invoke();
-                    };
+                    Lister.OperationEnded += async delegate
+                     {
+                         await Libraries.MyTask.WhenAll(this.ToList().Select(async (f, idx) =>
+                         {
+                             if (f.UnderVerification)
+                             {
+                                 await f.OnDisposedAsync(IsBarVisible(idx));
+                             }
+                         }));
+                         OperationEnded?.Invoke();
+                     };
                     Lister.ErrorOccurred += (msg) => { ErrorOccurred?.Invoke(msg); };
                     Lister.CloudFileListCleared += async () =>
                     {
@@ -53,7 +53,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         await semaphore.WaitAsync();
                         try
                         {
-                            await Libraries.MyTask.WhenAll(this.ToList().Select((f) => { f.UnderVerification = true;return Task.CompletedTask; }));
+                            await Libraries.MyTask.WhenAll(this.ToList().Select((f) => { f.UnderVerification = true; return Task.CompletedTask; }));
                         }
                         finally { semaphore.Release(); }
                     };
@@ -71,7 +71,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         finally { semaphore.Release(); }
                     };
                 }
-                private void UpdateItem(Api.Files.FullCloudFileMetadata fileProperty,int desiredIdx)
+                private void UpdateItem(Api.Files.FullCloudFileMetadata fileProperty, int desiredIdx)
                 {
                     if (TreapNodes.ContainsKey(fileProperty.id))
                     {
@@ -86,7 +86,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         var newItem = new CloudFileListPanelViewModel.CloudFileItemBarViewModel(fileProperty);
                         newItem.Disposed += delegate { ItemRemoved?.Invoke(newItem); };
                         ItemAdded?.Invoke(newItem);
-                        this.Insert(newItem,desiredIdx);
+                        this.Insert(newItem, desiredIdx);
                     }
                 }
                 public TheBarList(string q, List<string> orderBy)

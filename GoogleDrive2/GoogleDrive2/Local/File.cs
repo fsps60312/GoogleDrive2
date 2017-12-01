@@ -25,9 +25,9 @@ namespace GoogleDrive2.Local
         public abstract void CloseReadIfNot();
         public abstract void CloseWriteIfNot();
     }
-    partial class File:AFile
+    partial class File : AFile
     {
-        public override async Task<Uploader>GetUploader() { return await Uploader.GetUploader(this); }
+        public override async Task<Uploader> GetUploader() { return await Uploader.GetUploader(this); }
         public override bool IsImageFile
         {
             get { return MimeType.StartsWith("image"); }
@@ -44,7 +44,7 @@ namespace GoogleDrive2.Local
         {
             return await OpenSingleFilePrivateAsync();
         }
-        public static async Task<List<File>>OpenMultipleFilesAsync()
+        public static async Task<List<File>> OpenMultipleFilesAsync()
         {
             return await OpenMultipleFilesPrivateAsync();
         }

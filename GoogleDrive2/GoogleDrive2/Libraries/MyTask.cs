@@ -13,7 +13,7 @@ namespace GoogleDrive2.Libraries
         protected object syncRootChangeRunningState = new object();
         private CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
         public CancellationToken CancellationToken { get { return CancellationTokenSource.Token; } }
-        public event MyEventHandler<object> Started, Unstarted, Pausing,Completed;
+        public event MyEventHandler<object> Started, Unstarted, Pausing, Completed;
         public event Libraries.Events.MyEventHandler<string> MessageAppended;
         protected void OnMessageAppended(string msg) { MessageAppended?.Invoke(msg); }
         protected void OnCompleted()
@@ -63,9 +63,9 @@ namespace GoogleDrive2.Libraries
         protected MyTaskQueue TaskQueue { get; set; } = unlimitedTaskQueue;
         protected bool ConfirmPauseSignal()
         {
-            lock(syncRootChangeRunningState)
+            lock (syncRootChangeRunningState)
             {
-                if(IsPausing)
+                if (IsPausing)
                 {
                     PausingSignalReceived = true;
                     //this.Debug("Pausing request received");
@@ -97,7 +97,7 @@ namespace GoogleDrive2.Libraries
         public async Task StartAsync()
         {
             //Debug("StartAsync()");
-            CancelPauseRequests();
+            await Task.Run(() => CancelPauseRequests());//TODO: Only a little effect to prevent blocking
             if (semaphoreStartAsync != null) await semaphoreStartAsync.WaitAsync();
             try
             {
@@ -121,10 +121,10 @@ namespace GoogleDrive2.Libraries
                     Unqueued?.Invoke(this);
                     await StartMainTaskAsync();//OnCompleted() might be called here
                                                //Now IsCompleted is determined
-                    //lock(syncRootChangeRunningState)
-                    //{
-                    //    if (!IsCompleted && PausingSignalReceived && !IsPausing) goto index_restart;
-                    //}
+                                               //lock(syncRootChangeRunningState)
+                                               //{
+                                               //    if (!IsCompleted && PausingSignalReceived && !IsPausing) goto index_restart;
+                                               //}
                 }
                 finally
                 {

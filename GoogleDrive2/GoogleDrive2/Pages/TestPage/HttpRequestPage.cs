@@ -58,7 +58,7 @@ namespace GoogleDrive2.Pages.TestPage
             }
             async Task AddAuthorization()
             {
-                AKVheader.BLPmain.PushFront(new KeyValueItemBarViewModel { Key = "Authorization", Value =$"{await RestRequests.RestRequestsAuthorizer.DriveAuthorizer.GetTokenTypeAsync()} {await RestRequests.RestRequestsAuthorizer.DriveAuthorizer.GetAccessTokenAsync()}" });
+                AKVheader.BLPmain.PushFront(new KeyValueItemBarViewModel { Key = "Authorization", Value = $"{await RestRequests.RestRequestsAuthorizer.DriveAuthorizer.GetTokenTypeAsync()} {await RestRequests.RestRequestsAuthorizer.DriveAuthorizer.GetAccessTokenAsync()}" });
             }
             void AddContentLength()
             {
@@ -73,7 +73,7 @@ namespace GoogleDrive2.Pages.TestPage
                 this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                 this.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                 {
-                    var sp = new MyStackPanel (ScrollOrientation.Horizontal );
+                    var sp = new MyStackPanel(ScrollOrientation.Horizontal);
                     {
                         var btn = new MyButton { Text = "Multipart Upload" };
                         btn.Clicked += async delegate { await MultipartUploadExample(); };
@@ -159,7 +159,7 @@ namespace GoogleDrive2.Pages.TestPage
                 }
                 var blankPoint = url.IndexOf(' ');
                 MyLogger.Assert(blankPoint != -1);
-                MyHttpRequest request =new MyHttpRequest(url.Remove(blankPoint), url.Substring(blankPoint + 1));
+                MyHttpRequest request = new MyHttpRequest(url.Remove(blankPoint), url.Substring(blankPoint + 1));
                 foreach (var header in AKVheader.BLPmain.ToList())
                 {
                     //await MyLogger.Alert($"Header: {header.Key} = {header.Value}");
@@ -280,7 +280,7 @@ namespace GoogleDrive2.Pages.TestPage
                     BTNcancel.Clicked += async delegate
                     {
                         if (this.BindingContext != null)// && await MyLogger.Ask($"Remove this item?\r\nKey: {ETkey.Text}\r\nValue: {ETvalue.Text}"))
-                            {
+                        {
                             await (this.BindingContext as MyControls.BarsListPanel.MyDisposable).OnDisposedAsync();
                         }
                     };

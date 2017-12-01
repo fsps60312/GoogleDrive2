@@ -43,7 +43,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                 }
             }
             public Api.Files.FullCloudFileMetadata File { get; private set; }
-            Color originColor,focusedColor,selectedColor;
+            Color originColor, focusedColor, selectedColor;
             private bool __Selected__ = false;
             public bool Selected
             {

@@ -25,7 +25,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     //MyGrid.SetRowSpan(bx, this.RowDefinitions.Count);
                     this.SetBinding(MyGrid.BackgroundColorProperty, "BorderColor");
                 }
-                double? a=0;
+                double? a = 0;
                 a += 1;
                 {
                     BTNmain = new MyButton();

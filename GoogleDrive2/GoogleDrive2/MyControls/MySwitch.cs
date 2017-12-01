@@ -27,7 +27,7 @@ namespace GoogleDrive2.MyControls
         public MySwitch(string onText, string offText, bool onLeft = true) : this()
         {
             {
-                MyLabel lbl = new MyLabel {Text= offText, IsVisible = false, Opacity = 0, FontAttributes = FontAttributes.Bold, VerticalTextAlignment = TextAlignment.Center };
+                MyLabel lbl = new MyLabel { Text = offText, IsVisible = false, Opacity = 0, FontAttributes = FontAttributes.Bold, VerticalTextAlignment = TextAlignment.Center };
                 if (onLeft)
                 {
                     MyGrid.SetColumn(SWmain, 1);

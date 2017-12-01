@@ -5,7 +5,7 @@ using GoogleDrive2.MyControls;
 
 namespace GoogleDrive2.Pages.TestPage
 {
-    class FilesListRequestPage: MyControls.ApiPage.PPage
+    class FilesListRequestPage : MyControls.ApiPage.PPage
     {
         public FilesListRequestPage()
         {

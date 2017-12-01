@@ -5,7 +5,7 @@ using Xamarin.Forms;
 
 namespace GoogleDrive2.MyControls
 {
-    class MyButton:Button
+    class MyButton : Button
     {
     }
 }

@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace GoogleDrive2.Pages.TestPage
 {
-    class SemaphoreSlimPage:MyContentPage
+    class SemaphoreSlimPage : MyContentPage
     {
-        class SemaphoreSlimContentView:MyStackLayout
+        class SemaphoreSlimContentView : MyStackLayout
         {
             MyLabel LBcount;
             MyButton BTNreleaseOriginal, BTNwaitOriginal, BTNreleaseCopy, BTNwaitCopy;

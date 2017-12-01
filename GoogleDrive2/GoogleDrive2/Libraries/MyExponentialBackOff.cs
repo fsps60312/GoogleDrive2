@@ -8,12 +8,12 @@ namespace GoogleDrive2.Libraries
     static class MyExponentialBackOff
     {
         const int MaxTimeToWait = 500 * 16;
-        public static async Task<bool> Do(Func<Task<bool>>task,Func<int,Task> whenRetrying=null)
+        public static async Task<bool> Do(Func<Task<bool>> task, Func<int, Task> whenRetrying = null)
         {
-            for(int timeToWait = 500; !await task();)
+            for (int timeToWait = 500; !await task();)
             {
                 if (timeToWait > MaxTimeToWait) return false;
-                if(whenRetrying!=null)
+                if (whenRetrying != null)
                 {
                     await whenRetrying(timeToWait);
                 }

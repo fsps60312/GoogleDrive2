@@ -37,7 +37,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
         {
             speedMaintainer.Add(byteCount);
         }
-        protected NetworkStatusWithSpeedBarViewModel():base()
+        protected NetworkStatusWithSpeedBarViewModel() : base()
         {
             var frequencyLimiter = new Libraries.FrequentExecutionLimiter(0.5);
             speedMaintainer.SpeedUpdated += (v) => frequencyLimiter.Execute(() =>
@@ -136,7 +136,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
             PauseButtonText = Constants.Icons.Pause;
             Icon = Constants.Icons.Hourglass;
         }
-        protected PausableNetworkStatusBarViewModel():base() { }
+        protected PausableNetworkStatusBarViewModel() : base() { }
     }
     partial class NetworkStatusBarViewModel : MyControls.BarsListPanel.MyDisposable
     {
@@ -150,7 +150,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
         bool __InfoEnabled__ = true;
         string __TimeRemaining__ = null; // Estimated Remaining Time
         string __TimePassed__ = null;
-        int __Indent__= 0;
+        int __Indent__ = 0;
         Xamarin.Forms.Thickness __Margin__ = new Xamarin.Forms.Thickness();
         public Xamarin.Forms.Thickness Margin
         {

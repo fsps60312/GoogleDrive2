@@ -5,7 +5,7 @@ using GoogleDrive2.MyControls;
 
 namespace GoogleDrive2.Pages.TestPage
 {
-    class GetAuthorizationCodePage:MyContentPage
+    class GetAuthorizationCodePage : MyContentPage
     {
         MyButton BTNrun;
         MyEntry ETresult;

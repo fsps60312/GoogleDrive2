@@ -6,11 +6,11 @@ using Xamarin.Forms;
 
 namespace GoogleDrive2.Pages.StatisticsPage
 {
-    partial class StatisticsPage:MyContentPage
+    partial class StatisticsPage : MyContentPage
     {
         MyGrid GDmain;
         MyScrollView SVmain;
-        MyButton BTNclearMemory,BTNdeleteAuthorationSaveFile;
+        MyButton BTNclearMemory, BTNdeleteAuthorationSaveFile;
         private void RegisterEvents()
         {
             BTNdeleteAuthorationSaveFile.Clicked += async delegate
@@ -25,11 +25,11 @@ namespace GoogleDrive2.Pages.StatisticsPage
                   BTNclearMemory.IsEnabled = false;
                   var startTime = DateTime.Now;
                   GC.Collect(GC.MaxGeneration, System.GCCollectionMode.Forced, true);
-                  BTNclearMemory.Text = $"{Constants.Icons.Clear} Clear Memory ({(int)((DateTime.Now-startTime).TotalMilliseconds)} ms)";
+                  BTNclearMemory.Text = $"{Constants.Icons.Clear} Clear Memory ({(int)((DateTime.Now - startTime).TotalMilliseconds)} ms)";
                   BTNclearMemory.IsEnabled = true;
               };
         }
-        private void AddWatcher(string name,string binding,IValueConverter converter)
+        private void AddWatcher(string name, string binding, IValueConverter converter)
         {
             var row = GDmain.RowDefinitions.Count;
             GDmain.RowDefinitions.Add(new RowDefinition { Height = new GridLength(50, GridUnitType.Absolute) });

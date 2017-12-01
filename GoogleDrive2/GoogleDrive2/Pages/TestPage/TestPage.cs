@@ -6,14 +6,14 @@ using Xamarin.Forms;
 
 namespace GoogleDrive2.Pages.TestPage
 {
-    class TestPage:MyNavigationPage
+    class TestPage : MyNavigationPage
     {
-        public TestPage():base(new TestTabbedPage())
+        public TestPage() : base(new TestTabbedPage())
         {
             var a = new MyNavigationPage(new TestTabbedPage());
         }
     }
-    class TestTabbedPage:MyTabbedPage
+    class TestTabbedPage : MyTabbedPage
     {
         public TestTabbedPage()
         {

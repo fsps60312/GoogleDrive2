@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 
 namespace GoogleDrive2.RestRequests
 {
-    class RestRequestsPrototype: MyLoggerClass
+    class RestRequestsPrototype : MyLoggerClass
     {
         public static async Task<string> LogHttpWebResponse(MyHttpResponse response, bool readStream)
         {
@@ -27,7 +27,7 @@ namespace GoogleDrive2.RestRequests
             return await request.GetResponseAsync();
         }
     }
-    class RestRequestsLogger: RestRequestsPrototype
+    class RestRequestsLogger : RestRequestsPrototype
     {
         public override async Task<MyHttpResponse> GetHttpResponseAsync(MyHttpRequest request)
         {
@@ -60,7 +60,7 @@ namespace GoogleDrive2.RestRequests
                          }
                      default: return true;
                  }
-             }), new Func<int, Task>(async(timeToWait) =>
+             }), new Func<int, Task>(async (timeToWait) =>
               {
                   var msg = $"Trying again {timeToWait} ms later...\r\nResponse: {await LogHttpWebResponse(response, true)}";
                   response?.Dispose();
@@ -110,12 +110,12 @@ namespace GoogleDrive2.RestRequests
         }
     }
 
-    partial class RestRequestsAuthorizer:RestRequestsLimiter
+    partial class RestRequestsAuthorizer : RestRequestsLimiter
     {
         public bool AuthorizationRequired = true;
         //public RestRequestsAuthorizer(bool auth) { authorizationRequired = auth; }
         static int quotaUserNumber = 0;
-        private async Task UpdateRequestAuthorization(MyHttpRequest request,bool refresh)
+        private async Task UpdateRequestAuthorization(MyHttpRequest request, bool refresh)
         {
             if (AuthorizationRequired)
             {
@@ -126,7 +126,7 @@ namespace GoogleDrive2.RestRequests
         }
         public override async Task<MyHttpResponse> GetHttpResponseAsync(MyHttpRequest request)
         {
-            await UpdateRequestAuthorization(request,false);
+            await UpdateRequestAuthorization(request, false);
             var response = await base.GetHttpResponseAsync(request);
             if (response?.StatusCode == HttpStatusCode.Unauthorized)
             {
@@ -145,7 +145,7 @@ namespace GoogleDrive2.RestRequests
             return response;
         }
     }
-    partial class RestRequester:RestRequestsAuthorizer
+    partial class RestRequester : RestRequestsAuthorizer
     {
         public override async Task<MyHttpResponse> GetHttpResponseAsync(MyHttpRequest request)
         {
@@ -153,7 +153,7 @@ namespace GoogleDrive2.RestRequests
             {
                 return await base.GetHttpResponseAsync(request);
             }
-            catch(System.Threading.Tasks.TaskCanceledException error)
+            catch (System.Threading.Tasks.TaskCanceledException error)
             {
                 MyLogger.LogError($"{error}");
                 return null;

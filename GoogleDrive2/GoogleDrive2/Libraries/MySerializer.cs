@@ -7,7 +7,7 @@ namespace GoogleDrive2.Libraries
 {
     static class MySerializer
     {
-        static List<string> GetInfoAsStringList(object o,bool includeFields,bool includeProperties,ref HashSet<object>used)
+        static List<string> GetInfoAsStringList(object o, bool includeFields, bool includeProperties, ref HashSet<object> used)
         {
             if (used.Contains(o)) return new List<string> { "(Repeated)" };
             used.Add(o);
@@ -56,7 +56,7 @@ namespace GoogleDrive2.Libraries
                         }
                     }
                 }
-                if(includeProperties)
+                if (includeProperties)
                 {
                     var fs = o.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
                     foreach (var f in fs)
@@ -68,7 +68,7 @@ namespace GoogleDrive2.Libraries
                         }
                         catch (Exception error)
                         {
-                            nxto = error.ToString().Replace("\r","\\r").Replace("\n","\\n");
+                            nxto = error.ToString().Replace("\r", "\\r").Replace("\n", "\\n");
                         }
                         ans.Add($"{(f.Name + ":").PadRight(15)} {nxto}");
                         if (nxto != null)

@@ -13,7 +13,7 @@ namespace GoogleDrive2.RestRequests
         public partial class DriveAuthorizer
         {
             const string SaveFileName = "AuthorizationTokens.ini";
-            static async Task<IFile>GetSaveFileAsync()
+            static async Task<IFile> GetSaveFileAsync()
             {
                 return await FileSystem.Current.LocalStorage.CreateFileAsync(SaveFileName, CreationCollisionOption.OpenIfExists);
             }
@@ -25,7 +25,7 @@ namespace GoogleDrive2.RestRequests
             {
                 await (await GetSaveFileAsync()).WriteAllTextAsync(data);
             }
-            static async Task<string>ReadAsync()
+            static async Task<string> ReadAsync()
             {
                 return await (await GetSaveFileAsync()).ReadAllTextAsync();
             }
@@ -121,7 +121,7 @@ namespace GoogleDrive2.RestRequests
                 request.CreateGetBodyMethod(bodyBytes);
                 using (var response = await responseGetter.GetHttpResponseAsync(request))
                 {
-                    return await  response.GetResponseString();
+                    return await response.GetResponseString();
                 }
             }
             static async Task<string> GetAuthorizationCode()
@@ -131,7 +131,7 @@ namespace GoogleDrive2.RestRequests
                     $"&prompt=consent&response_type=code&client_id={WebUtility.UrlEncode(client_id)}" +
                     $"&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdrive&access_type=offline";
                 string ans = null;
-                for (int i = 0; ans == null||ans.StartsWith("/?error="); i++)
+                for (int i = 0; ans == null || ans.StartsWith("/?error="); i++)
                 {
                     SemaphoreSlim semaphoreSlim = new SemaphoreSlim(0, 1);
                     var eventAction = new Action<string>((string eUrl) =>

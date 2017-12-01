@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace GoogleDrive2.Pages.TestPage
 {
-    class TouchEventImplementPage:MyContentPage
+    class TouchEventImplementPage : MyContentPage
     {
         MyAbsoluteLayout ALmain;
         MyLabel LBtxt;
@@ -19,7 +19,7 @@ namespace GoogleDrive2.Pages.TestPage
                 ALmain = new MyAbsoluteLayout();
                 {
                     LBtxt = new MyLabel { Text = "Status" };
-                    ALmain.Children.Add(LBtxt,new Point(0,0));
+                    ALmain.Children.Add(LBtxt, new Point(0, 0));
                 }
                 {
                     BX = new BoxView { BackgroundColor = Color.Red, WidthRequest = 100, HeightRequest = 100 };
@@ -40,7 +40,7 @@ namespace GoogleDrive2.Pages.TestPage
                 };
                 r.Tapped += new EventHandler((o, args) =>
                 {
-                    ShowStatus("Tap "+args.ToString());
+                    ShowStatus("Tap " + args.ToString());
                     BX.BackgroundColor = Color.FromRgba(rand.NextDouble(), rand.NextDouble(), rand.NextDouble(), rand.NextDouble());
                 });
                 BX.GestureRecognizers.Add(r);
@@ -93,24 +93,24 @@ namespace GoogleDrive2.Pages.TestPage
             {
                 var r = new PanGestureRecognizer();
                 double x = double.NaN, y = 0;
-                r.PanUpdated += new EventHandler<PanUpdatedEventArgs>( (o, args) =>
-                {
+                r.PanUpdated += new EventHandler<PanUpdatedEventArgs>((o, args) =>
+               {
                     //await MyLogger.Alert("hi");
                     ShowStatus($"Status: {args.StatusType}, TotalX: {args.TotalX}, TotalY: {args.TotalY}");
-                    if (args.StatusType == GestureStatus.Completed)
-                    {
-                        x = double.NaN;
-                        return;
-                    }
-                    if (double.IsNaN(x))
-                    {
-                        var b = MyAbsoluteLayout.GetLayoutBounds(BX);
-                        x = b.X;
-                        y = b.Y;
+                   if (args.StatusType == GestureStatus.Completed)
+                   {
+                       x = double.NaN;
+                       return;
+                   }
+                   if (double.IsNaN(x))
+                   {
+                       var b = MyAbsoluteLayout.GetLayoutBounds(BX);
+                       x = b.X;
+                       y = b.Y;
                         //await MyLogger.Alert($"{x} {y}");
                     }
-                    MyAbsoluteLayout.SetLayoutBounds(BX, new Rectangle(x + args.TotalX, y + args.TotalY, -1, -1));
-                });
+                   MyAbsoluteLayout.SetLayoutBounds(BX, new Rectangle(x + args.TotalX, y + args.TotalY, -1, -1));
+               });
                 BX.GestureRecognizers.Add(r);
             }
             //LBtxt.GestureRecognizers.Add(new TapGestureRecognizer

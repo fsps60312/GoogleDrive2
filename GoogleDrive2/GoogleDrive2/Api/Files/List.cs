@@ -62,7 +62,7 @@ namespace GoogleDrive2.Api.Files
     class List<T> : MyLoggerClass
     {
         public event Libraries.Events.MyEventHandler<string> ErrorOccurred;
-        public event Libraries.Events.EmptyEventHandler CloudFileListCleared,OperationStarted,OperationEnded;
+        public event Libraries.Events.EmptyEventHandler CloudFileListCleared, OperationStarted, OperationEnded;
         public event Libraries.Events.MyEventHandler<System.Collections.Generic.List<T>> CloudFilesAdded;
         public string Fields
         {

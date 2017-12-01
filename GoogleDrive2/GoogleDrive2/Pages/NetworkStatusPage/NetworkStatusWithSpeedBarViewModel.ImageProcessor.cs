@@ -26,7 +26,7 @@ namespace GoogleDrive2.Pages.NetworkStatusPage
             {
                 WriteAsync(stream, new byte[2] { (byte)(v & 0xFF), (byte)((v >> 8) & 0xFF) });
             }
-            private static double GetMax(List<double>s)
+            private static double GetMax(List<double> s)
             {
                 if (s.Count == 0) return double.Epsilon;
                 s.Sort();

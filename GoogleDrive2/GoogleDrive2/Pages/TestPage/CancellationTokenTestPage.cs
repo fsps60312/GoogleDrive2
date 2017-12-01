@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace GoogleDrive2.Pages.TestPage
 {
-    class CancellationTokenTestPage:MyContentPage
+    class CancellationTokenTestPage : MyContentPage
     {
-        MyButton BTNwait,BTNrelease, BTNcancel;
+        MyButton BTNwait, BTNrelease, BTNcancel;
         MyStackPanel SPmain;
         CancellationTokenSource cancellationTokenSource;
         Libraries.MySemaphore semaphore = new Libraries.MySemaphore(0);

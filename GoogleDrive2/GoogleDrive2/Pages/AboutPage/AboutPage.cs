@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace GoogleDrive2.Pages.AboutPage
 {
-    class AboutPage:MyContentPage
+    class AboutPage : MyContentPage
     {
         MyWebView WVmain;
         MyGrid GDmain;
@@ -23,17 +23,17 @@ namespace GoogleDrive2.Pages.AboutPage
             AddButton("Hacker's Notice", "I know, I know. My client secret was made public here. You can create your own through your Google Account for free too, so do not abuse this one please. No benefits for you to do so! ><", "https://github.com/fsps60312/GoogleDrive2/blob/master/GoogleDrive2/GoogleDrive2/RestRequests/RestRequestsAuthorizer.DriveAuthorizer.cs");
             AddButton("Private Policy", "The Private Policy, which is required in order to publish this App. So simple, huh? XD", "https://codingsimplifylife.blogspot.tw/2017/11/fsps60312-drive-private-policy.html");
         }
-        private void AddButton(string text,string title,string url)
+        private void AddButton(string text, string title, string url)
         {
             MyButton btn = new MyButton { Text = text };
-            btn.Clicked +=async delegate
-              {
-                  btn.IsEnabled = false;
-                  LBinfo.Text = title;
-                  WVmain.Source = url;
-                  await Task.Delay(500);
-                  btn.IsEnabled = true;
-              };
+            btn.Clicked += async delegate
+               {
+                   btn.IsEnabled = false;
+                   LBinfo.Text = title;
+                   WVmain.Source = url;
+                   await Task.Delay(500);
+                   btn.IsEnabled = true;
+               };
             SPmain.Children.Add(btn);
         }
         private void RegisterEvents()
