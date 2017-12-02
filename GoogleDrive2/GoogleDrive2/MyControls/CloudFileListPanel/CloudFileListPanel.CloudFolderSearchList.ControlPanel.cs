@@ -119,7 +119,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                     });
                     try
                     {
-                        await uploader.StartAsync();
+                        await uploader.StartBackgroundAsync();
                     }
                     catch (Exception error)
                     {
@@ -145,7 +145,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                                 metaData.parents = new List<string> { cloud.id };
                                 return Task.FromResult(metaData);
                             });
-                            await uploader.StartAsync();
+                            await uploader.StartBackgroundAsync();
                         }));
                     }
                     catch (Exception error)
@@ -168,7 +168,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         {
                             var trasher = f.File.GetTrasher(!f.File.trashed.Value);
                             trasher.ErrorLogged += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };
-                            await trasher.StartAsync();
+                            await trasher.StartBackgroundAsync();
                         }));
                     }
                     else
@@ -176,7 +176,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         var cloud = this.Parent.ClickedItem.File;
                         var trasher = cloud.GetTrasher(!cloud.trashed.Value);
                         trasher.ErrorLogged += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };
-                        await trasher.StartAsync();
+                        await trasher.StartBackgroundAsync();
                     }
                     Parent.Refresh();
                 }
@@ -193,7 +193,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         {
                             var starrer = f.File.GetStarrer(!f.File.starred.Value);
                             starrer.ErrorLogged += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };
-                            await starrer.StartAsync();
+                            await starrer.StartBackgroundAsync();
                         }));
                     }
                     else
@@ -201,7 +201,7 @@ namespace GoogleDrive2.MyControls.CloudFileListPanel
                         var cloud = this.Parent.ClickedItem.File;
                         var starrer = cloud.GetStarrer(!cloud.starred.Value);
                         starrer.ErrorLogged += async (msg) => { await MyLogger.Alert($"Failed: {msg}"); };
-                        await starrer.StartAsync();
+                        await starrer.StartBackgroundAsync();
                     }
                     Parent.Refresh();
                 }

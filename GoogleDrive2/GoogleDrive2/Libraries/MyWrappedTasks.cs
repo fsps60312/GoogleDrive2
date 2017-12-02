@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Threading;
 
 namespace GoogleDrive2.Libraries
 {
@@ -10,37 +11,37 @@ namespace GoogleDrive2.Libraries
     {
         public event Libraries.Events.MyEventHandler<object> ExtraThreadWaited, ExtraThreadReleased;
         //protected event Libraries.Events.MyEventHandler<object> SubtaskStarted, SubtaskUnstarted;
+        private object
+            syncRootSubtasks = new object(),
+            syncRootSemaphoreReleased = new object();
         List<MyTask> subtasks = new List<MyTask>();
         long subtasksRunningCount = 0, subtasksCompletedCount = 0;
         event Libraries.Events.EmptyEventHandler SemaphoreReleased;
         void DecreaseRunningCount()
         {
-            lock (syncRootChangeRunningState)
+            if (Interlocked.Decrement(ref subtasksRunningCount) == 0)
             {
-                if (--subtasksRunningCount == 0)
-                {
-                    SemaphoreReleased?.Invoke();
-                }
+                lock (syncRootSemaphoreReleased) SemaphoreReleased?.Invoke();
             }
         }
         MySemaphore GetSemaphore()
         {
-            lock (syncRootChangeRunningState)
+            var ans = new MySemaphore(0);
+            Events.EmptyEventHandler semaphoreReleasedEventHandler = null;
+            semaphoreReleasedEventHandler = new Events.EmptyEventHandler(() =>
             {
-                var ans = new MySemaphore(0);
-                Events.EmptyEventHandler semaphoreReleasedEventHandler = null;
-                semaphoreReleasedEventHandler = new Events.EmptyEventHandler(() =>
+                lock (syncRootSemaphoreReleased)
                 {
                     ans.Release();
                     this.SemaphoreReleased -= semaphoreReleasedEventHandler;
-                });
-                this.SemaphoreReleased += semaphoreReleasedEventHandler;
-                return ans;
-            }
+                }
+            });
+            lock (syncRootSemaphoreReleased) this.SemaphoreReleased += semaphoreReleasedEventHandler;
+            return ans;
         }
         void IncreaseRunningCount()
         {
-            lock (syncRootChangeRunningState) subtasksRunningCount++;
+            Interlocked.Increment(ref subtasksRunningCount);
         }
         async void StartSubtask(MyTask subtask)
         {
@@ -50,9 +51,9 @@ namespace GoogleDrive2.Libraries
         }
         void StartSubtasks()
         {
-            lock (syncRootChangeRunningState)
+            IncreaseRunningCount();
+            lock (syncRootSubtasks)
             {
-                IncreaseRunningCount();
                 foreach (var task in subtasks) StartSubtask(task);
             }
         }
@@ -62,7 +63,7 @@ namespace GoogleDrive2.Libraries
             this.Pausing += (sender) =>
             {
                 Debug($"{Constants.Icons.Hourglass} Pausing...");
-                lock (syncRootChangeRunningState)
+                lock (syncRootSubtasks)
                 {
                     foreach (var task in subtasks) task.Pause();
                 }
@@ -70,27 +71,24 @@ namespace GoogleDrive2.Libraries
         }
         protected void AddSubTask(MyTask subtask)
         {
-            lock (syncRootChangeRunningState)
+            MyLogger.Assert(!subtask.IsCompleted);
+            subtask.Completed += delegate
             {
-                MyLogger.Assert(!subtask.IsCompleted);
-                subtask.Completed += delegate
-                {
-                    lock (syncRootChangeRunningState) ++subtasksCompletedCount;
-                };
-                //subtask.Started += delegate { IncreaseRunningCount(); };
-                //subtask.Unstarted += delegate { DecreaseRunningCount(); };
-                subtasks.Add(subtask);
-                if (IsRunningRequest) StartSubtask(subtask);
-            }
+                Interlocked.Increment(ref subtasksCompletedCount);
+            };
+            //subtask.Started += delegate { IncreaseRunningCount(); };
+            //subtask.Unstarted += delegate { DecreaseRunningCount(); };
+            lock (syncRootSubtasks) subtasks.Add(subtask);
+            if (IsRunningRequest) StartSubtask(subtask);
         }
         protected abstract Task<bool> AddSubtasksIfNot();
         public override void CancelPauseRequests()
         {
-            lock (syncRootChangeRunningState)
+            lock (syncRootSubtasks)
             {
                 foreach (var task in subtasks) task.CancelPauseRequests();
-                base.CancelPauseRequests();
             }
+            base.CancelPauseRequests();
         }
         protected override Task PrepareBeforeStartAsync()
         {
@@ -105,19 +103,14 @@ namespace GoogleDrive2.Libraries
             await semaphoreAddSubtasks.WaitAsync();
             var allSubtaskAdded = await AddSubtasksIfNot();
             semaphoreAddSubtasks.Release();
-            Libraries.MySemaphore semaphore;
-            lock (syncRootChangeRunningState)
-            {
-                semaphore = GetSemaphore();
-                DecreaseRunningCount();
-                if (threadCount++ > 0) ExtraThreadWaited?.Invoke(this);
-            }
+            Libraries.MySemaphore semaphore = GetSemaphore();
+            DecreaseRunningCount();
+            if (Interlocked.Increment(ref threadCount) > 1) ExtraThreadWaited?.Invoke(this);
             await semaphore.WaitAsync();// Paused might be misjudged if not all thread wait here
-            lock (syncRootChangeRunningState)
-            {
-                if (--threadCount > 0) ExtraThreadReleased?.Invoke(this);
-                if (allSubtaskAdded && subtasksCompletedCount == subtasks.Count && !IsCompleted) OnCompleted();
-            }
+            if (Interlocked.Decrement(ref threadCount) > 0) ExtraThreadReleased?.Invoke(this);
+            bool allCompleted;
+            lock (syncRootSubtasks) allCompleted = (Interlocked.Read(ref subtasksCompletedCount) == subtasks.Count);
+            if (allSubtaskAdded && allCompleted && !IsCompleted) OnCompleted();
         }
     }
 }

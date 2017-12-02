@@ -9,6 +9,10 @@ namespace GoogleDrive2.Libraries
 {
     partial class MyTask
     {
+        public static void RunOnUIThread(Action action)
+        {
+            Xamarin.Forms.Device.BeginInvokeOnMainThread(action);
+        }
         public static async Task WhenAll(params Task[] tasks) { await WhenAll(tasks as IEnumerable<Task>); }
         public static async Task WhenAll(IEnumerable<Task> tasks)
         {

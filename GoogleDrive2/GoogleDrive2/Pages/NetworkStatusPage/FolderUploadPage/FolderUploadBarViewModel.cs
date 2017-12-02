@@ -354,8 +354,8 @@ namespace GoogleDrive2.Pages.NetworkStatusPage.FolderUploadPage
             PauseClicked = new Xamarin.Forms.Command(async () =>
             {
                 //this.OnMessageAppended($"{up.IsRunningRequest}");
-                if (up.IsRunningRequest) up.Pause();
-                else await up.StartAsync();
+                if (up.IsRunningRequest)await up.PauseBackgroundAsync();
+                else await up.StartBackgroundAsync();
             });
         }
     }

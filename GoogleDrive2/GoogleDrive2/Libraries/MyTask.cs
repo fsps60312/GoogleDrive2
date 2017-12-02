@@ -8,12 +8,25 @@ using GoogleDrive2.Libraries.Events;
 
 namespace GoogleDrive2.Libraries
 {
+    public partial class MyTask
+    {
+        public async Task StartBackgroundAsync()
+        {
+            await StartAsync();
+        }
+        public async Task PauseBackgroundAsync()
+        {
+            //Pause();
+            await Task.Run(() => Pause());
+        }
+    }
     public abstract partial class MyTask : MyLoggerClass, MyQueuedTask
     {
         protected object syncRootChangeRunningState = new object();
         private CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
         public CancellationToken CancellationToken { get { return CancellationTokenSource.Token; } }
         public event MyEventHandler<object> Started, Unstarted, Pausing, Completed;
+        protected event MyEventHandler<object> PausingWithoutLock;
         public event Libraries.Events.MyEventHandler<string> MessageAppended;
         protected void OnMessageAppended(string msg) { MessageAppended?.Invoke(msg); }
         protected void OnCompleted()
@@ -58,6 +71,7 @@ namespace GoogleDrive2.Libraries
                 Pausing?.Invoke(this);
                 RemoveFromTaskQueueRequested?.Invoke(this);
             }
+            PausingWithoutLock?.Invoke(this);
         }
         static MyTaskQueue unlimitedTaskQueue = new MyTaskQueue(long.MaxValue);
         protected MyTaskQueue TaskQueue { get; set; } = unlimitedTaskQueue;
